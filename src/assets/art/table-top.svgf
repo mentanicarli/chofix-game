@@ -1,0 +1,6 @@
+<rect x="198" y="488" width="64" height="52" rx="6" fill="#EADFCB"/>
+<circle cx="230" cy="514" r="6" fill="#C4694A" stroke="none"/>
+<rect x="190" y="540" width="80" height="9" rx="4" fill="#D5C7AE"/>
+<path d="M290 526H312L308 546Q301 550 294 546Z" fill="#FFF8EC"/>
+<path d="M311 530Q320 530 319 538Q318 544 309 543" fill="none" stroke-width="2.5"/>
+<ellipse cx="301" cy="550" rx="17" ry="4" fill="#FBF4E8"/>

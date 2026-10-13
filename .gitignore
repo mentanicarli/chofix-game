@@ -1,0 +1,15 @@
+node_modules
+e2e/node_modules
+dist
+.tmp
+out
+*.log
+*.png
+.DS_Store
+Thumbs.db
+.env*
+.vscode/
+.idea/
+*.swp
+*.dbg.html
+*.seq.html

@@ -1,0 +1,35 @@
+{
+  "name": "chofix",
+  "private": true,
+  "version": "0.11.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/fragment.mjs",
+    "test": "vitest run",
+    "audio": "python3 scripts/make-audio.py",
+    "menu": "cd data && python3 parse_menu.py && python3 build_menu.py",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/game src/ui src/render test",
+    "format": "prettier --write \"src/game/**/*.ts\" \"test/**/*.ts\"",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "lint:legacy": "node scripts/lint-legacy.mjs",
+    "build:debug": "CHOFIX_DEBUG=1 vite build && node scripts/fragment.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.4"
+  },
+  "dependencies": {
+    "pixi.js": "^8.22.0"
+  }
+}

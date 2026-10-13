@@ -1,0 +1,31 @@
+const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
+(async () => {
+  const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; } };');
+  const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
+  const out = process.argv[3];
+  const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
+  const p = await require('./pw').page(b);
+  const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
+  await p.goto('file://' + tmp + (process.env.HASH || '#nopixi')); await p.waitForTimeout(600);
+  await p.click('[data-start]'); await p.waitForTimeout(400);
+  await p.evaluate(() => { const G = window.__dbg.G; G.day = 5; G.rank = 3; G.eq_case_pastry = true; G.eq_microwave = true; if (typeof applyUpgrades === 'function') applyUpgrades(); });
+  await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
+  const info = await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.drink = 'espresso'; c.strong = false; c.syrup = null; c.pat = c.max = 999; c.order.food = { id: 'food_018', name: 'Блюдо', price: 120, case: 'case_pastry', heat: true }; return 1; });
+  await p.keyboard.press('Space'); await p.waitForTimeout(600);
+  console.log('tasks', await p.evaluate(() => Object.keys(window.__dbg.BR.done || {}) + ' | food=' + !!window.__dbg.BR.food + ' choices=' + JSON.stringify((window.__dbg.BR.foodChoices || []).map(x => x.id))));
+  await p.click('[data-z=food]', { force: true }); await p.waitForTimeout(400);
+  await p.screenshot({ path: out + '_food1.png' });
+  const ids = await p.$$eval('[data-food]', e => e.map(x => x.dataset.food)); console.log('items', ids);
+  const wrong = ids.find(i => i !== 'food_018');
+  if (wrong) { await p.click(`[data-food=${wrong}]`); await p.waitForTimeout(200); }
+  await p.click('[data-food=food_018]'); await p.waitForTimeout(300);
+  await p.screenshot({ path: out + '_food2.png' });
+  const hb = await p.$('[data-foodheat]'); const bb = await hb.boundingBox();
+  await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down();
+  await p.waitForFunction(() => window.__dbg.BR.food.heatT >= 4.2, null, { timeout: 15000, polling: 30 });
+  await p.screenshot({ path: out + '_food3.png' }); await p.mouse.up(); await p.waitForTimeout(200);
+  await p.click('[data-fooddone]'); await p.waitForTimeout(400);
+  console.log('after', await p.evaluate(() => JSON.stringify({ done: window.__dbg.BR.done, res: window.__dbg.BR.res, inset: window.__dbg.BR.inset })));
+  console.log('errs', errs);
+  await b.close();
+})();

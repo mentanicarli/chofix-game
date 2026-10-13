@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chofix</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&amp;family=Caveat:wght@600;700&amp;display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="stage">
+<div id="boot"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 24H46L43 48Q29 54 15 48Z" fill="#FFF8EC" stroke="#4A2F25" stroke-width="3" stroke-linejoin="round"/><path d="M46 28Q58 28 56 38Q54 44 44 43" fill="none" stroke="#4A2F25" stroke-width="3" stroke-linecap="round"/><path class="bs" d="M22 18Q18 12 23 7M31 18Q27 12 32 7M40 18Q36 12 41 7" fill="none" stroke="#C4694A" stroke-width="3" stroke-linecap="round"/></svg><b>Chofix</b><span>Готовим кофейню</span></div>
+
+<!-- Фон: неподвижная нарисованная сцена -->
+<!-- Общие градиенты и фильтры для сцены бара -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9EFDF"/><stop offset="1" stop-color="#F0DDC2"/></linearGradient>
+<linearGradient id="gSage" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9C6AA"/><stop offset="1" stop-color="#95A886"/></linearGradient>
+<linearGradient id="gSageDeep" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B2C4A3"/><stop offset="1" stop-color="#889E79"/></linearGradient>
+<linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DDA672"/><stop offset="1" stop-color="#B87947"/></linearGradient>
+<linearGradient id="gWoodTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3CA98"/><stop offset="1" stop-color="#E0A872"/></linearGradient>
+<linearGradient id="gWoodFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D49A62"/><stop offset="1" stop-color="#A9693E"/></linearGradient>
+<linearGradient id="gTerra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8956F"/><stop offset="1" stop-color="#BA5C3F"/></linearGradient>
+<linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C6E3E6"/><stop offset="1" stop-color="#FBE7C2"/></linearGradient>
+<linearGradient id="gSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8F6753"/><stop offset="1" stop-color="#694634"/></linearGradient>
+<linearGradient id="gMustard" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0BC55"/><stop offset="1" stop-color="#CF9430"/></linearGradient>
+<linearGradient id="gCoat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E9BE92"/><stop offset="1" stop-color="#C28B5C"/></linearGradient>
+<linearGradient id="gShaft" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1C4" stop-opacity=".65"/><stop offset="1" stop-color="#FFF1C4" stop-opacity="0"/></linearGradient>
+<linearGradient id="gStarHalf" x1="0" y1="0" x2="1" y2="0"><stop offset=".5" stop-color="#E8B04A"/><stop offset=".5" stop-color="#F3E4CB"/></linearGradient>
+<radialGradient id="gGlow"><stop offset="0" stop-color="#FFE6A0" stop-opacity=".65"/><stop offset="1" stop-color="#FFE6A0" stop-opacity="0"/></radialGradient>
+<radialGradient id="gVig" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#4A2F25" stop-opacity="0"/><stop offset="1" stop-color="#4A2F25" stop-opacity=".32"/></radialGradient>
+<filter id="wobble" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="wobbleS" x="-10%" y="-5%" width="120%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.04" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="blur6" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+<filter id="woodH" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.004 0.2" numOctaves="3" seed="8"/><feColorMatrix type="matrix" values="0 0 0 0 .30  0 0 0 0 .16  0 0 0 0 .08  0 0 0 1.6 -.55"/></filter>
+<filter id="woodV" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.2 0.004" numOctaves="3" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 .30  0 0 0 0 .16  0 0 0 0 .08  0 0 0 1.6 -.55"/></filter>
+<filter id="blotch" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.007 0.01" numOctaves="3" seed="21"/><feColorMatrix type="matrix" values="0 0 0 0 .55  0 0 0 0 .35  0 0 0 0 .2  1.1 0 0 0 -.35"/></filter>
+<filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" result="t"/><feColorMatrix in="t" type="matrix" values="0 0 0 0 0.29  0 0 0 0 0.18  0 0 0 0 0.14  0 0 0 0.9 -0.28"/></filter>
+</defs>
+</svg>
+
+<!-- Зал, гости и эффекты рисует Pixi -->
+<canvas id="world" width="1280" height="720" aria-label="Кофейня Chofix: зал"></canvas>
+
+<!-- Бар от первого лица -->
+<div id="bar" aria-label="Бар Chofix: приготовление напитка">
+<svg id="barSvg" viewBox="0 0 1280 720">
+<!-- кликабельные зоны -->
+<g id="bZones" fill="transparent" stroke="none" style="cursor:pointer">
+<rect data-z="grind" x="90" y="170" width="140" height="300" rx="14"><title>Кофемолка</title></rect>
+<rect data-z="tamp" x="260" y="440" width="140" height="90" rx="14"><title>Темпер</title></rect>
+<rect data-z="shot" x="560" y="296" width="140" height="190" rx="14"><title>Группа кофемашины</title></rect>
+<rect data-z="food" x="520" y="540" width="270" height="72" rx="14"><title>Витрина</title></rect>
+<rect data-z="ice" x="330" y="516" width="124" height="90" rx="14"><title>Лёд</title></rect>
+<rect data-z="water" x="466" y="296" width="70" height="80" rx="12"><title>Горячая вода</title></rect>
+<rect data-z="steam" x="776" y="296" width="100" height="170" rx="12"><title>Паровая трубка</title></rect>
+<rect data-z="milk" x="1066" y="244" width="190" height="262" rx="14"><title>Холодильник с молоком</title></rect>
+<rect data-z="syr1" x="878" y="170" width="48" height="130" rx="10"><title>Сиропы</title></rect>
+<rect data-z="syr2" x="944" y="170" width="48" height="130" rx="10"><title>Сиропы</title></rect>
+<rect data-z="syr3" x="1010" y="170" width="48" height="130" rx="10"><title>Сиропы</title></rect>
+<rect data-z="pour" x="540" y="380" width="180" height="120" rx="14"><title>Чашка</title></rect>
+<rect data-z="tea" x="28" y="556" width="94" height="68" rx="14"><title>Чайная станция</title></rect>
+<rect data-z="matcha" x="128" y="556" width="94" height="68" rx="14"><title>Матча</title></rect>
+<rect data-z="powders" x="228" y="556" width="94" height="68" rx="14"><title>Порошки</title></rect>
+<rect data-z="juice" x="804" y="556" width="108" height="68" rx="14"><title>Соки и тоник</title></rect>
+<rect data-z="whipper" x="918" y="556" width="108" height="68" rx="14"><title>Сифон для пены</title></rect>
+<rect data-z="foamer" x="1032" y="556" width="108" height="68" rx="14"><title>Миксер для пенок</title></rect>
+<rect data-z="blender" x="1146" y="556" width="108" height="68" rx="14"><title>Блендер</title></rect>
+<rect data-z="boba" x="28" y="632" width="94" height="68" rx="14"><title>Бабл ти</title></rect>
+<rect data-z="shaker" x="128" y="632" width="94" height="68" rx="14"><title>Шейкер</title></rect>
+<rect data-z="bell" x="984" y="470" width="96" height="70" rx="14"><title>Звонок: подать</title></rect>
+<rect data-z="stop" x="716" y="231" width="48" height="48" rx="24"><title>Стоп шота</title></rect>
+</g>
+</svg>
+<div id="bTk"></div>
+<div id="bCoach" hidden></div>
+<canvas id="bi" width="880" height="900"></canvas>
+<canvas id="bp"></canvas>
+<div id="foodPanel" hidden></div>
+<div id="xPanel" hidden></div>
+<button type="button" id="bClose" class="bbtn" hidden aria-label="Закрыть">×</button>
+<div id="bFloat"></div>
+</div>
+<div id="frontHint" class="chip" hidden>Нажмите на клиента или Пробел, чтобы принять заказ</div>
+
+<div id="tint" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;background:rgb(255,236,200)"></div>
+
+<!-- Интерфейс -->
+<div id="helperChip" hidden></div>
+<div id="hud">
+<div class="chip" id="chDay"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3.5" fill="#FBF4E8" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M3 9.5V8.5A3.5 3.5 0 0 1 6.5 5h11A3.5 3.5 0 0 1 21 8.5v1Z" fill="#C4694A" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 3v3.5M16 3v3.5" fill="none" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="8.5" cy="14" r="1.3" fill="#4A2F25"/><circle cx="12" cy="14" r="1.3" fill="#4A2F25"/><circle cx="15.5" cy="14" r="1.3" fill="#4A2F25"/></svg><span>День 1</span></div>
+<div class="chip" id="chClock"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#FBF4E8" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M12 6.8V12l3.4 2.2" fill="none" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><span>08:00</span></div>
+<div class="chip" id="chMoney"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#E8B04A" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="12" r="5.4" fill="none" stroke="#B8801F" stroke-width="1.8"/><path d="M7.5 7.5Q9 6 11 5.6" fill="none" stroke="#FFF1C9" stroke-width="1.6" stroke-linecap="round"/></svg><span>₽ 500</span></div>
+<div class="chip" id="stars" role="img" aria-label="Рейтинг"></div>
+</div>
+<div id="hudR">
+<div class="chip" id="chServed" title="Подано сегодня"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h12l-1.4 9.2Q11 20 6.4 17.2Z" fill="#FFF8EC" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M17 10q4 0 3.4 3.4-.6 2.4-4 2.2" fill="none" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 3.5q1.4 1.4 0 2.8M12 3.5q1.4 1.4 0 2.8" fill="none" stroke="#4A2F25" stroke-width="1.6" stroke-linecap="round"/></svg><span>0</span></div>
+<button type="button" class="chip ib" id="chSound" aria-label="Звук (M)" title="Звук (M)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5Z" fill="#E8B04A" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path class="slash" d="M3.5 3.5L20.5 20.5" fill="none" stroke="#C4694A" stroke-width="3" stroke-linecap="round"/></svg></button>
+<button type="button" class="chip ib" id="chPause" aria-label="Пауза (P)" title="Пауза (P)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="5" height="15" rx="1.8" fill="#93A684" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="13.5" y="4.5" width="5" height="15" rx="1.8" fill="#93A684" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+</div>
+
+<div id="banner" aria-hidden="true"></div>
+<div id="toast" class="chip" role="status" aria-live="polite"></div>
+
+<div id="screen" hidden></div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

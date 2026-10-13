@@ -1,0 +1,193 @@
+{
+ "ranks": [
+  {
+   "rank": 1,
+   "title": "Стажёр",
+   "minDay": 1,
+   "minRating": 1.0,
+   "minServed": 0
+  },
+  {
+   "rank": 2,
+   "title": "Бариста",
+   "minDay": 3,
+   "minRating": 2.0,
+   "minServed": 8
+  },
+  {
+   "rank": 3,
+   "title": "Опытный бариста",
+   "minDay": 6,
+   "minRating": 2.5,
+   "minServed": 25
+  },
+  {
+   "rank": 4,
+   "title": "Знаток чая и матчи",
+   "minDay": 9,
+   "minRating": 3.0,
+   "minServed": 50
+  },
+  {
+   "rank": 5,
+   "title": "Старший смены",
+   "minDay": 13,
+   "minRating": 3.2,
+   "minServed": 90
+  },
+  {
+   "rank": 6,
+   "title": "Мастер пенок",
+   "minDay": 17,
+   "minRating": 3.4,
+   "minServed": 130
+  },
+  {
+   "rank": 7,
+   "title": "Мастер сезона",
+   "minDay": 21,
+   "minRating": 3.6,
+   "minServed": 175
+  },
+  {
+   "rank": 8,
+   "title": "Мастер вкусов",
+   "minDay": 25,
+   "minRating": 3.8,
+   "minServed": 220
+  },
+  {
+   "rank": 9,
+   "title": "Шеф-бариста",
+   "minDay": 30,
+   "minRating": 4.0,
+   "minServed": 270
+  }
+ ],
+ "equipment": [
+  {
+   "id": "fridge_bottles",
+   "name": "Холодильник за баром (бутылки)",
+   "rank": 2,
+   "cost": 500,
+   "unlocks": "вода и морсы"
+  },
+  {
+   "id": "case_snacks",
+   "name": "Прилавок со снеками",
+   "rank": 2,
+   "cost": 300,
+   "unlocks": "снеки"
+  },
+  {
+   "id": "case_pastry",
+   "name": "Витрина выпечки",
+   "rank": 3,
+   "cost": 900,
+   "unlocks": "круассаны, маффины, брецели"
+  },
+  {
+   "id": "cream",
+   "name": "Кувшин сливок",
+   "rank": 3,
+   "cost": 300,
+   "unlocks": "раф"
+  },
+  {
+   "id": "powders",
+   "name": "Полка порошков",
+   "rank": 3,
+   "cost": 250,
+   "unlocks": "какао, цикорий, протеин"
+  },
+  {
+   "id": "ice",
+   "name": "Льдогенератор",
+   "rank": 3,
+   "cost": 800,
+   "unlocks": "холодные версии любых напитков 0.3–0.6 л"
+  },
+  {
+   "id": "matcha",
+   "name": "Набор для матчи",
+   "rank": 4,
+   "cost": 1000,
+   "unlocks": "матча латте"
+  },
+  {
+   "id": "tea",
+   "name": "Чайная станция",
+   "rank": 4,
+   "cost": 1200,
+   "unlocks": "чаи"
+  },
+  {
+   "id": "juice",
+   "name": "Холодильник соков и тоника",
+   "rank": 5,
+   "cost": 2200,
+   "unlocks": "бамблы, тоники"
+  },
+  {
+   "id": "whipper",
+   "name": "Сифон для сливочной пены",
+   "rank": 5,
+   "cost": 1800,
+   "unlocks": "аэрокано"
+  },
+  {
+   "id": "case_dessert",
+   "name": "Охлаждаемая витрина десертов",
+   "rank": 5,
+   "cost": 2800,
+   "unlocks": "торты, чизкейки, vegan"
+  },
+  {
+   "id": "foamer",
+   "name": "Миксер для пенок",
+   "rank": 6,
+   "cost": 2400,
+   "unlocks": "пенки таро и крем-брюле"
+  },
+  {
+   "id": "fridge_deli",
+   "name": "Холодильник для сэндвичей и ланчей",
+   "rank": 6,
+   "cost": 3200,
+   "unlocks": "сэндвичи, ролы, салаты"
+  },
+  {
+   "id": "microwave",
+   "name": "Микроволновка",
+   "rank": 6,
+   "cost": 1200,
+   "unlocks": "разогрев по просьбе гостя"
+  },
+  {
+   "id": "blender",
+   "name": "Блендер",
+   "rank": 8,
+   "cost": 3000,
+   "unlocks": "милкшейки, фраппе"
+  },
+  {
+   "id": "boba",
+   "name": "Станция бабл ти",
+   "rank": 9,
+   "cost": 3600,
+   "unlocks": "бабл ти, джус боллы"
+  },
+  {
+   "id": "shaker",
+   "name": "Шейкер",
+   "rank": 9,
+   "cost": 800,
+   "unlocks": "протеин"
+  }
+ ],
+ "promotions": {
+  "seniorRank": 5,
+  "managerAfterRank": 9,
+  "managerExtraDays": 2
+ }
+}

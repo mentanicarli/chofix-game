@@ -1,0 +1,2 @@
+import globals from 'globals';
+export default [{ files: ['**/*.js'], languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { ...globals.browser, MENUAPI: 'readonly', World: 'readonly', lookFor: 'readonly', bookHTML: 'readonly', InsetRenderer: 'readonly', foodPanelHTML: 'readonly', heatPct: 'readonly', panelHTML: 'readonly', panelUpdate: 'readonly', readoutFill: 'readonly', readoutTime: 'readonly', readoutBrew: 'readonly' } }, rules: { 'no-undef': 'error' } }];

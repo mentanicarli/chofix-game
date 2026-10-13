@@ -1,0 +1,20 @@
+const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
+(async () => {
+  const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, showBook, applyUpgrades };');
+  const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
+  const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
+  const p = await require('./pw').page(b);
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.goto('file://' + tmp + '#nopixi-lowfx'); await p.waitForTimeout(2500);
+  await p.click('[data-start]'); await p.waitForTimeout(300);
+  await p.evaluate(() => { const G = window.__dbg.G; G.rank = 5; G.helper = true; G.milk = true; G.money = 3000; G.day = 13; window.__dbg.applyUpgrades(); });
+  await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 40000 });
+  await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.drink = 'americano'; c.syrup = null; c.strong = false; c.order.food = null; c.pat = c.max = 999; });
+  const m0 = await p.evaluate(() => window.__dbg.G.money); const t0 = await p.evaluate(() => window.__dbg.D.stats.served);
+  await p.waitForTimeout(3000); await p.screenshot({ path: 'helper_chip.png', clip: { x: 0, y: 0, width: 600, height: 160 } });
+  console.log('chip', await p.evaluate(() => document.querySelector('#helperChip').textContent));
+  await p.waitForFunction(() => window.__dbg.D.stats.served > 0, null, { timeout: 60000 });
+  console.log('served by helper; money', m0, '->', await p.evaluate(() => window.__dbg.G.money));
+  await p.evaluate(() => window.__dbg.showBook()); await p.waitForTimeout(600); await p.screenshot({ path: 'book.png' });
+  console.log(errs.length ? errs.slice(0, 4).join('\n') : 'NO_ERRORS'); await b.close();
+})();

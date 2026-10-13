@@ -1,0 +1,2911 @@
+{
+ "stations": {
+  "grind": "Смолоть кофе",
+  "tamp": "Утрамбовать (темпер)",
+  "shot": "Пробить шот",
+  "water": "Добавить горячую воду",
+  "milk": "Налить молоко в питчер",
+  "steam": "Вспенить молоко паром",
+  "pour": "Залить в чашку",
+  "syrup": "Сироп",
+  "ice": "Насыпать лёд",
+  "cream": "Добавить сливки",
+  "foam": "Взбить пенку",
+  "whisk": "Взбить матчу венчиком",
+  "brew": "Заварить чай",
+  "juice": "Налить сок или пюре",
+  "tonic": "Налить тоник",
+  "blend": "Взбить в блендере",
+  "boba": "Добавить шарики",
+  "powder": "Добавить порошок",
+  "shake": "Взболтать в шейкере",
+  "topping": "Украсить",
+  "shot_only": "Пробить шот сверху"
+ },
+ "drinks": [
+  {
+   "id": "latte_coconut",
+   "family": "foamlatte",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "кокосовый пломбир"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    },
+    {
+     "st": "foam",
+     "arg": "таро"
+    }
+   ],
+   "rank": 7,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "кокос",
+    "пенка таро"
+   ],
+   "note": "сезон; 0.4/0.6 л",
+   "name": "Латте кокосовый пломбир с пенкой таро",
+   "fullName": "Латте кокосовый пломбир с пенкой таро",
+   "section": "Сезонные напитки",
+   "sizes": {
+    "0.4": 360,
+    "0.6": 410
+   },
+   "coldSizes": [
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "matcha_coconut",
+   "family": "foamlatte",
+   "steps": [
+    {
+     "st": "whisk"
+    },
+    {
+     "st": "syrup",
+     "arg": "кокосовый пломбир"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    },
+    {
+     "st": "foam",
+     "arg": "таро"
+    }
+   ],
+   "rank": 7,
+   "temp": "both",
+   "ing": [
+    "матча",
+    "молоко",
+    "кокос",
+    "пенка таро"
+   ],
+   "note": "сезон; 0.4/0.6 л",
+   "name": "Матча латте кокосовый пломбир с пенкой таро",
+   "fullName": "Матча латте кокосовый пломбир с пенкой таро",
+   "section": "Сезонные напитки",
+   "sizes": {
+    "0.4": 360,
+    "0.6": 410
+   },
+   "coldSizes": [
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "cappuccino_pumpkin",
+   "family": "milk",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "тыква"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thick"
+    },
+    {
+     "st": "pour"
+    },
+    {
+     "st": "topping",
+     "arg": "специи"
+    }
+   ],
+   "rank": 7,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "тыква",
+    "специи"
+   ],
+   "note": "сезон",
+   "name": "Капучино пряная тыква",
+   "fullName": "Капучино пряная тыква",
+   "section": "Сезонные напитки",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "raf_halva",
+   "family": "raf",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "халва"
+    },
+    {
+     "st": "cream"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 7,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "сливки",
+    "халва"
+   ],
+   "note": "сезон",
+   "name": "Раф сливочная халва",
+   "fullName": "Раф сливочная халва",
+   "section": "Сезонные напитки",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "tea_currant",
+   "family": "tea",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "95/4"
+    },
+    {
+     "st": "juice",
+     "arg": "смородина"
+    }
+   ],
+   "rank": 6,
+   "temp": "both",
+   "ing": [
+    "чай",
+    "смородиновый сорбет"
+   ],
+   "note": "",
+   "name": "Чай смородиновый сорбет",
+   "fullName": "Чай смородиновый сорбет",
+   "section": "Сезонные напитки",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "latte_sakura",
+   "family": "foamlatte",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "сакура-вишня"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    },
+    {
+     "st": "foam",
+     "arg": "таро"
+    }
+   ],
+   "rank": 6,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "сироп сакура-вишня",
+    "пенка таро"
+   ],
+   "note": "0.4/0.6 л",
+   "name": "Латте сакура-вишня с пенкой таро",
+   "fullName": "Латте сакура-вишня с пенкой таро",
+   "section": "Хиты",
+   "sizes": {
+    "0.4": 360,
+    "0.6": 410
+   },
+   "coldSizes": [
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "latte_banana",
+   "family": "foamlatte",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "банан"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    },
+    {
+     "st": "foam",
+     "arg": "крем-брюле протеин"
+    }
+   ],
+   "rank": 6,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "банан",
+    "протеиновая пенка"
+   ],
+   "note": "",
+   "name": "Латте банановый с пенкой крем-брюле",
+   "fullName": "Латте банановый с пенкой крем-брюле (протеиновая пенка — 11 г белка на порцию)",
+   "section": "Хиты",
+   "sizes": {
+    "0.4": 360,
+    "0.6": 410
+   },
+   "coldSizes": [
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "latte_lemon",
+   "family": "foamlatte",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "лимонная меренга"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    },
+    {
+     "st": "foam",
+     "arg": "таро"
+    }
+   ],
+   "rank": 6,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "лимонная меренга",
+    "пенка таро"
+   ],
+   "note": "",
+   "name": "Латте лимонная меренга с пенкой таро",
+   "fullName": "Латте лимонная меренга с пенкой таро",
+   "section": "Хиты",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "pomegranate_bumble",
+   "family": "bumble",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "juice",
+     "arg": "гранат"
+    },
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "pour",
+     "arg": "layer"
+    }
+   ],
+   "rank": 5,
+   "temp": "cold",
+   "ing": [
+    "гранатовый сок",
+    "кофе",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Гранатовый бамбл",
+   "fullName": "Гранатовый бамбл",
+   "section": "Хиты",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "espresso_double",
+   "family": "espresso",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    }
+   ],
+   "rank": 1,
+   "temp": "hot",
+   "ing": [
+    "кофе"
+   ],
+   "note": "двойная порция, 0.2 л",
+   "name": "Двойной эспрессо",
+   "fullName": "Двойной эспрессо",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 100
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "flat_white",
+   "family": "milk",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "micro"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 3,
+   "temp": "hot",
+   "ing": [
+    "кофе",
+    "молоко"
+   ],
+   "note": "двойной, плотная микропена; только 0.2 л",
+   "name": "Флэт уайт",
+   "fullName": "Флэт уайт",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 190
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "americano",
+   "family": "espresso",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "water"
+    }
+   ],
+   "rank": 1,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "вода"
+   ],
+   "note": "",
+   "name": "Американо",
+   "fullName": "Американо",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 150,
+    "0.3": 200,
+    "0.4": 250,
+    "0.6": 300
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "cappuccino",
+   "family": "milk",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thick"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 2,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко"
+   ],
+   "note": "",
+   "name": "Капучино",
+   "fullName": "Капучино",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "latte",
+   "family": "milk",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 2,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко"
+   ],
+   "note": "",
+   "name": "Латте",
+   "fullName": "Латте",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "vanilla_raf",
+   "family": "raf",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "syrup",
+     "arg": "ваниль"
+    },
+    {
+     "st": "cream"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 3,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "сливки",
+    "сироп ваниль"
+   ],
+   "note": "",
+   "name": "Ванильный раф",
+   "fullName": "Ванильный раф",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "raf",
+   "family": "raf",
+   "steps": [
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "cream"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 4,
+   "temp": "both",
+   "ing": [
+    "кофе",
+    "молоко",
+    "сливки"
+   ],
+   "note": "без сиропа, сливки + сахар",
+   "name": "Раф кофе",
+   "fullName": "Раф кофе",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "matcha_latte",
+   "family": "matcha",
+   "steps": [
+    {
+     "st": "whisk"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 4,
+   "temp": "both",
+   "ing": [
+    "матча",
+    "молоко"
+   ],
+   "note": "",
+   "name": "Матча латте",
+   "fullName": "Матча латте (на церемониальной матче кансай)",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "cocoa",
+   "family": "powder",
+   "steps": [
+    {
+     "st": "powder",
+     "arg": "какао"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 3,
+   "temp": "both",
+   "ing": [
+    "какао",
+    "молоко"
+   ],
+   "note": "",
+   "name": "Какао",
+   "fullName": "Какао",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "chicory_latte",
+   "family": "powder",
+   "steps": [
+    {
+     "st": "powder",
+     "arg": "цикорий"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "steam",
+     "arg": "thin"
+    },
+    {
+     "st": "pour"
+    }
+   ],
+   "rank": 4,
+   "temp": "both",
+   "ing": [
+    "цикорий",
+    "молоко"
+   ],
+   "note": "кофе нет — для любителей без кофеина",
+   "name": "Цикорий латте",
+   "fullName": "Цикорий латте",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 170,
+    "0.3": 220,
+    "0.4": 270,
+    "0.6": 310
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "tea_sencha",
+   "family": "tea",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "80/2"
+    }
+   ],
+   "rank": 4,
+   "temp": "both",
+   "ing": [
+    "чай сенча"
+   ],
+   "note": "80°C, 2 мин",
+   "name": "Чай зелёный сенча",
+   "fullName": "Чай зелёный сенча",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 100,
+    "0.3": 160,
+    "0.4": 220,
+    "0.6": 260
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "tea_assam",
+   "family": "tea",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "95/4"
+    }
+   ],
+   "rank": 4,
+   "temp": "both",
+   "ing": [
+    "чай ассам"
+   ],
+   "note": "95°C, 4 мин",
+   "name": "Чай чёрный ассам",
+   "fullName": "Чай чёрный ассам",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 100,
+    "0.3": 160,
+    "0.4": 220,
+    "0.6": 260
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "tea_hibiscus",
+   "family": "tea",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "95/5"
+    }
+   ],
+   "rank": 4,
+   "temp": "both",
+   "ing": [
+    "каркадэ"
+   ],
+   "note": "95°C, 5 мин",
+   "name": "Чай каркадэ",
+   "fullName": "Чай каркадэ",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 100,
+    "0.3": 160,
+    "0.4": 220,
+    "0.6": 260
+   },
+   "coldSizes": [
+    "0.3",
+    "0.4",
+    "0.6"
+   ]
+  },
+  {
+   "id": "tea_buckwheat",
+   "family": "tea",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "95/5"
+    }
+   ],
+   "rank": 4,
+   "temp": "hot",
+   "ing": [
+    "гречишный чай"
+   ],
+   "note": "только 0.2 л",
+   "name": "Чай гречишный",
+   "fullName": "Чай гречишный",
+   "section": "Классические",
+   "sizes": {
+    "0.2": 100
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "hot_bumble",
+   "family": "bumble",
+   "steps": [
+    {
+     "st": "juice",
+     "arg": "горячий"
+    },
+    {
+     "st": "shot_only"
+    }
+   ],
+   "rank": 5,
+   "temp": "hot",
+   "ing": [
+    "сок",
+    "кофе"
+   ],
+   "note": "горячая основа + эспрессо сверху; 0.3 л",
+   "name": "Горячий бамбл",
+   "fullName": "Горячий бамбл",
+   "section": "Классические",
+   "sizes": {
+    "0.3": 270
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "orange_bumble",
+   "family": "bumble",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "juice",
+     "arg": "апельсин"
+    },
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "pour",
+     "arg": "layer"
+    }
+   ],
+   "rank": 5,
+   "temp": "cold",
+   "ing": [
+    "апельсиновый сок",
+    "кофе",
+    "лёд"
+   ],
+   "note": "слои: сок → лёд → эспрессо",
+   "name": "Апельсиновый бамбл",
+   "fullName": "Апельсиновый бамбл",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "matcha_bumble",
+   "family": "bumble",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "juice",
+     "arg": "апельсин"
+    },
+    {
+     "st": "whisk"
+    },
+    {
+     "st": "pour",
+     "arg": "layer"
+    }
+   ],
+   "rank": 6,
+   "temp": "cold",
+   "ing": [
+    "апельсиновый сок",
+    "матча",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Матча бамбл",
+   "fullName": "Матча бамбл",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "espresso_tonic",
+   "family": "tonic",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "tonic"
+    },
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "pour",
+     "arg": "layer"
+    }
+   ],
+   "rank": 5,
+   "temp": "cold",
+   "ing": [
+    "тоник",
+    "кофе",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Эспрессо-тоник",
+   "fullName": "Эспрессо-тоник",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "matcha_tonic",
+   "family": "tonic",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "tonic"
+    },
+    {
+     "st": "whisk"
+    },
+    {
+     "st": "pour",
+     "arg": "layer"
+    }
+   ],
+   "rank": 6,
+   "temp": "cold",
+   "ing": [
+    "тоник",
+    "матча",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Матча-тоник",
+   "fullName": "Матча-тоник",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "aerocano",
+   "family": "aero",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "water"
+    },
+    {
+     "st": "foam",
+     "arg": "cream"
+    },
+    {
+     "st": "topping",
+     "arg": "карамельный соус"
+    }
+   ],
+   "rank": 5,
+   "temp": "cold",
+   "ing": [
+    "кофе",
+    "вода",
+    "сливки",
+    "карамель",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Сливочный аэрокано с карамелью",
+   "fullName": "Сливочный аэрокано с карамелью",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.3": 270,
+    "0.4": 320,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "milkshake_vanilla",
+   "family": "shake",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "syrup",
+     "arg": "ваниль"
+    },
+    {
+     "st": "blend"
+    }
+   ],
+   "rank": 8,
+   "temp": "cold",
+   "ing": [
+    "молоко",
+    "мороженое",
+    "ваниль",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Милкшейк ванильный",
+   "fullName": "Милкшейк ванильный",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.4": 330,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "milkshake_banana",
+   "family": "shake",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "syrup",
+     "arg": "банан"
+    },
+    {
+     "st": "blend"
+    }
+   ],
+   "rank": 8,
+   "temp": "cold",
+   "ing": [
+    "молоко",
+    "мороженое",
+    "банан",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Милкшейк банановый",
+   "fullName": "Милкшейк банановый",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.4": 330,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "frappe_caramel",
+   "family": "shake",
+   "steps": [
+    {
+     "st": "ice"
+    },
+    {
+     "st": "grind"
+    },
+    {
+     "st": "tamp"
+    },
+    {
+     "st": "shot"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "syrup",
+     "arg": "карамель"
+    },
+    {
+     "st": "blend"
+    },
+    {
+     "st": "topping",
+     "arg": "карамельный соус"
+    }
+   ],
+   "rank": 8,
+   "temp": "cold",
+   "ing": [
+    "кофе",
+    "молоко",
+    "карамель",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Фраппе карамельный",
+   "fullName": "Фраппе карамельный",
+   "section": "Холодная классика",
+   "sizes": {
+    "0.4": 330,
+    "0.6": 360
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "boba_guava",
+   "family": "boba",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "90/3"
+    },
+    {
+     "st": "syrup",
+     "arg": "гуава-персик"
+    },
+    {
+     "st": "ice"
+    },
+    {
+     "st": "boba"
+    },
+    {
+     "st": "shake"
+    }
+   ],
+   "rank": 9,
+   "temp": "cold",
+   "ing": [
+    "чай",
+    "сироп гуава-персик",
+    "шарики",
+    "лёд"
+   ],
+   "note": "",
+   "name": "Бабл ти гуава-персик",
+   "fullName": "Бабл ти гуава-персик",
+   "section": "Бабл ти",
+   "sizes": {
+    "0.4": 390,
+    "0.6": 440
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "boba_raspberry",
+   "family": "boba",
+   "steps": [
+    {
+     "st": "brew",
+     "arg": "90/3"
+    },
+    {
+     "st": "syrup",
+     "arg": "малина-лимон"
+    },
+    {
+     "st": "ice"
+    },
+    {
+     "st": "boba",
+     "arg": "ежовик"
+    },
+    {
+     "st": "shake"
+    }
+   ],
+   "rank": 9,
+   "temp": "cold",
+   "ing": [
+    "чай",
+    "малина-лимон",
+    "ежовик",
+    "лёд"
+   ],
+   "note": "«ежовик» трактую как топпинг-желе; уточните",
+   "name": "Бабл ти малина-лимон с ежовиком",
+   "fullName": "Бабл ти малина-лимон с ежовиком",
+   "section": "Бабл ти",
+   "sizes": {
+    "0.4": 390,
+    "0.6": 440
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "protein_milk",
+   "family": "protein",
+   "steps": [
+    {
+     "st": "powder",
+     "arg": "протеин"
+    },
+    {
+     "st": "milk"
+    },
+    {
+     "st": "shake"
+    }
+   ],
+   "rank": 9,
+   "temp": "cold",
+   "ing": [
+    "протеин",
+    "молоко"
+   ],
+   "note": "только 0.4 л",
+   "name": "Протеин на молоке",
+   "fullName": "Протеин на молоке",
+   "section": "Протеин",
+   "sizes": {
+    "0.4": 250
+   },
+   "coldSizes": []
+  },
+  {
+   "id": "protein_water",
+   "family": "protein",
+   "steps": [
+    {
+     "st": "powder",
+     "arg": "протеин"
+    },
+    {
+     "st": "water"
+    },
+    {
+     "st": "shake"
+    }
+   ],
+   "rank": 9,
+   "temp": "cold",
+   "ing": [
+    "протеин",
+    "вода"
+   ],
+   "note": "только 0.4 л",
+   "name": "Протеин на воде",
+   "fullName": "Протеин на воде",
+   "section": "Протеин",
+   "sizes": {
+    "0.4": 200
+   },
+   "coldSizes": []
+  }
+ ],
+ "bottles": [
+  {
+   "id": "bottle_0",
+   "name": "Вода питьевая без газа",
+   "amount": 500,
+   "unit": "ml",
+   "price": 120,
+   "rank": 2
+  },
+  {
+   "id": "bottle_1",
+   "name": "Вода питьевая с газом",
+   "amount": 500,
+   "unit": "ml",
+   "price": 120,
+   "rank": 2
+  },
+  {
+   "id": "bottle_2",
+   "name": "Морс Вишнёвый",
+   "amount": 500,
+   "unit": "ml",
+   "price": 200,
+   "rank": 2
+  },
+  {
+   "id": "bottle_3",
+   "name": "Морс Малиновый с клюквой",
+   "amount": 500,
+   "unit": "ml",
+   "price": 200,
+   "rank": 2
+  },
+  {
+   "id": "bottle_4",
+   "name": "Морс Смородиновый",
+   "amount": 500,
+   "unit": "ml",
+   "price": 200,
+   "rank": 2
+  }
+ ],
+ "food": [
+  {
+   "id": "food_000",
+   "name": "Суп рамен с курицей",
+   "section": "Новинки сезона",
+   "weight": 315,
+   "price": 290,
+   "kind": "soup",
+   "case": "deli",
+   "heatable": true,
+   "rank": 8
+  },
+  {
+   "id": "food_001",
+   "name": "Набор дрипов Рандом-Фест",
+   "section": "Новинки сезона",
+   "weight": 66,
+   "price": 600,
+   "kind": "other",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 9
+  },
+  {
+   "id": "food_002",
+   "name": "Брецель с соленым маслом",
+   "section": "Новинки сезона",
+   "weight": 79,
+   "price": 200,
+   "kind": "pretzel",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 4
+  },
+  {
+   "id": "food_003",
+   "name": "Рондель с пралине и фундуком",
+   "section": "Сладкая выпечка",
+   "weight": 100,
+   "price": 270,
+   "kind": "donut",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_004",
+   "name": "Рондель с ванилью и пеканом",
+   "section": "Сладкая выпечка",
+   "weight": 90,
+   "price": 270,
+   "kind": "donut",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_005",
+   "name": "Круассан с миндалём",
+   "section": "Сладкая выпечка",
+   "weight": 110,
+   "price": 310,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_006",
+   "name": "Круассан с фисташкой и шоколадом",
+   "section": "Сладкая выпечка",
+   "weight": 115,
+   "price": 310,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_007",
+   "name": "Круассан с меренгой и лимонным кремом",
+   "section": "Сладкая выпечка",
+   "weight": 120,
+   "price": 310,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_008",
+   "name": "Круассан с клубникой",
+   "section": "Сладкая выпечка",
+   "weight": 105,
+   "price": 290,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_009",
+   "name": "Круассан с карамелью и попкорном",
+   "section": "Сладкая выпечка",
+   "weight": 115,
+   "price": 290,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_010",
+   "name": "Круассан с шоколадом",
+   "section": "Сладкая выпечка",
+   "weight": 115,
+   "price": 290,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_011",
+   "name": "Круассан классический",
+   "section": "Сладкая выпечка",
+   "weight": 70,
+   "price": 220,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 4
+  },
+  {
+   "id": "food_012",
+   "name": "Краффин с черникой и меренгой",
+   "section": "Сладкая выпечка",
+   "weight": 90,
+   "price": 250,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_013",
+   "name": "Булочка с апельсиновым конфи и шоколадом",
+   "section": "Сладкая выпечка",
+   "weight": 105,
+   "price": 260,
+   "kind": "other",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_014",
+   "name": "Круглый круассан с малиной",
+   "section": "Сладкая выпечка",
+   "weight": 110,
+   "price": 200,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 4
+  },
+  {
+   "id": "food_015",
+   "name": "Круглый круассан с фисташкой",
+   "section": "Сладкая выпечка",
+   "weight": 80,
+   "price": 200,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 4
+  },
+  {
+   "id": "food_016",
+   "name": "Круассан миндальный",
+   "section": "Сладкая выпечка",
+   "weight": 80,
+   "price": 190,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 4
+  },
+  {
+   "id": "food_017",
+   "name": "Круассан миндальный с лесной ягодой",
+   "section": "Сладкая выпечка",
+   "weight": 140,
+   "price": 190,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 4
+  },
+  {
+   "id": "food_018",
+   "name": "Круассан с заварным кремом",
+   "section": "Сладкая выпечка",
+   "weight": 70,
+   "price": 160,
+   "kind": "croissant",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_019",
+   "name": "Маффин с черной смородиной",
+   "section": "Сладкая выпечка",
+   "weight": 75,
+   "price": 140,
+   "kind": "muffin",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_020",
+   "name": "Маффин шоколадный",
+   "section": "Сладкая выпечка",
+   "weight": 75,
+   "price": 140,
+   "kind": "muffin",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_021",
+   "name": "Брецель Клубничный",
+   "section": "Сладкая выпечка",
+   "weight": 70,
+   "price": 100,
+   "kind": "pretzel",
+   "case": "pastry",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_022",
+   "name": "Торт Синнокейк",
+   "section": "Десерты",
+   "weight": 170,
+   "price": 280,
+   "kind": "cake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_023",
+   "name": "Торт с черной смородиной",
+   "section": "Десерты",
+   "weight": 155,
+   "price": 270,
+   "kind": "cake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_024",
+   "name": "Пирожное блинное шоколадное с Вареной сгущенкой",
+   "section": "Десерты",
+   "weight": 125,
+   "price": 250,
+   "kind": "other",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_025",
+   "name": "Торт Рикотта Груша",
+   "section": "Десерты",
+   "weight": 125,
+   "price": 230,
+   "kind": "cake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_026",
+   "name": "Торт Медовик",
+   "section": "Десерты",
+   "weight": 160,
+   "price": 230,
+   "kind": "cake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_027",
+   "name": "Торт Тирамису",
+   "section": "Десерты",
+   "weight": 114,
+   "price": 200,
+   "kind": "cake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_028",
+   "name": "Чизкейк с брауни и карамелью",
+   "section": "Десерты",
+   "weight": 150,
+   "price": 250,
+   "kind": "cheesecake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_029",
+   "name": "Чизкейк Лесные ягоды",
+   "section": "Десерты",
+   "weight": 140,
+   "price": 210,
+   "kind": "cheesecake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_030",
+   "name": "Чизкейк с клубникой",
+   "section": "Десерты",
+   "weight": 116,
+   "price": 210,
+   "kind": "cheesecake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_031",
+   "name": "Чизкейк с Шоколадной крошкой",
+   "section": "Десерты",
+   "weight": 118,
+   "price": 210,
+   "kind": "cheesecake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_032",
+   "name": "Чизкейк Лайм",
+   "section": "Десерты",
+   "weight": 120,
+   "price": 200,
+   "kind": "cheesecake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_033",
+   "name": "Чизкейк New York",
+   "section": "Десерты",
+   "weight": 118,
+   "price": 200,
+   "kind": "cheesecake",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_034",
+   "name": "Брауни с карамелью",
+   "section": "Десерты",
+   "weight": 120,
+   "price": 200,
+   "kind": "brownie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_035",
+   "name": "Кекс лимонный с черникой",
+   "section": "Десерты",
+   "weight": 130,
+   "price": 190,
+   "kind": "muffin",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_036",
+   "name": "Сэндвич-суфле с клюквой",
+   "section": "Десерты",
+   "weight": 100,
+   "price": 230,
+   "kind": "sandwich",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_037",
+   "name": "Сэндвич-суфле с клубникой",
+   "section": "Десерты",
+   "weight": 100,
+   "price": 230,
+   "kind": "sandwich",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_038",
+   "name": "Печенье-сэндвич с арахисовой пастой",
+   "section": "Десерты",
+   "weight": 145,
+   "price": 210,
+   "kind": "cookie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_039",
+   "name": "Кукис Малина — Белый шоколад",
+   "section": "Десерты",
+   "weight": 110,
+   "price": 210,
+   "kind": "cookie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_040",
+   "name": "Кукис ультрашоколадный",
+   "section": "Десерты",
+   "weight": 110,
+   "price": 210,
+   "kind": "cookie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_041",
+   "name": "Шу манго-маракуйя",
+   "section": "Десерты",
+   "weight": 80,
+   "price": 190,
+   "kind": "eclair",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_042",
+   "name": "Шу Мисо-карамель и юдзу",
+   "section": "Десерты",
+   "weight": 80,
+   "price": 190,
+   "kind": "eclair",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_043",
+   "name": "Моти малина",
+   "section": "Десерты",
+   "weight": 75,
+   "price": 230,
+   "kind": "mochi",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_044",
+   "name": "Моти черника",
+   "section": "Десерты",
+   "weight": 75,
+   "price": 230,
+   "kind": "mochi",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 6
+  },
+  {
+   "id": "food_045",
+   "name": "Пирожное Молодая картошка",
+   "section": "Десерты",
+   "weight": 65,
+   "price": 190,
+   "kind": "other",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_046",
+   "name": "Трубочка с вареной сгущенкой",
+   "section": "Десерты",
+   "weight": 100,
+   "price": 160,
+   "kind": "eclair",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_047",
+   "name": "Эклер Дубайский шоколад",
+   "section": "Десерты",
+   "weight": 70,
+   "price": 180,
+   "kind": "eclair",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_048",
+   "name": "Эклер Карамельный",
+   "section": "Десерты",
+   "weight": 75,
+   "price": 180,
+   "kind": "eclair",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_049",
+   "name": "Медовая колбаса",
+   "section": "Десерты",
+   "weight": 100,
+   "price": 200,
+   "kind": "other",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_050",
+   "name": "Шоколадная колбаса",
+   "section": "Десерты",
+   "weight": 100,
+   "price": 200,
+   "kind": "other",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_051",
+   "name": "Шелл карамельный",
+   "section": "Десерты",
+   "weight": 65,
+   "price": 100,
+   "kind": "donut",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_052",
+   "name": "Донат Яблоко",
+   "section": "Десерты",
+   "weight": 55,
+   "price": 100,
+   "kind": "donut",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_053",
+   "name": "Донат Дубайский шоколад",
+   "section": "Десерты",
+   "weight": 55,
+   "price": 100,
+   "kind": "donut",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_054",
+   "name": "Донат с черникой",
+   "section": "Десерты",
+   "weight": 65,
+   "price": 100,
+   "kind": "donut",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_055",
+   "name": "Донат Клубничный",
+   "section": "Десерты",
+   "weight": 65,
+   "price": 100,
+   "kind": "donut",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_056",
+   "name": "Макарон Соленая карамель",
+   "section": "Десерты",
+   "weight": 16,
+   "price": 90,
+   "kind": "macaron",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_057",
+   "name": "Макарон Сицилийская фисташка",
+   "section": "Десерты",
+   "weight": 16,
+   "price": 90,
+   "kind": "macaron",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_058",
+   "name": "Круглый круассан-сэндвич с курицей и карри",
+   "section": "Сэндвичи и выпечка",
+   "weight": 135,
+   "price": 310,
+   "kind": "croissant",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_059",
+   "name": "Сэндвич с говядиной",
+   "section": "Сэндвичи и выпечка",
+   "weight": 150,
+   "price": 290,
+   "kind": "sandwich",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_060",
+   "name": "Сэндвич Чофикс двойной",
+   "section": "Сэндвичи и выпечка",
+   "weight": 220,
+   "price": 310,
+   "kind": "sandwich",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_061",
+   "name": "Сосиска в тесте",
+   "section": "Сэндвичи и выпечка",
+   "weight": 160,
+   "price": 150,
+   "kind": "other",
+   "case": "deli",
+   "heatable": true,
+   "rank": 6
+  },
+  {
+   "id": "food_062",
+   "name": "Круассан с лососем",
+   "section": "Сэндвичи и выпечка",
+   "weight": 140,
+   "price": 280,
+   "kind": "croissant",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_063",
+   "name": "Круассан с курицей",
+   "section": "Сэндвичи и выпечка",
+   "weight": 176,
+   "price": 280,
+   "kind": "croissant",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_064",
+   "name": "Чиабатта с курицей",
+   "section": "Сэндвичи и выпечка",
+   "weight": 170,
+   "price": 270,
+   "kind": "sandwich",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_065",
+   "name": "Сэндвич с курицей и брусникой",
+   "section": "Сэндвичи и выпечка",
+   "weight": 180,
+   "price": 320,
+   "kind": "sandwich",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_066",
+   "name": "Киш с курицей",
+   "section": "Сэндвичи и выпечка",
+   "weight": 120,
+   "price": 200,
+   "kind": "pie",
+   "case": "deli",
+   "heatable": true,
+   "rank": 6
+  },
+  {
+   "id": "food_067",
+   "name": "Киш с ветчиной и грибами",
+   "section": "Сэндвичи и выпечка",
+   "weight": 110,
+   "price": 200,
+   "kind": "pie",
+   "case": "deli",
+   "heatable": true,
+   "rank": 6
+  },
+  {
+   "id": "food_068",
+   "name": "Ролл с курицей, песто и овощами",
+   "section": "Сэндвичи и выпечка",
+   "weight": 140,
+   "price": 250,
+   "kind": "roll",
+   "case": "deli",
+   "heatable": true,
+   "rank": 6
+  },
+  {
+   "id": "food_069",
+   "name": "Ролл с курицей и соусом блю-чиз",
+   "section": "Сэндвичи и выпечка",
+   "weight": 170,
+   "price": 310,
+   "kind": "roll",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_070",
+   "name": "Ролл с ветчиной и омлетом",
+   "section": "Сэндвичи и выпечка",
+   "weight": 140,
+   "price": 240,
+   "kind": "roll",
+   "case": "deli",
+   "heatable": true,
+   "rank": 6
+  },
+  {
+   "id": "food_071",
+   "name": "Ролл с рыбой и соусом тартар",
+   "section": "Сэндвичи и выпечка",
+   "weight": 140,
+   "price": 370,
+   "kind": "roll",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_072",
+   "name": "Сэндвич с ветчиной, сыром и овощами",
+   "section": "Сэндвичи и выпечка",
+   "weight": 130,
+   "price": 240,
+   "kind": "sandwich",
+   "case": "deli",
+   "heatable": true,
+   "rank": 6
+  },
+  {
+   "id": "food_073",
+   "name": "Круассан с ветчиной и сыром",
+   "section": "Сэндвичи и выпечка",
+   "weight": 108,
+   "price": 310,
+   "kind": "croissant",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_074",
+   "name": "Круассан с сыром",
+   "section": "Сэндвичи и выпечка",
+   "weight": 90,
+   "price": 290,
+   "kind": "croissant",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_075",
+   "name": "Конфеты Яблоко",
+   "section": "Сладкие снеки",
+   "weight": 14,
+   "price": 100,
+   "kind": "candy",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_076",
+   "name": "Брауни коллагеновый мятный",
+   "section": "Сладкие снеки",
+   "weight": 50,
+   "price": 190,
+   "kind": "brownie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_077",
+   "name": "Печенье клюква-кокос",
+   "section": "Сладкие снеки",
+   "weight": 70,
+   "price": 100,
+   "kind": "cookie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_078",
+   "name": "Орешки с вареной сгущенкой",
+   "section": "Сладкие снеки",
+   "weight": 64,
+   "price": 100,
+   "kind": "cookie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_079",
+   "name": "Конфеты Арктическая мята",
+   "section": "Сладкие снеки",
+   "weight": 14,
+   "price": 100,
+   "kind": "candy",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_080",
+   "name": "Батончик арахисовый",
+   "section": "Сладкие снеки",
+   "weight": 35,
+   "price": 100,
+   "kind": "candy",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_081",
+   "name": "Брауни протеиновый",
+   "section": "Сладкие снеки",
+   "weight": 50,
+   "price": 160,
+   "kind": "brownie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_082",
+   "name": "Печенье протеиновое Тройной шоколад",
+   "section": "Сладкие снеки",
+   "weight": 40,
+   "price": 110,
+   "kind": "cookie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_083",
+   "name": "Протеиновый батончик кокос-бельгийский шоколад",
+   "section": "Сладкие снеки",
+   "weight": 30,
+   "price": 100,
+   "kind": "other",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_084",
+   "name": "Печенье с арахисовой пастой",
+   "section": "Сладкие снеки",
+   "weight": 70,
+   "price": 100,
+   "kind": "cookie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_085",
+   "name": "Брауни протеиновый Блонди",
+   "section": "Сладкие снеки",
+   "weight": 50,
+   "price": 160,
+   "kind": "brownie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 3
+  },
+  {
+   "id": "food_086",
+   "name": "Печенье с шоколадом",
+   "section": "Сладкие снеки",
+   "weight": 70,
+   "price": 100,
+   "kind": "cookie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_087",
+   "name": "Кукис Яблоко-карамель",
+   "section": "Сладкие снеки",
+   "weight": 70,
+   "price": 100,
+   "kind": "cookie",
+   "case": "snacks",
+   "heatable": false,
+   "rank": 2
+  },
+  {
+   "id": "food_088",
+   "name": "Штрудель с яблоком и корицей",
+   "section": "Vegan friendly",
+   "weight": 100,
+   "price": 160,
+   "kind": "pie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_089",
+   "name": "Штрудель с вишней",
+   "section": "Vegan friendly",
+   "weight": 100,
+   "price": 160,
+   "kind": "pie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_090",
+   "name": "Тарталетка ягодная",
+   "section": "Vegan friendly",
+   "weight": 105,
+   "price": 240,
+   "kind": "pie",
+   "case": "dessert",
+   "heatable": false,
+   "rank": 5
+  },
+  {
+   "id": "food_091",
+   "name": "Куриный шницель с картофельным пюре",
+   "section": "Завтраки и ланчи",
+   "weight": 200,
+   "price": 310,
+   "kind": "plate",
+   "case": "deli",
+   "heatable": true,
+   "rank": 8
+  },
+  {
+   "id": "food_092",
+   "name": "Куриное филе с рисом и овощами",
+   "section": "Завтраки и ланчи",
+   "weight": 200,
+   "price": 330,
+   "kind": "plate",
+   "case": "deli",
+   "heatable": true,
+   "rank": 8
+  },
+  {
+   "id": "food_093",
+   "name": "Омлет с курицей и сыром",
+   "section": "Завтраки и ланчи",
+   "weight": 190,
+   "price": 320,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 8
+  },
+  {
+   "id": "food_094",
+   "name": "Салат-поке с курицей",
+   "section": "Завтраки и ланчи",
+   "weight": 320,
+   "price": 360,
+   "kind": "bowl",
+   "case": "deli",
+   "heatable": false,
+   "rank": 8
+  },
+  {
+   "id": "food_095",
+   "name": "Салат-Поке с лососем",
+   "section": "Завтраки и ланчи",
+   "weight": 320,
+   "price": 390,
+   "kind": "bowl",
+   "case": "deli",
+   "heatable": false,
+   "rank": 8
+  },
+  {
+   "id": "food_096",
+   "name": "Поке боул форель с овощами",
+   "section": "Завтраки и ланчи",
+   "weight": 260,
+   "price": 380,
+   "kind": "bowl",
+   "case": "deli",
+   "heatable": false,
+   "rank": 8
+  },
+  {
+   "id": "food_097",
+   "name": "Блинчики с творогом",
+   "section": "Завтраки и ланчи",
+   "weight": 210,
+   "price": 210,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_098",
+   "name": "Сырники",
+   "section": "Завтраки и ланчи",
+   "weight": 150,
+   "price": 210,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_099",
+   "name": "Поке боул с курицей",
+   "section": "Завтраки и ланчи",
+   "weight": 265,
+   "price": 370,
+   "kind": "bowl",
+   "case": "deli",
+   "heatable": false,
+   "rank": 8
+  },
+  {
+   "id": "food_100",
+   "name": "Каша рисовая с манго и чиа",
+   "section": "Завтраки и ланчи",
+   "weight": 200,
+   "price": 200,
+   "kind": "porridge",
+   "case": "deli",
+   "heatable": false,
+   "rank": 7
+  },
+  {
+   "id": "food_101",
+   "name": "Паста с курицей и песто",
+   "section": "Завтраки и ланчи",
+   "weight": 190,
+   "price": 310,
+   "kind": "plate",
+   "case": "deli",
+   "heatable": true,
+   "rank": 8
+  },
+  {
+   "id": "food_102",
+   "name": "Салат Цезарь с курицей",
+   "section": "Завтраки и ланчи",
+   "weight": 150,
+   "price": 320,
+   "kind": "bowl",
+   "case": "deli",
+   "heatable": false,
+   "rank": 8
+  },
+  {
+   "id": "food_103",
+   "name": "Плов с курицей",
+   "section": "Завтраки и ланчи",
+   "weight": 230,
+   "price": 300,
+   "kind": "plate",
+   "case": "deli",
+   "heatable": true,
+   "rank": 8
+  },
+  {
+   "id": "food_104",
+   "name": "Блинчики с грушей и маскарпоне",
+   "section": "Завтраки и ланчи",
+   "weight": 210,
+   "price": 230,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_105",
+   "name": "Блинчики с курицей",
+   "section": "Завтраки и ланчи",
+   "weight": 210,
+   "price": 220,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_106",
+   "name": "Драники",
+   "section": "Завтраки и ланчи",
+   "weight": 150,
+   "price": 250,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  },
+  {
+   "id": "food_107",
+   "name": "Запеканка",
+   "section": "Завтраки и ланчи",
+   "weight": 100,
+   "price": 220,
+   "kind": "pancake",
+   "case": "deli",
+   "heatable": true,
+   "rank": 7
+  }
+ ],
+ "syrups": [
+  {
+   "id": "syr_0",
+   "name": "Ваниль",
+   "price": 20,
+   "rank": 2
+  },
+  {
+   "id": "syr_1",
+   "name": "Карамель",
+   "price": 20,
+   "rank": 2
+  },
+  {
+   "id": "syr_2",
+   "name": "Соленая карамель",
+   "price": 20,
+   "rank": 3
+  },
+  {
+   "id": "syr_3",
+   "name": "Миндаль",
+   "price": 20,
+   "rank": 2
+  },
+  {
+   "id": "syr_4",
+   "name": "Каштан",
+   "price": 20,
+   "rank": 3
+  },
+  {
+   "id": "syr_5",
+   "name": "Халва",
+   "price": 20,
+   "rank": 3
+  },
+  {
+   "id": "syr_6",
+   "name": "Тыква",
+   "price": 20,
+   "rank": 5
+  },
+  {
+   "id": "syr_7",
+   "name": "Кокос",
+   "price": 20,
+   "rank": 4
+  },
+  {
+   "id": "syr_8",
+   "name": "Персик",
+   "price": 20,
+   "rank": 4
+  },
+  {
+   "id": "syr_9",
+   "name": "Лаванда",
+   "price": 20,
+   "rank": 4
+  },
+  {
+   "id": "syr_10",
+   "name": "Ваниль (без сахара)",
+   "price": 20,
+   "rank": 5
+  },
+  {
+   "id": "syr_11",
+   "name": "Карамель (без сахара)",
+   "price": 20,
+   "rank": 5
+  },
+  {
+   "id": "syr_12",
+   "name": "Малина (без сахара)",
+   "price": 20,
+   "rank": 5
+  },
+  {
+   "id": "syr_13",
+   "name": "Шоколад (без сахара)",
+   "price": 20,
+   "rank": 5
+  }
+ ],
+ "altMilk": [
+  {
+   "id": "alt_0",
+   "name": "Овсяное",
+   "surcharge": {
+    "0.2": 60,
+    "0.3": 60,
+    "0.4": 90,
+    "0.6": 90
+   },
+   "rank": 4
+  },
+  {
+   "id": "alt_1",
+   "name": "Миндальное",
+   "surcharge": {
+    "0.2": 60,
+    "0.3": 60,
+    "0.4": 90,
+    "0.6": 90
+   },
+   "rank": 5
+  },
+  {
+   "id": "alt_2",
+   "name": "Кокосовое",
+   "surcharge": {
+    "0.2": 60,
+    "0.3": 60,
+    "0.4": 90,
+    "0.6": 90
+   },
+   "rank": 5
+  },
+  {
+   "id": "alt_3",
+   "name": "Банановое",
+   "surcharge": {
+    "0.2": 60,
+    "0.3": 60,
+    "0.4": 90,
+    "0.6": 90
+   },
+   "rank": 6
+  },
+  {
+   "id": "alt_4",
+   "name": "Безлактозное",
+   "surcharge": {
+    "0.2": 60,
+    "0.3": 60,
+    "0.4": 90,
+    "0.6": 90
+   },
+   "rank": 6
+  }
+ ],
+ "addons": [
+  {
+   "id": "add_0",
+   "name": "Протеиновая пенка",
+   "price": 90,
+   "rank": 6
+  },
+  {
+   "id": "add_1",
+   "name": "Сливочная пенка таро",
+   "price": 60,
+   "rank": 6
+  },
+  {
+   "id": "add_2",
+   "name": "Джус боллы",
+   "price": 60,
+   "rank": 9
+  },
+  {
+   "id": "add_3",
+   "name": "Доп. порция эспрессо / матчи / протеина",
+   "price": 60,
+   "rank": 3
+  },
+  {
+   "id": "add_4",
+   "name": "Маршмеллоу",
+   "price": 20,
+   "rank": 3
+  },
+  {
+   "id": "add_5",
+   "name": "Карамельный соус",
+   "price": 20,
+   "rank": 3
+  }
+ ]
+}

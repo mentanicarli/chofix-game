@@ -1,0 +1,18 @@
+/** Единая точка входа чистой логики для старого ядра и интерфейса. */
+export * from './menu';
+export * from './orders';
+export * from './phrases';
+export * from './economy';
+export * from './shift';
+export * from './quality';
+export * from './save';
+export type * from './types';
+export * from './stations/station';
+export * from './stations/fill';
+export * from './stations/syrup';
+export * from './stations/food';
+export * from './food';
+export * from './stations/timed';
+export * from './stations/brew';
+export * from './recipes';
+export * from './helper';

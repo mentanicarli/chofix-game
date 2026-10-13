@@ -1,0 +1,20 @@
+const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
+(async () => {
+  const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, setPause, serve, WORLD };');
+  const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
+  const out = process.argv[3];
+  const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const ctx = await b.newContext({ viewport: { width: 1312, height: 752 }, deviceScaleFactor: 1 });
+  const p = await ctx.newPage(); const errs = [];
+  p.on('pageerror', e => errs.push('PAGE ' + e.message)); p.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errs.push('CON ' + m.text().slice(0, 900)); });
+  await p.route(/fonts\.googleapis\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: require('./pw').css }));
+  await p.goto('file://' + tmp); await p.waitForTimeout(2500);
+  await p.screenshot({ path: out + '_title.png' });
+  console.log('PRE', errs.slice(0,6).join('\n')); await p.click('[data-start]', {timeout: 3000}).catch(()=>{}); await p.waitForTimeout(400);
+  await p.evaluate(() => { window.__dbg.G.milk = true; window.__dbg.G.day = 2; });
+  await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 40000 });
+  await p.waitForTimeout(1500);
+  await p.screenshot({ path: out + '_front.png' });
+  console.log('ERRS', errs.slice(0, 8).join('\n'));
+  await b.close();
+})();

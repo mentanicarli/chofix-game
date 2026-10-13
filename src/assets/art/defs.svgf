@@ -1,0 +1,22 @@
+<linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9EFDF"/><stop offset="1" stop-color="#F0DDC2"/></linearGradient>
+<linearGradient id="gSage" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9C6AA"/><stop offset="1" stop-color="#95A886"/></linearGradient>
+<linearGradient id="gSageDeep" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B2C4A3"/><stop offset="1" stop-color="#889E79"/></linearGradient>
+<linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DDA672"/><stop offset="1" stop-color="#B87947"/></linearGradient>
+<linearGradient id="gWoodTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3CA98"/><stop offset="1" stop-color="#E0A872"/></linearGradient>
+<linearGradient id="gWoodFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D49A62"/><stop offset="1" stop-color="#A9693E"/></linearGradient>
+<linearGradient id="gTerra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8956F"/><stop offset="1" stop-color="#BA5C3F"/></linearGradient>
+<linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C6E3E6"/><stop offset="1" stop-color="#FBE7C2"/></linearGradient>
+<linearGradient id="gSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8F6753"/><stop offset="1" stop-color="#694634"/></linearGradient>
+<linearGradient id="gMustard" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0BC55"/><stop offset="1" stop-color="#CF9430"/></linearGradient>
+<linearGradient id="gCoat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E9BE92"/><stop offset="1" stop-color="#C28B5C"/></linearGradient>
+<linearGradient id="gShaft" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1C4" stop-opacity=".65"/><stop offset="1" stop-color="#FFF1C4" stop-opacity="0"/></linearGradient>
+<linearGradient id="gStarHalf" x1="0" y1="0" x2="1" y2="0"><stop offset=".5" stop-color="#E8B04A"/><stop offset=".5" stop-color="#F3E4CB"/></linearGradient>
+<radialGradient id="gGlow"><stop offset="0" stop-color="#FFE6A0" stop-opacity=".65"/><stop offset="1" stop-color="#FFE6A0" stop-opacity="0"/></radialGradient>
+<radialGradient id="gVig" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#4A2F25" stop-opacity="0"/><stop offset="1" stop-color="#4A2F25" stop-opacity=".32"/></radialGradient>
+<filter id="wobble" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="wobbleS" x="-10%" y="-5%" width="120%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.04" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="blur6" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+<filter id="woodH" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.004 0.2" numOctaves="3" seed="8"/><feColorMatrix type="matrix" values="0 0 0 0 .30  0 0 0 0 .16  0 0 0 0 .08  0 0 0 1.6 -.55"/></filter>
+<filter id="woodV" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.2 0.004" numOctaves="3" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 .30  0 0 0 0 .16  0 0 0 0 .08  0 0 0 1.6 -.55"/></filter>
+<filter id="blotch" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.007 0.01" numOctaves="3" seed="21"/><feColorMatrix type="matrix" values="0 0 0 0 .55  0 0 0 0 .35  0 0 0 0 .2  1.1 0 0 0 -.35"/></filter>
+<filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" result="t"/><feColorMatrix in="t" type="matrix" values="0 0 0 0 0.29  0 0 0 0 0.18  0 0 0 0 0.14  0 0 0 0.9 -0.28"/></filter>
