@@ -6,7 +6,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   const p = await require('./pw').page(b);
   const errs = []; require('./pw').watch(p, errs);
   await p.goto(require('./pw').url(tmp) + '#nopixi-lowfx'); await p.waitForTimeout(2500);
-  await p.click('[data-start]'); await p.waitForTimeout(300);
+  await require('./pw').startNew(p); await p.waitForTimeout(300);
   await p.evaluate(() => { const G = window.__dbg.G; G.rank = 5; G.helper = true; G.milk = true; G.money = 3000; G.day = 13; window.__dbg.applyUpgrades(); });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 40000 });
   await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.drink = 'americano'; c.syrup = null; c.strong = false; c.order.food = null; c.pat = c.max = 999; });

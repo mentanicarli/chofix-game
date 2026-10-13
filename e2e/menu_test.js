@@ -7,7 +7,7 @@ const id = process.argv[4]; const out = process.argv[3];
   const p = await require('./pw').page(b);
   const errs = []; require('./pw').watch(p, errs);
   await p.goto(require('./pw').url(tmp) + (process.env.HASH || '#nopixi')); await p.waitForTimeout(500);
-  await p.click('[data-start]'); await p.waitForTimeout(300);
+  await require('./pw').startNew(p); await p.waitForTimeout(300);
   await p.evaluate(() => { const G = window.__dbg.G; G.milk = true; G.day = 12; G.rank = 9; G.money = 5000; G.hints = true; window.__dbg.MENUAPI.EQ_IMPL.forEach(e => { G['eq_' + e] = true; }); window.__dbg.applyUpgrades(); });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   const info = await p.evaluate(id => {

@@ -13,3 +13,5 @@ Thumbs.db
 *.swp
 *.dbg.html
 *.seq.html
+
+public/music/manifest.json

@@ -10,7 +10,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   await p.route(/fonts\.googleapis\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: require('./pw').css }));
   await p.goto('file://' + tmp); await p.waitForTimeout(2500);
   await p.screenshot({ path: out + '_title.png' });
-  console.log('PRE', errs.slice(0,6).join('\n')); await p.click('[data-start]', {timeout: 3000}).catch(()=>{}); await p.waitForTimeout(400);
+  console.log('PRE', errs.slice(0,6).join('\n')); await require('./pw').startNew(p); await p.waitForTimeout(400);
   await p.evaluate(() => { window.__dbg.G.milk = true; window.__dbg.G.day = 2; });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 40000 });
   await p.waitForTimeout(1500);

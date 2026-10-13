@@ -4,7 +4,9 @@
   "version": "0.11.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/make-music-manifest.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/make-music-manifest.mjs",
     "build": "vite build && node scripts/fragment.mjs",
     "test": "vitest run",
     "audio": "python3 scripts/make-audio.py",
@@ -14,6 +16,7 @@
     "format": "prettier --write \"src/game/**/*.ts\" \"test/**/*.ts\"",
     "check": "npm run typecheck && npm run lint && npm test",
     "lint:legacy": "node scripts/lint-legacy.mjs",
+    "prebuild:debug": "node scripts/make-music-manifest.mjs",
     "build:debug": "CHOFIX_DEBUG=1 vite build && node scripts/fragment.mjs"
   },
   "devDependencies": {

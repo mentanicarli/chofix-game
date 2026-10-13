@@ -1,6 +1,6 @@
 /* ---------- состояние ---------- */
 function newGame() {
-  G = { rank: 1, served: 0, money: 500, day: 1, rating: 3, pace: selPace, milk: false, machine: false, cozy: false, beans: false, phase: 'title', grindSet: 3, idealGrind: 3, hints: true, syrups: false, stencil: false, grinderPro: false, tamper: false, thermo: false, wifi: false, cards: false, helper: false };
+  G = { rank: 1, served: 0, money: 500, day: 1, rating: 3, pace: selPace, milk: false, machine: false, cozy: false, beans: false, phase: 'title', grindSet: 3, idealGrind: 3, hints: SET.hintsSet ? SET.hints : true, hintsTouched: SET.hintsSet, syrups: false, stencil: false, grinderPro: false, tamper: false, thermo: false, wifi: false, cards: false, helper: false };
   D = null;
   WORLD.clearActors(); ACT.clear();
   applyUpgrades();

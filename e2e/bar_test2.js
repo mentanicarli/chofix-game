@@ -9,7 +9,7 @@ const drink = process.argv[4] || 'espresso';
   const errs = []; require('./pw').watch(p, errs);
   await p.addInitScript(() => { let a = 1234567; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; /* mulberry32: детерминированный прогон */ });
   await p.goto(require('./pw').url(tmp) + (process.env.HASH || '')); await p.waitForTimeout(600);
-  await p.click('[data-start]'); await p.waitForTimeout(400);
+  await require('./pw').startNew(p); await p.waitForTimeout(400);
   await p.evaluate(() => { window.__dbg.G.milk = true; window.__dbg.G.eq_ice = true; window.__dbg.G.day = 2; });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   await p.evaluate(d => { window.__dbg.G.rank = 3; const c = window.__dbg.D.customers[0]; c.drink = d; c.strong = false; c.syrup = (d === 'cappuccino' || d === 'vanillaraf') ? 'vanilla' : null; c.pumps = 2; c.pat = c.max = 999; }, drink);

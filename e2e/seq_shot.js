@@ -14,7 +14,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   await p.addInitScript(() => { const raf = window.requestAnimationFrame.bind(window); window.__hold = false; window.requestAnimationFrame = cb => window.__hold ? 0 : raf(cb); let a = 777; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
   await p.route(/fonts\.googleapis\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: require('./pw').css }));
   await p.goto('file://' + tmp + (process.env.HASH || '#nopixi')); await p.waitForTimeout(2500);
-  await p.click('[data-start]', { timeout: 3000 }).catch(() => {}); await p.waitForTimeout(600);
+  await require('./pw').startNew(p); await p.waitForTimeout(600);
   await p.evaluate(() => { window.__hold = true; });
   await p.waitForTimeout(300);
   await p.evaluate(pre => { const { WORLD, G, D } = window.__dbg; (0, eval)('(function(){ const {WORLD,G,D,ACT,spawn,serve,deliver}=window.__dbg; ' + pre + '\n})()'); }, pre);

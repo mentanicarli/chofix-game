@@ -16,7 +16,9 @@ function legacyPlugin() {
       const files = readdirSync(LEGACY).filter(f => f.endsWith('.js')).sort();
       files.forEach(f => this.addWatchFile(resolve(LEGACY, f)));
       // Как и раньше, всё внутри одной функции: так повторные function-объявления (старый и новый drawGrind и т.п.) разрешены, побеждает последнее.
-      const head = `import * as MENUAPI from '/src/game/api';\nimport { bookHTML } from '/src/ui/book';\nimport { InsetRenderer } from '/src/render/inset';\nimport { foodPanelHTML, heatPct } from '/src/ui/foodPanel';\nimport { World, lookFor } from '/src/render/world/world';\nimport { panelHTML, panelUpdate, readoutFill, readoutTime, readoutBrew } from '/src/ui/stationPanel';\n${process.env.CHOFIX_DEBUG ? 'window.__MENUAPI = MENUAPI;\n' : ''}(() => {\n'use strict';\n`;
+      const head = `import * as MENUAPI from '/src/game/api';\nimport { bookHTML } from '/src/ui/book';\nimport { InsetRenderer } from '/src/render/inset';\nimport { foodPanelHTML, heatPct } from '/src/ui/foodPanel';\nimport { World, lookFor } from '/src/render/world/world';\nimport { MusicPlayer, trackLabel } from '/src/ui/music';
+import { titleHTML, paceScreenHTML, howtoHTML, settingsHTML, confirmHTML, pauseHTML } from '/src/ui/menus';
+import { panelHTML, panelUpdate, readoutFill, readoutTime, readoutBrew } from '/src/ui/stationPanel';\n${process.env.CHOFIX_DEBUG ? 'window.__MENUAPI = MENUAPI;\n' : ''}(() => {\n'use strict';\n`;
       return head + files.map(f => `/* ===== ${f} ===== */\n` + readFileSync(resolve(LEGACY, f), 'utf8')).join('\n') + `\n})();\n`;
     }
   };

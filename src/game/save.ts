@@ -2,9 +2,12 @@ import { nextRank } from './menu';
 import type { PaceId } from './types';
 
 export const SAVE_KEY = 'coffee-sim-save-v1';
+/** Версия формата: 1 — без поля v (старые сохранения), 2 — с полем v. Читаются обе. */
+export const SAVE_VERSION = 2;
 
-/** Что хранится между сессиями. Версия формата — v1 (обратно совместимо). */
+/** Что хранится между сессиями. */
 export interface SaveData {
+  v?: number;
   rank?: number;
   served?: number;
   money: number;
@@ -15,18 +18,62 @@ export interface SaveData {
   up?: string[];
 }
 
-export function parseSave(raw: string | null): SaveData | null {
-  if (!raw) return null;
+const PACES: readonly PaceId[] = ['cozy', 'normal', 'hard'];
+const num = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+
+/** Результат чтения: сохранения нет, оно прочитано (возможно, мигрировано) или повреждено. */
+export type SaveRead = { kind: 'none' } | { kind: 'ok'; data: SaveData } | { kind: 'broken'; reason: 'corrupt' | 'newer' };
+
+/** Разбор и миграция сохранения любой версии. Лишние поля отбрасываются, числа проверяются. */
+export function readSave(raw: string | null): SaveRead {
+  if (!raw) return { kind: 'none' };
+  let o: unknown;
   try {
-    const o: unknown = JSON.parse(raw);
-    if (o && typeof o === 'object') {
-      const r = o as Record<string, unknown>;
-      if (typeof r['day'] === 'number' && typeof r['money'] === 'number') return o as SaveData;
-    }
+    o = JSON.parse(raw);
   } catch {
-    /* повреждённое сохранение — как будто его нет */
+    return { kind: 'broken', reason: 'corrupt' };
   }
-  return null;
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return { kind: 'broken', reason: 'corrupt' };
+  const r = o as Record<string, unknown>;
+  const v = r['v'];
+  if (num(v) && v > SAVE_VERSION) return { kind: 'broken', reason: 'newer' };
+  const day = r['day'];
+  const money = r['money'];
+  const rating = r['rating'];
+  if (!num(day) || !num(money) || day < 1) return { kind: 'broken', reason: 'corrupt' };
+  const up = Array.isArray(r['up']) ? r['up'].filter((x): x is string => typeof x === 'string') : [];
+  const data: SaveData = {
+    v: SAVE_VERSION,
+    day: Math.floor(day),
+    money,
+    rating: num(rating) ? Math.min(5, Math.max(0, rating)) : 3,
+    pace: PACES.find((p) => p === r['pace']) ?? 'normal',
+    up
+  };
+  const rank = r['rank'];
+  const served = r['served'];
+  const grind = r['grindSet'];
+  if (num(rank) && rank >= 1) data.rank = Math.floor(rank);
+  if (num(served) && served >= 0) data.served = Math.floor(served);
+  if (num(grind)) data.grindSet = grind;
+  return { kind: 'ok', data };
+}
+
+export function parseSave(raw: string | null): SaveData | null {
+  const r = readSave(raw);
+  return r.kind === 'ok' ? r.data : null;
+}
+
+export const serializeSave = (d: SaveData): string => JSON.stringify({ ...d, v: SAVE_VERSION });
+
+/**
+ * Куда игра кладёт сохранение. Сейчас это localStorage (см. 10-save.js); позже сюда можно подключить аккаунт:
+ * достаточно другой реализации с теми же тремя методами.
+ */
+export interface SaveStore {
+  load(): SaveRead;
+  save(d: SaveData): void;
+  clear(): void;
 }
 
 export interface Restored {

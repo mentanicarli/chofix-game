@@ -6,6 +6,7 @@ function startDay() {
   D = { t: 0, customers: [], nextArr: 4, lastCall: false, closing: false, closeT: 0, cup: null, hold: null, rushShown: false, idc: 0, stats: { served: 0, lost: 0, revenue: 0, tips: 0, costs: 0, perfect: 0 } };
   BR = null; renderCup(); lastHud = ''; updateHud(); stopLoops(); stage.classList.remove('inbar');
   G.idealGrind = MENUAPI.idealGrind(G.day); if (G.day >= 3 && !G.hintsTouched) G.hints = false;
+  saveGame();
   banner('День ' + G.day, 'Открываемся');
   if (G.idealGrind !== (G.grindSet || 3) && G.day > 1) toast('Сегодня другая погода: проверьте помол по первому шоту', 4200);
 }

@@ -84,7 +84,11 @@ export class Fx {
   private readonly list: P[] = [];
   private readonly tex = makeFxTextures();
 
+  /** Лёгкая графика: частицы не создаются. */
+  enabled = true;
+
   add(o: Particle): void {
+    if (!this.enabled) return;
     this.list.push({ t: 0, vx: 0, vy: 0, g: 0, r: 3, grow: 0, a: 0.5, col: '255,255,255', kind: 'puff', x: 0, y: 0, ...o } as P);
   }
 

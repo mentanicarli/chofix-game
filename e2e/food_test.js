@@ -7,7 +7,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   const p = await require('./pw').page(b);
   const errs = []; require('./pw').watch(p, errs);
   await p.goto(require('./pw').url(tmp) + (process.env.HASH || '#nopixi')); await p.waitForTimeout(600);
-  await p.click('[data-start]'); await p.waitForTimeout(400);
+  await require('./pw').startNew(p); await p.waitForTimeout(400);
   await p.evaluate(() => { const G = window.__dbg.G; G.day = 5; G.rank = 3; G.eq_case_pastry = true; G.eq_microwave = true; if (typeof applyUpgrades === 'function') applyUpgrades(); });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   const info = await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.drink = 'espresso'; c.strong = false; c.syrup = null; c.pat = c.max = 999; c.order.food = { id: 'food_018', name: 'Блюдо', price: 120, case: 'case_pastry', heat: true }; return 1; });

@@ -15,3 +15,13 @@ exports.css = css;
 exports.url = tmp => process.env.BASE ? process.env.BASE + '/' + path.basename(tmp) : 'file://' + tmp;
 /** Собирает pageerror, console.error и console.warning (кроме шума драйвера GL). */
 exports.watch = (p, errs) => { p.on('pageerror', e => errs.push('PAGE ' + e.message)); p.on('console', m => { const t = m.text(); if ((m.type() === 'error' || m.type() === 'warning') && !/GL Driver Message/.test(t)) errs.push('console ' + m.type() + ': ' + t.slice(0, 300)); }); };
+/** «Новая игра» → (если есть сохранение, подтверждение) → «Открыть кофейню». Не бросает: дальше тест сам упадёт, если день не начался. */
+exports.startNew = async (p) => {
+  try {
+    await p.click('[data-start]', { timeout: 3000 });
+    const yes = await p.waitForSelector('[data-yes], [data-go]', { timeout: 3000 });
+    if (await yes.getAttribute('data-yes') !== null) { await yes.click(); await p.waitForSelector('[data-go]', { timeout: 3000 }); }
+    await p.waitForTimeout(650); /* карточка выезжает: клик до конца анимации промахивается */
+    await p.click('[data-go]', { timeout: 3000 });
+  } catch (e) { /* см. выше */ }
+};

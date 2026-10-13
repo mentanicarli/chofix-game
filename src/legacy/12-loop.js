@@ -1,6 +1,6 @@
 /* ---------- масштаб и цикл ---------- */
 let stageScale = 1;
-const worldRes = () => Math.min(2, Math.max(1, (devicePixelRatio || 1) * stageScale));
+const worldRes = () => Math.min(gfxLow() ? 1 : 2, Math.max(1, (devicePixelRatio || 1) * stageScale));
 function fit() {
   const s = Math.max(.2, Math.min((innerWidth - 32) / 1280, innerHeight / 720)); stageScale = s;
   WORLD.setResolution(worldRes());
@@ -13,7 +13,7 @@ function frame(ts) {
   const rawMs = ts - last, dt = Math.min(.1, rawMs / 1000); last = ts;
   if (G && G.phase === 'day' && !paused) tickDay(dt);
   if (!paused) { tickFx(dt); animActors(dt); animBarista(dt); if (G && G.phase === 'day') barTick(dt); }
-  ambTick(); tickLoops();
+  ambTick(); tickLoops(); MUSIC.duck(paused ? .35 : 1);
   tickSky(paused ? 0 : dt); tickMoney(dt); tickTint(dt);
   WORLD.setBar(stage.classList.contains('inbar')); WORLD.render(dt, rawMs);
 }

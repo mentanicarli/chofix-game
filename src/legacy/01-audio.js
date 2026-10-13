@@ -6,7 +6,7 @@ let AC = null, MASTER = null; const BUF = {}, SFX_LOOPS = new Set(); let sfxRead
 function audioCtx() {
   if (!AC) {
     AC = new (window.AudioContext || window.webkitAudioContext)();
-    MASTER = AC.createGain(); MASTER.gain.value = muted ? 0 : .9; MASTER.connect(AC.destination);
+    MASTER = AC.createGain(); MASTER.gain.value = sfxGain(); MASTER.connect(AC.destination);
   }
   if (AC.state === 'suspended') AC.resume();
   return AC;
@@ -33,7 +33,8 @@ function sfxLoad() {
   Object.keys(RAW).forEach(sfxDecode);
 }
 sfxPrefetch();
-function sfxMute() { if (MASTER) MASTER.gain.setTargetAtTime(muted ? 0 : .9, AC.currentTime, .03); }
+const sfxGain = () => muted ? 0 : .9 * SET.sfxVol;
+function sfxMute() { if (MASTER) MASTER.gain.setTargetAtTime(sfxGain(), AC.currentTime, .03); }
 function play(id, vol = 1, rate = 1, delay = 0) {
   if (muted) return null;
   try {

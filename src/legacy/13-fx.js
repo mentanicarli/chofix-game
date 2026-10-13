@@ -129,7 +129,7 @@ function banner(big, small) {
 }
 
 WORLD.init($('#world'), worldRes()).then(() => {
-  fit(); tickSky(0);
+  applySettings(); tickSky(0);
   newGame(); updateHud(); showTitle();
   requestAnimationFrame(frame);
   const bt = $('#boot'); bt.classList.add('done'); setTimeout(() => bt.remove(), 600);

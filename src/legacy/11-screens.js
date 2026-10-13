@@ -42,22 +42,6 @@ function countUp() {
 }
 
 /* ---------- экраны ---------- */
-function showTitle() {
-  G.phase = 'title';
-  const sv = loadSave();
-  const paces = Object.keys(PACE).map(k => `<button type="button" class="pace${k === selPace ? ' sel' : ''}" data-pace="${k}">${PACE_ICON[k]}<b>${PACE[k].name}</b><span>${PACE[k].text}</span></button>`).join('');
-  const act = sv
-    ? `<button type="button" class="big" data-continue="1">Продолжить: день ${sv.day}</button><button type="button" class="ghost" data-start="1">Новая игра</button>`
-    : `<button type="button" class="big" data-start="1">Открыть кофейню</button>`;
-  scr.innerHTML = `<div class="title">
-<div class="sign"><i class="chain l"></i><i class="chain r"></i>${CUP_LOGO}<div><h1>Chofix</h1><p>кофе между парами, корпус Б</p></div></div>
-<div class="paper">
-<div class="lbl">${sv ? 'Темп для новой игры' : 'Вы бариста в университетской кофейне. Как будем играть?'}</div><div class="paces">${paces}</div>
-<div class="foot">${act}</div>
-<div class="keyrow"><span>Мышь: все действия</span><span><kbd>Пробел</kbd> заказ / шаг</span><span><kbd>Tab</kbd> к залу</span><span><kbd>P</kbd> пауза</span><span><kbd>M</kbd> звук</span></div>
-</div></div>`;
-  scr.hidden = false;
-}
 function showEvening(keep) {
   const s = D.stats; if (!keep) saveGame();
   const row = (a, v, kind, cls) => `<div class="rw"><span>${a}</span><b class="${cls || ''}" data-count="${v}" data-kind="${kind || 'int'}">${keep ? (kind === 'money' ? money(v) : kind === 'plus' ? (v > 0 ? '+' : '') + money(v) : kind === 'minus' ? '−' + money(Math.abs(v)) : v) : 0}</b></div>`;
@@ -96,21 +80,11 @@ function closeBook() {
   const b = bookBack; bookBack = null;
   if (b === 'pause') setPause(true); else if (b === 'evening') showEvening(true); else if (b === 'title') showTitle(); else scr.hidden = true;
 }
-function setPause(on) {
-  if (!G || G.phase !== 'day') return;
-  paused = on;
-  if (on) {
-    scr.innerHTML = `<div class="paper pausecard">${CUP_LOGO}<h2>Пауза</h2><div class="foot"><button type="button" class="big" data-resume="1">Продолжить</button><button type="button" class="ghost" data-book="pause">Книга рецептов</button></div></div>`;
-    scr.hidden = false;
-  } else scr.hidden = true;
-}
 scr.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.pace) { selPace = t.dataset.pace; scr.querySelectorAll('.pace').forEach(b => b.classList.toggle('sel', b === t)); sndOk(); }
-  else if (t.dataset.start) { clearSave(); newGame(); G.pace = selPace; startDay(); }
-  else if (t.dataset.continue) { const sv = loadSave(); newGame(); if (sv) { const r = MENUAPI.restore(sv); Object.assign(G, { rank: r.rank, served: r.served, money: r.money, day: r.day, rating: r.rating, pace: r.pace, grindSet: r.grindSet }); r.up.forEach(id => { G[id] = true; }); } applyUpgrades(); lastHud = ''; startDay(); }
   else if (t.dataset.tab) { shopTab = t.dataset.tab; showEvening(true); sndTap(); }
-  else if (t.dataset.buy) { const it = SHOP.find(x => x.id === t.dataset.buy); if (it && !G[it.id] && G.money >= it.cost) { G.money -= it.cost; G[it.id] = true; applyUpgrades(); sndCoin(); lastHud = ''; updateHud(true); showEvening(true); } }
+  else if (t.dataset.buy) { const it = SHOP.find(x => x.id === t.dataset.buy); if (it && !G[it.id] && G.money >= it.cost) { G.money -= it.cost; G[it.id] = true; applyUpgrades(); saveGame(); sndCoin(); lastHud = ''; updateHud(true); showEvening(true); } }
   else if (t.dataset.next) { G.day++; saveGame(); startDay(); }
   else if (t.dataset.restart) { newGame(); lastHud = ''; updateHud(); showTitle(); }
   else if (t.dataset.resume) setPause(false);
@@ -122,18 +96,21 @@ scr.addEventListener('click', e => {
 
 /* ---------- ввод ---------- */
 $('#chPause').addEventListener('click', e => { setPause(!paused); e.currentTarget.blur(); });
-$('#chSound').addEventListener('click', e => { muted = !muted; sfxMute(); $('#chSound').classList.toggle('off', muted); e.currentTarget.setAttribute('aria-pressed', String(muted)); e.currentTarget.blur(); });
+$('#chSound').addEventListener('click', e => { toggleAllSound(); e.currentTarget.blur(); });
 addEventListener('keydown', e => {
+  MUSIC.unlock();
   if (e.repeat) return;
-  const c = e.code;
+  const c = e.code, mv = menuView();
+  if (c === 'Escape' && menuBack()) { e.preventDefault(); return; }
   if (G && G.phase === 'day' && !paused) {
     if ((BR || c === 'Space') && barKey(c)) { e.preventDefault(); return; }
     if (c === 'Space') { e.preventDefault(); openNext(); }
   }
-  if (c === 'KeyP' || (c === 'Escape' && !(BR && stage.classList.contains('inbar')))) setPause(!paused);
+  if ((c === 'KeyP' || (c === 'Escape' && !(BR && stage.classList.contains('inbar')))) && (!mv || mv === 'pause')) setPause(!paused);
   if (c === 'KeyM') $('#chSound').click();
 });
-addEventListener('keyup', e => { if (e.code === 'Space' && G && G.phase === 'day') { e.preventDefault(); barKeyUp(e.code); } });
-addEventListener('pointerdown', () => { try { audioCtx(); sfxLoad(); } catch (x) { /* без звука */ } });
+addEventListener('keyup', e => { if (e.code === 'Space' && G && G.phase === 'day' && !paused) { e.preventDefault(); barKeyUp(e.code); } });
+addEventListener('pointerdown', () => { try { audioCtx(); sfxLoad(); } catch (x) { /* без звука */ } MUSIC.unlock(); });
+addEventListener('pointerup', () => MUSIC.unlock());
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.phase === 'day' && !paused) setPause(true); });
 

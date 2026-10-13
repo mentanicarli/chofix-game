@@ -57,6 +57,7 @@ export class World {
   res = 1;
   /** Описание GPU, если браузер рисует программно. */
   software: string | null = null;
+  low = false;
   private texRes = 1;
   private readonly actors = new Set<Actor>();
   private readonly cust = new Container();
@@ -323,6 +324,7 @@ export class World {
     this.bar.root.pivot.set(W / 2, H / 2);
     S.addChild(this.bar.root);
     this.ready = true;
+    this.setLowFx(this.low);
     this.update(0, 0.3, 480);
   }
 
@@ -566,6 +568,18 @@ export class World {
     this.actors.forEach((a) => a.destroy());
     this.actors.clear();
     this.fx.clear();
+  }
+
+  /** Лёгкая графика: без частиц, ореолов ламп, пятен света и луча. Вызывать можно в любой момент. */
+  setLowFx(low: boolean): void {
+    this.low = low;
+    this.fx.enabled = !low;
+    if (low) this.fx.clear();
+    if (!this.ready) return;
+    this.sunGlow.visible = !low;
+    this.shaft.visible = !low;
+    this.glows.forEach((g) => (g.visible = !low));
+    this.pools.forEach((p) => (p.visible = !low));
   }
 
   /** Скорость пересчёта плотности под размер окна (dpr × масштаб сцены). */
