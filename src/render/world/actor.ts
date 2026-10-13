@@ -807,6 +807,11 @@ export class Actor {
   private lastSpeed = 60;
 
   /** Наклон корпуса от поз: потягивание откидывает назад, сидя — чуть вперёд. */
+  /** Тянется к чашке на столе: рука должна быть видна справа от ноутбука. */
+  get reaching(): boolean {
+    return this.act === 'sip';
+  }
+
   private leanTarget(seated: boolean): number {
     let l = 0;
     if (this.sipping > 0) l -= 1.5;

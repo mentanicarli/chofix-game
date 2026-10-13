@@ -94,7 +94,9 @@ button.chip:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink);
 .own { font-style: normal; font-weight: 800; color: #4F7A3E; }
 .note { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: #F3E4C3; border: 2px solid var(--ink); font-size: 15px; font-weight: 600; line-height: 1.35; }
 .foot { margin-top: 18px; display: flex; justify-content: flex-end; gap: 12px; }
-button:focus-visible { outline: 3px solid #2D6CDF; outline-offset: 3px; }
+/* кольцо фокуса только в режиме клавиатуры (html.kbd): программный .focus() при открытии меню его не вызывает */
+button:focus, button:focus-visible, input:focus-visible { outline: none; }
+html.kbd button:focus-visible, html.kbd input:focus-visible { outline: 3px solid #2D6CDF; outline-offset: 3px; }
 
 .tags { font-size: 11px; }
 

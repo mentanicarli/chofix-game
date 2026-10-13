@@ -21,7 +21,10 @@ export { lookFor, type Look };
 
 const INK = '#4A2F25';
 const WRAP = `filter="url(#wobble)" stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
-const PAPER = `<rect width="1280" height="720" filter="url(#blotch)" opacity=".5"/><rect x="0" y="550" width="1280" height="170" filter="url(#woodH)" opacity=".5"/><rect x="688" y="424" width="592" height="96" filter="url(#woodV)" opacity=".4"/><rect width="1280" height="720" filter="url(#grain)" opacity=".55"/><rect width="1280" height="720" fill="url(#gVig)"/>`;
+/* бумага поверх всей сцены: пятна, зерно, виньетка */
+const PAPER = `<rect width="1280" height="720" filter="url(#blotch)" opacity=".5"/><rect width="1280" height="720" filter="url(#grain)" opacity=".55"/><rect width="1280" height="720" fill="url(#gVig)"/>`;
+/* текстура досок пола и фасада стойки: часть фона, лежит под гостями и баристой (иначе доски «просвечивают» сквозь одежду) */
+const WOOD = `<rect x="0" y="550" width="1280" height="170" filter="url(#woodH)" opacity=".5"/><rect x="688" y="424" width="592" height="96" filter="url(#woodV)" opacity=".4"/>`;
 /** Для автотестов на слабой машине: мир рисуется редко (#lowfx в адресе). */
 const LOWFX = typeof location !== 'undefined' && location.hash.includes('lowfx');
 const NOFX = typeof location !== 'undefined' && location.hash.includes('nofx');
@@ -59,6 +62,8 @@ export class World {
   /** Описание GPU, если браузер рисует программно. */
   software: string | null = null;
   low = false;
+  /** доски пола поверх фона, но под людьми */
+  floorGrain!: Sprite;
   private texRes = 1;
   private readonly actors = new Set<Actor>();
   private readonly cust = new Container();
@@ -69,6 +74,10 @@ export class World {
   private readonly saucer = new Sprite();
   private readonly chair = new Sprite();
   private sitter: Actor | null = null;
+  /* маски гостя за ноутбуком: тело ниже кромки крышки и сбоку от неё скрыто */
+  private readonly seatMaskA = new Graphics();
+  private readonly seatMaskB = new Graphics();
+  private seatMaskState = '';
   private sitSt: 'empty' | 'in' | 'sit' | 'seated' | 'rise' | 'out' = 'empty';
   private sitT = 2;
   private sitX = -100;
@@ -174,7 +183,7 @@ export class World {
 
     const full = box(0, 0, W, H);
     const lampBox = (x: number) => box(x - 60, -30, 120, 180);
-    const [bg, items, hills, clock, l0, l1, l2, fg, paperT] = await Promise.all([
+    const [bg, items, hills, clock, l0, l1, l2, fg, paperT, woodT] = await Promise.all([
       raster(BG, full, r),
       raster(ITEMS, box(690, 280, 610, 140), r),
       raster(HILLS, box(80, 230, 240, 140), r),
@@ -184,6 +193,7 @@ export class World {
       raster(LAMP2, lampBox(1060), r),
       raster(FG, full, r),
       bakePaper(PAPER, full),
+      bakePaper(WOOD, full),
       fonts
     ]);
 
@@ -236,6 +246,8 @@ export class World {
       return s;
     };
     S.addChild(place(bg, 0, 0, W, H));
+    this.floorGrain = place(woodT, 0, 0, W, H);
+    S.addChild(this.floorGrain);
     /* мягкая тень под столиком, блик на стекле витрины */
     const tsh = new Sprite(this.shadow);
     tsh.anchor.set(0.5);
@@ -717,9 +729,27 @@ export class World {
     this.deskShow(a);
   }
 
+  /**
+   * Ноутбук стоит между камерой и гостем. Пока он открыт, тело и руки гостя ниже кромки крышки (y 490–546)
+   * скрыты на всю ширину стула, а над кромкой остаются голова и плечи. Тянется к чашке справа — рука видна.
+   */
+  private seatMasks(a: Actor | null): void {
+    const on = !!a && a.laptopK > 0.5;
+    const reach = on && !!a && a.reaching;
+    const key = `${on ? 1 : 0}${reach ? 1 : 0}${a ? 1 : 0}`;
+    if (a && a.root.mask !== (on ? this.seatMaskA : null)) a.root.mask = on ? this.seatMaskA : null;
+    if (key === this.seatMaskState) return;
+    this.seatMaskState = key;
+    const draw = (g: Graphics, x1: number) => g.clear().rect(0, 0, W, 490).rect(0, 546, W, H - 546).rect(0, 490, 164, 56).rect(x1, 490, W - x1, 56).fill(0xffffff);
+    draw(this.seatMaskA, 284);
+    draw(this.seatMaskB, reach ? 262 : 284);
+    this.sitFront.mask = on ? this.seatMaskB : null;
+  }
+
   /** Ноутбук, блюдце и стул следуют за фазой посадки гостя. */
   private deskShow(a: Actor | null): void {
     const open = a ? a.laptopK : 0;
+    this.seatMasks(a);
     this.lid.visible = this.deskBase.visible = open > 0.002;
     this.lid.scale.y = this.lidSy * clamp(open, 0.001, 1.08);
     this.lid.alpha = clamp(open * 3, 0, 1);

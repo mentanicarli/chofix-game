@@ -113,6 +113,9 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { if (e.code === 'Space' && G && G.phase === 'day' && !paused) { e.preventDefault(); barKeyUp(e.code); } });
 addEventListener('pointerdown', () => { try { audioCtx(); sfxLoad(); } catch (x) { /* без звука */ } MUSIC.unlock(); });
 addEventListener('pointerup', () => MUSIC.unlock());
+/* режим клавиатуры: кольцо фокуса появляется после Tab или стрелок и гаснет при любом нажатии мышью или касании */
+addEventListener('keydown', e => { if (e.code === 'Tab' || e.code.startsWith('Arrow')) document.documentElement.classList.add('kbd'); }, true);
+addEventListener('pointerdown', () => document.documentElement.classList.remove('kbd'), true);
 const autoPause = () => { if (G && G.phase === 'day' && !paused) setPause(true); };
 document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
 addEventListener('blur', autoPause);

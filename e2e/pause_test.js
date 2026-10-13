@@ -85,10 +85,10 @@ const out = process.argv[3] || 'out/pause';
   await p.click('[data-z=shot]', { force: true }); await p.waitForTimeout(400);
   await p.keyboard.press('Space'); await p.waitForTimeout(300); await p.keyboard.press('Space'); await p.waitForTimeout(1500);
   { const before = await snap(); ok('шот: идёт (st=run)', before.st === 'run');
-    await doPause('auto'); await p.waitForTimeout(900); const fr = await snap();
-    ok('шот: на паузе жидкость не льётся', fr.ml === before.ml && fr.st === 'run');
+    await doPause('auto'); const frz0 = await snap(); await p.waitForTimeout(900); const fr = await snap();
+    ok('шот: на паузе жидкость не льётся', fr.ml === frz0.ml && fr.st === 'run');
     await p.screenshot({ path: `${out}_shot_auto_pause.png` });
-    await resume('auto'); const af = await snap(); console.log('shot before', before.ml, before.st, 'after', af.ml, af.st); ok('шот: после продолжения тот же шаг и объём', af.st === 'run' && Math.abs(af.ml - before.ml) < 3);
+    await resume('auto'); const af = await snap(); console.log('shot before', before.ml, before.st, 'after', af.ml, af.st); ok('шот: после продолжения тот же шаг и объём', af.st === 'run' && Math.abs(af.ml - frz0.ml) < 3);
     ok('шот: нет сообщений-блокировок', !/Сначала|Ещё не/.test(await msgs()));
     await p.waitForTimeout(800); ok('шот: идёт дальше после паузы', (await snap()).ml > af.ml);
     await p.keyboard.press('Space'); await p.waitForTimeout(500); }

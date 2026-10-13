@@ -11,7 +11,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   const ctx = await b.newContext({ viewport: { width: 1312, height: 752 }, deviceScaleFactor: +scaleS });
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', e => errs.push('PAGE ' + e.message)); p.on('console', m => { const t = m.text(); if ((m.type() === 'error' || m.type() === 'warning') && !/ERR_FILE_NOT_FOUND|GL Driver Message/.test(t)) errs.push('CON ' + t.slice(0, 600)); });
-  await p.addInitScript(() => { const raf = window.requestAnimationFrame.bind(window); window.__hold = false; window.requestAnimationFrame = cb => window.__hold ? 0 : raf(cb); let a = 777; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
+  await p.addInitScript(seed => { const raf = window.requestAnimationFrame.bind(window); window.__hold = false; window.requestAnimationFrame = cb => window.__hold ? 0 : raf(cb); let a = seed; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }, +(process.env.SEED || 777));
   await p.route(/fonts\.googleapis\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: require('./pw').css }));
   await p.goto('file://' + tmp + (process.env.HASH || '#nopixi')); await p.waitForTimeout(2500);
   await require('./pw').startNew(p); await p.waitForTimeout(600);
