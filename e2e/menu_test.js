@@ -6,9 +6,9 @@ const id = process.argv[4]; const out = process.argv[3];
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const p = await require('./pw').page(b);
   const errs = []; require('./pw').watch(p, errs);
-  await p.goto(require('./pw').url(tmp) + (process.env.HASH || '#nopixi')); await p.waitForTimeout(500);
-  await require('./pw').startNew(p); await p.waitForTimeout(300);
-  await p.evaluate(() => { const G = window.__dbg.G; G.milk = true; G.day = 12; G.rank = 9; G.money = 5000; G.hints = true; window.__dbg.MENUAPI.EQ_IMPL.forEach(e => { G['eq_' + e] = true; }); window.__dbg.applyUpgrades(); });
+  /* песочница: день 12, ранг 9, всё куплено (раньше — startNew и ручная правка G) */
+  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: 12, rank: 9, money: 5000 }); await p.waitForTimeout(300);
+  await p.evaluate(() => { window.__dbg.G.hints = true; });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   const info = await p.evaluate(id => {
     const M = window.__dbg.MENUAPI; let o; const eq = Object.fromEntries(M.EQ_IMPL.map(e => [e, true]));

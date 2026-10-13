@@ -127,3 +127,31 @@ html.kbd .xp button:focus-visible { outline: 3px solid #E8B04A; outline-offset: 
 .dcard .big { display: block; margin: 16px auto 0; }
 @media (prefers-reduced-motion: reduce) { #tutHl { animation: none; } }
 #stage.paused #drinkCard, #stage.paused #tutHl { visibility: hidden; }
+
+/* Песочница разработчика (только при #dev): кнопка DEV, панель, экран настройки */
+#devBtn, #devPanel { position: absolute; z-index: 11; right: 8px; font-family: inherit; color: var(--ink); }
+#devBtn { top: 74px; padding: 2px 10px; border-radius: 999px; border: 2px solid var(--ink); background: #E8B04A; font-size: 12px; font-weight: 800; cursor: pointer; opacity: .8; }
+#devBtn:hover, #devBtn[aria-expanded="true"] { opacity: 1; }
+#devPanel { top: 102px; width: 340px; max-height: 590px; overflow-y: auto; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; border: 3px solid var(--ink); background: #FBF4E8; box-shadow: 0 5px 0 var(--ink); font-size: 13px; font-weight: 700; display: flex; flex-direction: column; gap: 8px; }
+#devBtn[hidden], #devPanel[hidden] { display: none; }
+#devPanel .dvh { display: flex; justify-content: space-between; align-items: baseline; }
+#devPanel .dvs { display: flex; flex-direction: column; gap: 5px; padding-top: 6px; border-top: 2px dashed rgba(74,47,37,.25); }
+#devPanel .dvr { display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; }
+#devPanel label { display: inline-flex; align-items: center; gap: 4px; }
+#devPanel button { font-family: inherit; font-weight: 800; font-size: 12px; padding: 3px 9px; border-radius: 9px; border: 2px solid var(--ink); background: #F4E6CF; color: var(--ink); cursor: pointer; }
+#devPanel button:hover { background: #F1E3CB; }
+#devPanel button.on { background: #93A684; }
+#devPanel select { font-family: inherit; font-size: 12px; max-width: 130px; }
+#devPanel pre { margin: 0; white-space: pre-wrap; font-family: inherit; font-size: 12px; font-weight: 600; background: #F3E4C3; border-radius: 8px; padding: 6px 8px; user-select: text; }
+#devPanel .dvn { font-size: 12px; color: var(--ink-soft); }
+#stage.paused #devBtn, #stage.paused #devPanel { visibility: hidden; }
+.sbxcard { width: 760px; animation: none; }
+.sbxrow { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 6px 0; }
+.sbxf { display: flex; flex-direction: column; gap: 3px; font-size: 13px; font-weight: 800; }
+.sbxf input, .sbxf select { font-family: inherit; font-size: 16px; font-weight: 700; width: 120px; padding: 5px 8px; border-radius: 10px; border: 2px solid var(--ink); background: #FFF8EC; color: var(--ink); }
+.sbxf select { width: 190px; }
+.sbxbtns { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 0 4px; }
+.sbxgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sbxg { display: flex; flex-direction: column; gap: 3px; }
+.sbxc { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.sbxc input { width: 18px; height: 18px; accent-color: #93A684; }

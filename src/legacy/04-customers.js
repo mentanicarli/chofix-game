@@ -4,10 +4,11 @@ ICON.icedlatte = ICON.latte + ICE_CUBES; ICON.icedcappuccino = ICON.cappuccino +
 ICON.flatwhite = ICON.latte; ICON.vanillaraf = ICON.raf = ICON.rafhalva = ICON.latte;
 function reindex() { D.customers.forEach((c, i) => { c.x = SLOTS[i]; c.tx = SLOTS[i]; }); }
 function spawn() {
-  const type = wpick(G.day === 1 ? [['regular', .6], ['student', .4]] : [['regular', .45], ['student', .3], ['hurry', .25]]);
+  const type = (SBX.on && SBX.type) || wpick(G.day === 1 ? [['regular', .6], ['student', .4]] : [['regular', .45], ['student', .3], ['hurry', .25]]);
   /* вчерашние покупки: в первых 5 гостях каждая должна встретиться хотя бы в одном заказе */
   const left = D.focus.filter(f => !D.focusDone.has(f)), focus = left.length && D.idc < 5 && 5 - D.idc <= left.length ? left[0] : undefined;
-  const order = MENUAPI.rollOrder({ rank: G.rank, day: G.day, milk: !!G.milk, eq: Object.fromEntries(MENUAPI.EQ_IMPL.map(e => [e, !!G['eq_' + e]])), focus }, type);
+  const order = MENUAPI.rollOrder({ rank: G.rank, day: G.day, milk: !!G.milk, eq: Object.fromEntries(MENUAPI.EQ_IMPL.map(e => [e, !!G['eq_' + e]])), focus, override: SBX.on && SBX.next ? SBX.next : undefined }, type);
+  if (SBX.on) SBX.next = null;
   D.focus.forEach(f => { if (MENUAPI.orderUsesItem(f, order)) D.focusDone.add(f); });
   const drink = order.key;
   const max = MENUAPI.patienceMax(type, { pace: G.pace, cozy: !!G.cozy, helper: !!G.helper });
@@ -19,6 +20,7 @@ function spawn() {
   c.px = -110; c.tx = slot; c.x = slot; c.ph = Math.random() * 6.28; c.walk = Math.random() * 6;
   c.act = WORLD.addActor({ look: c.look, icon: iconOf(drink), iconKey: drink, title: NAME[drink], tags, x: c.px, onTap: () => serve(c) });
   ACT.add(c);
+  if (SBX.on) c.t0 = SBX.clock;
   D.customers.push(c);
   reindex();
 }
@@ -52,6 +54,7 @@ function serve(c) {
 function deliver(c, d, q, flawless, byPlayer) {
   const st = MENUAPI.settle({ basePrice: c.order ? c.order.base : PRICE[d], beans: !!G.beans, paidSyrup: !!(c.order && c.order.syrup && !c.order.syrupImplied), quality: q, type: c.type, flawless, cards: !!G.cards, rating: G.rating, extra: c.order && c.order.food ? c.order.food.price : 0 });
   const price = st.price, tip = st.tip;
+  if (SBX.on) SBX.log.push({ serve: SBX.clock - c.t0, prep: byPlayer && c.tPrep !== undefined ? SBX.clock - c.tPrep : null, tasks: byPlayer && c.nTasks ? c.nTasks : null, q, byPlayer });
   D.stats.revenue += price; D.stats.tips += tip; D.stats.served++; if (q === 2) D.stats.perfect++;
   G.money += st.total; G.rating = st.rating;
   floatText(c.x, `+${money(price + tip)}` + (tip ? `<small>чаевые ${money(tip)}</small>` : q === 0 ? '<small>испорчено</small>' : ''), q === 0);

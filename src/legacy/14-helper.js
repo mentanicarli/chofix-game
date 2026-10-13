@@ -6,7 +6,7 @@ function helperTick(dt) {
   if (H.c && (H.c.leaving || !D.customers.includes(H.c) || (BR && BR.c === H.c))) H.c = null;
   if (!H.c && !D.closing) {
     const g = MENUAPI.helperPick(D.customers.map(c => ({ id: c.id, drink: c.drink, arrived: c.arrived, leaving: c.leaving, pat: c.pat, syrup: c.syrup, food: !!(c.order && c.order.food) })), BR ? BR.c.id : null);
-    if (g) { H.c = D.customers.find(c => c.id === g.id); H.t = 0; H.need = MENUAPI.helperPrepTime(H.c.drink); const cost = drinkCost(H.c.drink); D.stats.costs += cost; G.money -= cost; }
+    if (g) { H.c = D.customers.find(c => c.id === g.id); H.t = 0; H.need = MENUAPI.helperPrepTime(H.c.drink); const cost = drinkCost(H.c.drink); spend(cost); }
   } else if (H.c) {
     H.t += dt;
     if (H.t >= H.need) { const c = H.c; H.c = null; deliver(c, c.drink, MENUAPI.helperQuality(G.rank), false, false); updateHud(true); }

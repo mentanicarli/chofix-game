@@ -31,3 +31,16 @@ exports.dismissCard = async (p) => {
   if (on) { await p.click('[data-cardok]'); await p.waitForTimeout(500); }
   return on;
 };
+/**
+ * Песочница вместо «новой игры с нуля»: открывает #dev-nopixi-lowfx и запускает день программно тем же кодом, что кнопка «Начать»
+ * (window.__sandbox.start). url — адрес страницы без хеша; o: { day, rank, money, all (по умолчанию true), rating, served, pace, showTutorial }.
+ * Возвращает после того, как экран закрылся и день идёт. Обучение по умолчанию выключено (showTutorial: true включит).
+ */
+exports.sandboxStart = async (p, url, o = {}) => {
+  const { all = true, ...cfg } = o;
+  await p.goto('about:blank'); await p.goto(url + '#dev-nopixi-lowfx');
+  await p.waitForSelector('[data-sandbox]', { timeout: 30000 });
+  await p.waitForTimeout(400);
+  await p.evaluate(c => window.__sandbox.start(c), { all, ...cfg });
+  await p.waitForSelector('#screen', { state: 'hidden', timeout: 10000 });
+};

@@ -1,9 +1,10 @@
 /* ---------- день ---------- */
-function interval() { return MENUAPI.arrivalInterval({ day: G.day, rating: G.rating, t: D.t, wifi: !!G.wifi }); }
+function interval() { const v = MENUAPI.arrivalInterval({ day: G.day, rating: G.rating, t: D.t, wifi: !!G.wifi }); return SBX.on ? v / SBX.rate : v; }
 function startDay() {
   G.phase = 'day'; paused = false; scr.hidden = true;
   WORLD.clearActors(); ACT.clear();
   D = { t: 0, customers: [], nextArr: 4, lastCall: false, closing: false, closeT: 0, cup: null, hold: null, rushShown: false, idc: 0, focus: G.fresh.slice(), focusDone: new Set(), stats: { served: 0, lost: 0, revenue: 0, tips: 0, costs: 0, perfect: 0 } };
+  if (SBX.on) { SBX.log = []; SBX.clock = 0; }
   BR = null; renderCup(); lastHud = ''; updateHud(); stopLoops(); stage.classList.remove('inbar');
   G.fresh = [];
   G.idealGrind = MENUAPI.idealGrind(G.day); if (G.day >= 3 && !G.hintsTouched) G.hints = false;
@@ -13,6 +14,7 @@ function startDay() {
 }
 function tickDay(dt) {
   D.t += dt;
+  if (SBX.inf && G.money < 1e6) G.money = 1e6;
   const clock = OPEN_MIN + Math.min(1, D.t / DAY_LEN) * SPAN_MIN;
   if (!D.rushShown && clock >= 720 && !D.closing) { D.rushShown = true; toast('Обеденный час пик: клиентов станет больше'); }
   if (!D.lastCall && D.t >= DAY_LEN - 25) { D.lastCall = true; banner('Последний заказ', 'Скоро закрываемся'); }
@@ -34,6 +36,7 @@ function tickDay(dt) {
     if (w !== c.lastW) { c.lastW = w; c.act.setPatience(f); }
     const m = f < .12 ? 'angry' : f < .3 ? 'annoyed' : f < .6 ? 'wait' : 'neutral';
     if (m !== c.mood) { c.mood = m; c.act.setMood(m); }
+    if (SBX.noPat) c.pat = c.max;
     if (c.pat <= 0) lose(c);
   }
   helperTick(dt);

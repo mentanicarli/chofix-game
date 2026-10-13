@@ -26,6 +26,10 @@ const SHOP = [
 const SHOP_CATS = [['menu', 'Меню'], ['gear', 'Оборудование'], ['hall', 'Зал и команда']];
 let shopTab = 'menu';
 
+/* Песочница разработчика: включается только ссылкой с #dev. Без него всё ниже нейтрально (см. 16-sandbox.js). */
+const DEV = /(^#|-)dev(-|$)/.test(location.hash);
+const SBX = { on: false, scale: 1, noPat: false, free: false, inf: false, rate: 1, type: null, next: null, clock: 0, log: [] };
+
 const rnd = (a, b) => a + Math.random() * (b - a);
 const wpick = items => { let r = Math.random() * items.reduce((s, i) => s + i[1], 0); for (const [v, w] of items) { if ((r -= w) <= 0) return v; } return items[0][0]; };
 const money = n => (n < 0 ? '−' : '') + '₽ ' + Math.abs(Math.round(n)).toLocaleString('ru-RU');

@@ -11,7 +11,8 @@ let last = performance.now();
 function frame(ts) {
   requestAnimationFrame(frame);
   const rawMs = ts - last, dt = Math.min(.1, rawMs / 1000); last = ts;
-  if (G && G.phase === 'day' && !paused && !CARDON) tickDay(dt);
+  if (G && G.phase === 'day' && !paused && !CARDON) { if (SBX.on) { SBX.clock += dt; tickDay(dt * SBX.scale); } else tickDay(dt); }
+  if (SBX.on) sbxUi(dt);
   if (!paused) { tickFx(dt); animActors(dt); animBarista(dt); if (G && G.phase === 'day') barTick(dt); }
   ambTick(); tickLoops(); MUSIC.duck(paused ? .35 : 1); stage.classList.toggle('paused', paused);
   tickSky(paused ? 0 : dt); tickMoney(dt); tickTint(dt);

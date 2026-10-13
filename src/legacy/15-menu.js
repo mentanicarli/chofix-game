@@ -55,6 +55,7 @@ function menuRender(html, blur) {
 }
 function focusFirst(sel) { const b = scr.querySelector(sel || '.mbtn.main, .big, button'); if (b) b.focus({ preventScroll: true }); }
 function showTitle(notice) {
+  if (SBX.on) sbxLeave();
   G.phase = 'title'; menuFrom = 'title';
   let rd = SAVE_STORE.load(), msg = notice || '';
   if (rd.kind === 'broken') {
@@ -63,7 +64,7 @@ function showTitle(notice) {
     rd = { kind: 'none' };
   }
   const cont = rd.kind === 'ok' ? { day: rd.data.day, rank: MENUAPI.rankInfo(MENUAPI.restore(rd.data).rank).title } : null;
-  menuRender(titleHTML({ logo: CUP_LOGO, cont, notice: msg, np: npText() }), true);
+  menuRender(titleHTML({ logo: CUP_LOGO, cont, notice: msg, np: npText(), dev: DEV }), true);
   focusFirst();
 }
 function showPace() {
@@ -92,7 +93,7 @@ function confirmDialog(title, text, yes, onYes, onNo) {
 function menuBack() {
   const mv = menuView();
   if (mv === 'settings' || mv === 'howto') { if (menuFrom === 'pause') showPauseCard(); else showTitle(); return true; }
-  if (mv === 'pace') { showTitle(); return true; }
+  if (mv === 'pace' || mv === 'sandbox') { showTitle(); return true; }
   if (mv === 'confirm') { (confirmBack || showTitle)(); return true; }
   return false;
 }

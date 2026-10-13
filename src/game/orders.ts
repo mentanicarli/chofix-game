@@ -1,4 +1,4 @@
-import { DRINKS, DRINK_NEEDS, ENGINE, FORCED_SYRUP, ICED, RECIPE_SYRUPS, SYRUPS, SYRUP_META, isOrderable, needsMilk, priceOf, syrupByName } from './menu';
+import { DRINKS, DRINK_NEEDS, ENGINE, FOOD, FORCED_SYRUP, ICED, RECIPE_SYRUPS, SYRUPS, SYRUP_META, drinkById, isOrderable, needsMilk, priceOf, syrupByName } from './menu';
 import { coldVariantOk, isNewKeyEngine } from './recipes';
 import { forceFood, rollFood } from './food';
 import { drinkFitsItem, foodWantOfItem, orderUsesItem } from './shop';
@@ -27,6 +27,26 @@ const WEIGHTS: Readonly<Record<string, number>> = {
 };
 const baseW = (d: Drink): number => WEIGHTS[d.id] ?? 0.2;
 
+/**
+ * Подмена заказа для песочницы (#dev). Подменяет только названные поля, остальное бросается как обычно.
+ * В обычной игре не передаётся, и rollOrder работает как раньше.
+ */
+export interface OrderOverride {
+  /** id напитка из меню */
+  drink?: string;
+  size?: Size;
+  cold?: boolean;
+  strong?: boolean;
+  /** название сиропа; null — без сиропа */
+  syrup?: string | null;
+  /** название альтернативного молока; null — обычное */
+  altMilk?: string | null;
+  /** id блюда; null — без еды */
+  food?: string | null;
+  /** разогреть блюдо */
+  heat?: boolean;
+}
+
 export interface OrderState {
   rank: number;
   day: number;
@@ -35,6 +55,8 @@ export interface OrderState {
   eq?: Readonly<Record<string, boolean | undefined>>;
   /** Вчерашняя покупка (id позиции магазина): этот заказ должен её использовать. Без неё заказы считаются как обычно. */
   focus?: string;
+  /** Только песочница: подмена частей заказа. */
+  override?: OrderOverride;
 }
 
 /** Бросок заказа: что гость закажет сейчас. key — механика бара. */
@@ -48,7 +70,10 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
     if (fit.length) pool = fit;
   }
   const from = pool.length ? pool : DRINKS.filter((d) => d.id === 'americano');
-  const d = wpick(rng, from.map((x) => [x, baseW(x)] as const));
+  const ov = state.override;
+  const picked = wpick(rng, from.map((x) => [x, baseW(x)] as const));
+  const forcedDrink = ov?.drink ? drinkById[ov.drink] : undefined;
+  const d = forcedDrink && forcedDrink.id in ENGINE ? forcedDrink : picked;
   let key = ENGINE[d.id] as string;
   // Холодная версия: нужен льдогенератор, у напитка есть холодные объёмы и механика льда.
   const coldSize = d.coldSizes[0];
@@ -64,14 +89,24 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
     cold = !!eq['ice'] && key in ICED && !!coldSize && (rng() < 0.3 || state.focus === 'eq_ice');
     size = cold && coldSize ? coldSize : '0.2';
   }
+  if (ov) {
+    if (ov.cold !== undefined) {
+      const can = fresh ? coldVariantOk(d) && !!coldSize : key in ICED && !!coldSize;
+      cold = ov.cold && can;
+      if (!cold && size === coldSize) size = fresh ? ((Object.keys(d.sizes)[0] as Size | undefined) ?? size) : '0.2';
+    }
+    if (!cold && ov.size && d.sizes[ov.size] !== undefined) size = ov.size;
+  }
   const baseKey = key;
   if (cold && !fresh) key = ICED[baseKey] as string;
-  const strong = state.day >= 2 && rng() < 0.25;
+  const strongRoll = state.day >= 2 && rng() < 0.25;
+  const strong = ov?.strong ?? strongRoll;
   const forced = FORCED_SYRUP[d.id];
   const open = SYRUPS.filter((s) => s.rank <= state.rank && SYRUP_META[s.name] && !RECIPE_SYRUPS.has(s.name));
   const canSyrup = !fresh || d.steps.some((x) => x.st === 'milk' || x.st === 'shot');
   const withSyrup = forced || (canSyrup && open.length > 0 && baseKey !== 'espresso' && state.day >= 2 && rng() < 0.3);
-  const syrup = forced ? syrupByName[forced] : withSyrup ? open[Math.floor(rng() * open.length) % open.length] : undefined;
+  let syrup = forced ? syrupByName[forced] : withSyrup ? open[Math.floor(rng() * open.length) % open.length] : undefined;
+  if (ov && ov.syrup !== undefined && !forced) syrup = ov.syrup ? syrupByName[ov.syrup] : undefined;
   const meta = syrup ? SYRUP_META[syrup.name] : undefined;
   const order: Order = {
     id: d.id,
@@ -84,7 +119,7 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
     syrup:
       syrup && meta ? { name: syrup.name, shelf: meta.key, pumps: 1 + Math.floor(rng() * 2) } : null,
     syrupImplied: !!forced,
-    altMilk: null,
+    altMilk: ov?.altMilk ? { name: ov.altMilk } : null,
     cold,
     food: null,
     line: ''
@@ -94,6 +129,10 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
   order.food = rollFood({ rank: state.rank, day: state.day, eq }, rng);
   const want = state.focus ? foodWantOfItem(state.focus) : null;
   if (want && state.focus && !orderUsesItem(state.focus, order)) order.food = forceFood({ rank: state.rank, day: state.day, eq }, rng, want) ?? order.food;
+  if (ov && ov.food !== undefined) {
+    const f = ov.food ? FOOD.find((x) => x.id === ov.food) : undefined;
+    order.food = f ? { id: f.id, name: f.name, price: f.price, case: f.case, heat: !!ov.heat && f.heatable } : null;
+  }
   order.line = say(order, type, rng);
   return order;
 }

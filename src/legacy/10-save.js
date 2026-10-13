@@ -3,12 +3,13 @@ const SAVE_KEY = MENUAPI.SAVE_KEY;
 /* SaveStore: load / save / clear. Чтобы подключить аккаунты, заменить эту реализацию другой с теми же методами. */
 const SAVE_STORE = {
   load() {
+    if (SBX.on) return { kind: 'none' };
     try { return MENUAPI.readSave(localStorage.getItem(SAVE_KEY)); } catch (e) { return { kind: 'none' }; }
   },
-  save(d) { try { localStorage.setItem(SAVE_KEY, MENUAPI.serializeSave(d)); } catch (e) { /* без сохранения тоже можно играть */ } },
-  clear() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ничего */ } },
+  save(d) { if (SBX.on) return; try { localStorage.setItem(SAVE_KEY, MENUAPI.serializeSave(d)); } catch (e) { /* без сохранения тоже можно играть */ } },
+  clear() { if (SBX.on) return; try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ничего */ } },
   /* битое сохранение откладывается в сторону, чтобы его можно было достать вручную */
-  quarantine() { try { const raw = localStorage.getItem(SAVE_KEY); if (raw) localStorage.setItem(SAVE_KEY + '-broken', raw); localStorage.removeItem(SAVE_KEY); } catch (e) { /* ничего */ } }
+  quarantine() { if (SBX.on) return; try { const raw = localStorage.getItem(SAVE_KEY); if (raw) localStorage.setItem(SAVE_KEY + '-broken', raw); localStorage.removeItem(SAVE_KEY); } catch (e) { /* ничего */ } }
 };
 const SETTINGS_STORE = {
   load() { try { return MENUAPI.parseSettings(localStorage.getItem(MENUAPI.SETTINGS_KEY)); } catch (e) { return MENUAPI.parseSettings(null); } },

@@ -44,7 +44,8 @@ function barOpen(c) {
   if (card) { showDrinkCard(card, () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); }); return; }
   const d = c.drink, tasks = MENUAPI.buildTasks(d, { cold: !!(c.order && c.order.cold), syrup: !!c.syrup });
   if (c.order && c.order.food) tasks.push('food');
-  const cost = drinkCost(d) + (c.order && c.order.food ? Math.round(c.order.food.price * MENUAPI.FOOD_COST_SHARE) : 0); D.stats.costs += cost; G.money -= cost; updateHud(true);
+  const cost = drinkCost(d) + (c.order && c.order.food ? Math.round(c.order.food.price * MENUAPI.FOOD_COST_SHARE) : 0); spend(cost); updateHud(true);
+  if (SBX.on) { c.tPrep = SBX.clock; c.nTasks = tasks.length; }
   BR = { c, drink: d, tasks, done: {}, res: {}, tgtDose: c.strong ? 20 : 18, tgtMl: c.strong ? 30 : 36, dose: 0, uneven: 1, tampPhase: 'level', tampP: 0, tampHold: 0, sweep: 0,
     pf: 'grinder', shot: { st: 'idle', t: 0, ml: 0, locked: false }, cup: { es: 0, water: 0, ice: 0, milk: 0, foam: 0, pumps: 0, syr: null, art: null, level: 0 },
     pit: { ml: 0, T: 8, foam: 0, coarse: .2, steamed: false, burnt: false }, fill: 0, pumps: 0, pumpT: 0, inset: null, hold: false, mx: 220, my: 200,
@@ -150,7 +151,7 @@ function zoneNoNeed(z) {
 function runStep(step, t) {
   if (!step) return false;
   (step.effects || []).forEach(e => {
-    if (e.kind === 'cost') { D.stats.costs += e.amount; G.money -= e.amount; }
+    if (e.kind === 'cost') spend(e.amount);
     else if (e.kind === 'sound') play(e.id, e.id === 'pump' ? .9 : e.id === 'fridge' ? .5 : .4, e.id === 'pump' ? .9 + Math.random() * .2 : undefined);
   });
   if (step.result) { complete(t, step.result.score, step.result.message && step.result.message.text, step.result.message && step.result.message.bad); return true; }
@@ -276,7 +277,7 @@ function insetClick(id) {
   if (id.indexOf('syr:') === 0) { pump(id.slice(4)); return; }
   if (id === 'syrDone') { syrDone(); return; }
   if (id === 'syrDump') { syrDump(); return; }
-  if (id === 'dump') { B.dose = 0; D.stats.costs += 5; G.money -= 5; play('fridge', .6); return; }
+  if (id === 'dump') { B.dose = 0; spend(5); play('fridge', .6); return; }
   if (id === 'grindDone') { if (B.dose < 8) { barMsg('Слишком мало кофе', true); return; } const e = Math.abs(B.dose - B.tgtDose); const sc = 1 - Math.max(0, e - .5) / 3.2; B.pf = 'mat'; complete('grind', sc, e <= .5 ? 'Доза ' + f1(B.dose) + ' г: в точку' : B.dose < B.tgtDose ? 'Доза ' + f1(B.dose) + ' г: маловато' : 'Доза ' + f1(B.dose) + ' г: многовато', sc < .5); return; }
   if (id === 'lock') { B.shot.locked = true; B.pf = 'group'; play('lock', .9); return; }
   if (id === 'go' || id === 'stopShot') { shotBtn(); return; }

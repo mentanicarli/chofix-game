@@ -14,6 +14,8 @@ export interface TitleOpts {
   cont: { day: number; rank: string } | null;
   notice?: string;
   np: string;
+  /** только по ссылке с #dev: кнопка «Песочница» */
+  dev?: boolean;
 }
 export function titleHTML(o: TitleOpts): string {
   const cont = o.cont
@@ -22,7 +24,7 @@ export function titleHTML(o: TitleOpts): string {
   return `<div class="title" data-menu="title">
 <div class="sign"><i class="chain l"></i><i class="chain r"></i>${o.logo}<div><h1>Chofix</h1><p>кофе между парами</p></div></div>
 <div class="paper menucard">
-<div class="mbtns">${cont}<button type="button" class="mbtn${o.cont ? '' : ' main'}" data-start="1"><b>Новая игра</b></button><button type="button" class="mbtn" data-settings="title"><b>Настройки</b></button><button type="button" class="mbtn" data-howto="1"><b>Как играть</b></button></div>
+<div class="mbtns">${cont}<button type="button" class="mbtn${o.cont ? '' : ' main'}" data-start="1"><b>Новая игра</b></button>${o.dev ? '<button type="button" class="mbtn" data-sandbox="1"><b>Песочница</b></button>' : ''}<button type="button" class="mbtn" data-settings="title"><b>Настройки</b></button><button type="button" class="mbtn" data-howto="1"><b>Как играть</b></button></div>
 ${o.notice ? `<p class="mnote" role="status">${esc(o.notice)}</p>` : ''}
 </div>
 ${nowPlayingHTML(o.np)}

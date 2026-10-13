@@ -48,6 +48,8 @@ function toast(msg, ms = 2400) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+/* Расход на ингредиенты (в песочнице может быть бесплатным) */
+function spend(n) { if (SBX.free) return; D.stats.costs += n; G.money -= n; }
 const drinkCost = d => MENUAPI.drinkCost(d, !!G.beans);
 /* Короткая подсказка поверх сцены */
 function hint(msg) { toast(msg, 2200); }
