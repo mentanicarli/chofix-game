@@ -1,5 +1,6 @@
 /* Серия кадров детерминированной симуляции: игра ставится на паузу цикла кадров, дальше шаги по 1/30 с.
  * node seq_shot.js <html> <out.png> '<js перед стартом>' '<x,y,w,h в координатах сцены>' '<t1,t2,...>' [масштаб] [колонок]
+ * Расписание событий: в js-части `window.__at = [[сек, () => ...]]`.
  * Пример: node seq_shot.js ../dist/artifact.html ../out/sit.png "WORLD.sitT=0" 100,380,280,300 5,6,7 1 6 */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 (async () => {
@@ -21,7 +22,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   const shots = []; let t = 0;
   for (const tt of times) {
     const n = Math.max(0, Math.round((tt - t) * 30)); t = tt;
-    await p.evaluate(n => { const d = window.__dbg; for (let i = 0; i < n; i++) d.frame(d.last + 33.333); d.WORLD.app.render(); }, n);
+    await p.evaluate(n => { const d = window.__dbg; for (let i = 0; i < n; i++) { window.__sim = (window.__sim || 0) + 1 / 30; (window.__at || []).forEach(e => { if (!e.done && window.__sim >= e[0]) { e.done = true; e[1](); } }); d.frame(d.last + 33.333); } d.WORLD.app.render(); }, n);
     await p.waitForTimeout(60);
     shots.push((await p.screenshot({ clip: { x: 16 + clip[0], y: 16 + clip[1], width: clip[2], height: clip[3] } })).toString('base64'));
   }

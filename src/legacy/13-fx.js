@@ -49,7 +49,7 @@ function animActors(dt) {
     /* подскоки: сам прыжок (с растяжением и сжатием) считает гость */
     if (c.hopT > 0) { c.act.hop(c.hopT > .5 ? 1 : .55); c.hopT = 0; }
     c.act.update(dt, c.px, c.ty);
-    if (!c.arrived && !c.leaving && dist < 6) { c.arrived = true; c.act.showBubble(true); play('door', .5); }
+    if (!c.arrived && !c.leaving && dist < 6) { c.arrived = true; c.act.showBubble(true); WORLD.baristaReact(); play('door', .5); }
     /* реплика живёт 5 секунд именно в зале: в баре или на паузе время не идёт, ушёл в бар — покажется снова */
     if (c.arrived && !c.leaving && !c.sayDone && !paused) {
       if (stage.classList.contains('inbar')) hideSay(c);
@@ -75,6 +75,10 @@ function animBarista(dt) {
   if (servePulse > 0) { servePulse = Math.max(0, servePulse - dt); tgt = -20 * Math.sin((1 - servePulse / .55) * Math.PI); }
   armA += (tgt - armA) * (1 - Math.exp(-dt * 16));
   arm2A += (t2 - arm2A) * (1 - Math.exp(-dt * 12));
+  /* нагрузка: очередь и терпение гостей видны по лицу */
+  let stress = 0;
+  if (D && G && G.phase === 'day') { const w = D.customers.filter(c => c.arrived); if (w.length >= 3 || w.some(c => c.pat / c.max < .3)) stress = 2; else if (w.length >= 2) stress = 1; }
+  WORLD.setBaristaStress(stress);
   WORLD.setBarista({ arm: armA, arm2: arm2A, nod, bob: 1.3 * Math.sin(bt * 2.2) });
 }
 

@@ -42,7 +42,7 @@ export type SeatPhase = 'walk' | 'sit' | 'seated' | 'rise';
 const iconCache = new Map<string, Promise<Texture>>();
 
 /** Рука или нога: лента из атласа по ломаной и конец (кисть, ступня). */
-class Limb {
+export class Limb {
   readonly rope: Ribbon;
   readonly end: Sprite;
   readonly pts = new Float32Array(16);
@@ -110,6 +110,7 @@ export class Actor {
   private legs: Limb[] = [];
   private shoes: Sprite[] = [];
   private seatShoes: Sprite[] = [];
+  private knees: Sprite[] = [];
   private arms: Limb[] = [];
   private hands: { sp: Spring2; ovr: Pt | null }[] = [{ sp: new Spring2(-35, 533, 13, 0.7), ovr: null }, { sp: new Spring2(35, 533, 13, 0.7), ovr: null }];
   private readonly cup = new Container();
@@ -246,6 +247,10 @@ export class Actor {
         ss.visible = false;
         this.legsC.addChild(ss);
         this.seatShoes.push(ss);
+        const kn = frameSprite(atlas, 'knee', 0, 0);
+        kn.visible = false;
+        this.legsC.addChild(kn);
+        this.knees.push(kn);
       }
     }
     /* голова: сзади (волосы) и лицо */
@@ -891,6 +896,8 @@ export class Actor {
       const sh = this.shoes[i];
       if (!l || !sh) continue;
       const ss = this.seatShoes[i];
+      const kn = this.knees[i];
+      if (kn) kn.visible = full;
       if (full) {
         const s = i === 0 ? -1 : 1;
         this.kneeT += 0;
@@ -902,6 +909,7 @@ export class Actor {
         const ax = s * (17 + jig.ax);
         const ay = 629 + jig.ay;
         l.bend(hx, hy, kx, ky, ax, ay, 5);
+        kn?.position.set(kx, ky - 1);
         sh.visible = false;
         if (ss) {
           ss.visible = true;

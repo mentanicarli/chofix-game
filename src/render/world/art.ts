@@ -151,7 +151,7 @@ export function personParts(o: Look, seat = false): PersonParts {
     { id: 'torso', box: { x: -54, y: 452, w: 108, h: 150 }, svg: `${back}${ou.back}${ou.torso}${scarf}` }
   ];
   const seatCells: PartCell[] = seat
-    ? [{ id: 'shoeSeat', box: { x: -18, y: -13, w: 36, h: 26 }, svg: `<ellipse cx="0" cy="0" rx="14" ry="8.5" fill="${shoe}"/><ellipse cx="0" cy="2.5" rx="8.5" ry="4.6" fill="${lt(shoe, 0.22)}" stroke-width="2"/>` }]
+    ? [{ id: 'knee', box: { x: -17, y: -14, w: 34, h: 28 }, svg: `<ellipse cx="0" cy="0" rx="13.5" ry="10.5" fill="${pants}"/><path d="M-7 -4Q0 -8 7 -4" stroke="${lt(pants, 0.25)}" stroke-width="2" fill="none" stroke-opacity=".6"/>` }, { id: 'shoeSeat', box: { x: -18, y: -13, w: 36, h: 26 }, svg: `<ellipse cx="0" cy="0" rx="14" ry="8.5" fill="${shoe}"/><ellipse cx="0" cy="2.5" rx="8.5" ry="4.6" fill="${lt(shoe, 0.22)}" stroke-width="2"/>` }]
     : [];
   const hb = hr.b ? (o.hair === 'pony' ? 'pony' : o.hair === 'long' ? 'long' : 'bob') : null;
   if (hb) cells.push({ id: 'hairBack', box: { x: -48, y: 392, w: 114, h: 110 }, svg: `<g transform="translate(0 458) scale(1.1) translate(0 -458)">${hr.b}</g>` });
@@ -172,7 +172,7 @@ export function wrapPart(inner: string, b: Box = PERSON_BOX): string {
 
 
 /** Бариста за стойкой: координаты сцены, голова в (865,322), плечо левой руки (834,376). */
-export type BaristaFace = 'smile' | 'blink' | 'joy' | 'focus';
+export type BaristaFace = 'smile' | 'blink' | 'joy' | 'focus' | 'tired';
 export interface BaristaParts { body: string; arm2: string; arm: string; head: (f: BaristaFace) => string; heldCup: string }
 export function baristaParts(): BaristaParts {
   const sk = '#F5D0AE';
@@ -189,11 +189,13 @@ export function baristaParts(): BaristaParts {
     arm: `${arm('M836 379Q818 381 808 386', '#93A684', 12)}<circle cx="805" cy="386" r="8.5" fill="${sk}"/>`,
     heldCup: '',
     head: (f: BaristaFace) => {
-      const eye = (cx: number, hl: number) => f === 'blink' || f === 'joy'
+      const eye = (cx: number, hl: number) => f === 'tired'
+        ? `<path d="M${cx - 5} 328q5 4 10 0" fill="none" stroke-width="2.4"/><path d="M${cx - 5} 327q5 -4 10 0" fill="#FFFDF6" stroke-width="1.8"/><circle cx="${cx + 0.4}" cy="328" r="2.6" fill="#2F211B" stroke="none" clip-path="none"/><path d="M${cx - 5.5} 326.5q5.5 -4.5 11 0" fill="${sk}" stroke-width="2"/>`
+        : f === 'blink' || f === 'joy'
         ? `<path d="M${cx - 5} 328q5 -6 10 0" fill="none" stroke-width="2.4"/>`
         : `<g><ellipse cx="${cx}" cy="327" rx="4.8" ry="${f === 'focus' ? 4.2 : 5.2}" fill="#FFFDF6" stroke-width="1.8"/><circle cx="${cx + 0.4}" cy="328" r="3" fill="#2F211B" stroke="none"/><circle cx="${hl}" cy="326.6" r="1" fill="#fff" stroke="none"/></g>`;
-      const mouth = f === 'joy' ? '<path d="M855 335q10 13 20 0Z" fill="#8A3F34" stroke-width="2.4"/>' : f === 'focus' ? '<path d="M860 339q5 3 10 0" stroke-width="2.6" fill="none"/>' : '<path d="M857 337q8 9 16 0" stroke-width="2.6" fill="none"/>';
-      const brows = f === 'focus' ? '<path d="M848 320L860 322M870 322L882 320" stroke-width="2.2" fill="none"/>' : '<path d="M848 319q6 -4 12 -1M870 318q6 -3 12 1" stroke-width="2.2" fill="none"/>';
+      const mouth = f === 'tired' ? '<path d="M857 339q4 -3 8 0t8 0" stroke-width="2.4" fill="none"/>' : f === 'joy' ? '<path d="M855 335q10 13 20 0Z" fill="#8A3F34" stroke-width="2.4"/>' : f === 'focus' ? '<path d="M860 339q5 3 10 0" stroke-width="2.6" fill="none"/>' : '<path d="M857 337q8 9 16 0" stroke-width="2.6" fill="none"/>';
+      const brows = f === 'tired' ? '<path d="M848 321L860 317M870 317L882 321" stroke-width="2.2" fill="none"/>' : f === 'focus' ? '<path d="M848 320L860 322M870 322L882 320" stroke-width="2.2" fill="none"/>' : '<path d="M848 319q6 -4 12 -1M870 318q6 -3 12 1" stroke-width="2.2" fill="none"/>';
       return `<circle cx="865" cy="290" r="13" fill="${hr}"/><path d="M859 288q6 -5 12 0" fill="none" stroke="#6A5348" stroke-width="2.5"/>
 <circle cx="835" cy="326" r="5.5" fill="${sk}"/><circle cx="895" cy="326" r="5.5" fill="${sk}"/>
 <circle cx="865" cy="322" r="29" fill="${sk}"/>
@@ -201,7 +203,7 @@ export function baristaParts(): BaristaParts {
 <path d="M834 318Q832 290 865 289Q898 290 896 318Q880 302 865 304Q850 302 834 318Z" fill="${hr}"/>
 <path d="M835 312Q865 299 895 312" stroke="#C4694A" stroke-width="7" fill="none"/>
 ${eye(854, 855.5)}${eye(876, 877.5)}${brows}${mouth}
-<ellipse cx="845" cy="336" rx="5.5" ry="3.2" fill="#E3806C" fill-opacity=".6" stroke="none"/><ellipse cx="885" cy="336" rx="5.5" ry="3.2" fill="#E3806C" fill-opacity=".6" stroke="none"/>`;
+${f === 'tired' ? '<path d="M892 308q-5 7 0 10q5 -3 0 -10Z" fill="#A9D6E6" stroke-width="1.8"/>' : ''}<ellipse cx="845" cy="336" rx="5.5" ry="3.2" fill="#E3806C" fill-opacity=".6" stroke="none"/><ellipse cx="885" cy="336" rx="5.5" ry="3.2" fill="#E3806C" fill-opacity=".6" stroke="none"/>`;
     }
   };
 }
@@ -209,4 +211,13 @@ ${eye(854, 855.5)}${eye(876, 877.5)}${brows}${mouth}
 /** Обёртка клетки атласа: свой фильтр дрожания линий на рамку клетки. */
 export function wrapCell(inner: string, b: Box, id: string): string {
   return `<defs>${wobbleDef(b, id)}</defs><g filter="url(#${id})"><g ${S}>${inner}</g></g>`;
+}
+
+/** Клетки для рук баристы: плечо и предплечье по 24, толщина 12 (+контур). */
+export const BARISTA_ARM_LEN = 9 + 48 + 10;
+export function baristaCells(): PartCell[] {
+  return [
+    { id: 'bArm', box: { x: 0, y: -12, w: BARISTA_ARM_LEN, h: 24 }, svg: arm(`M9 0H${BARISTA_ARM_LEN - 10}`, '#93A684', 12) },
+    { id: 'bHand', box: { x: -12, y: -12, w: 24, h: 24 }, svg: '<circle cx="0" cy="0" r="8.5" fill="#F5D0AE"/>' }
+  ];
 }

@@ -52,7 +52,7 @@ function deliver(c, d, q, flawless, byPlayer) {
   D.stats.revenue += price; D.stats.tips += tip; D.stats.served++; if (q === 2) D.stats.perfect++;
   G.money += st.total; G.rating = st.rating;
   floatText(c.x, `+${money(price + tip)}` + (tip ? `<small>чаевые ${money(tip)}</small>` : q === 0 ? '<small>испорчено</small>' : ''), q === 0);
-  coinBurst(c.x, price + tip); if (byPlayer) servePulse = .55; if (q >= 1) WORLD.baristaJoy();
+  coinBurst(c.x, price + tip); if (byPlayer) { servePulse = .55; WORLD.baristaServe(); } if (q >= 1) WORLD.baristaJoy();
   c.act.setMood(q === 2 ? 'joy' : q === 1 ? 'happy' : 'annoyed');
   c.act.hideBubbleNow(); hideSay(c);
   (q === 2 ? sndPerfect : sndCoin)(); if (q === 2) setTimeout(sndCoin, 220);
@@ -61,7 +61,7 @@ function deliver(c, d, q, flawless, byPlayer) {
   setTimeout(() => {
     if (!c.act.alive) return;
     c.got = true; c.hopT = .6; c.act.takeCup(topCol);
-    if (q === 2) { loveBurst(c.x, 425, 3); sparkBurst(c.x + 40, 500, 7); } else if (q === 1) loveBurst(c.x, 425, 1); else puffBurst(c.x, 440);
+    if (q === 2) { loveBurst(c.x, 425, 3); sparkBurst(c.x + 40, 500, 7); } else if (q === 1) { loveBurst(c.x, 425, 1); if (tip) sparkBurst(c.x + 40, 500, 3); } else puffBurst(c.x, 440);
   }, 400);
   exit(c);
 }

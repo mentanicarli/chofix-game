@@ -8,12 +8,13 @@ import HILLS from '../../assets/art/sky-hills.svgf?raw';
 import LAMP0 from '../../assets/art/lamp-0.svgf?raw';
 import LAMP1 from '../../assets/art/lamp-1.svgf?raw';
 import LAMP2 from '../../assets/art/lamp-2.svgf?raw';
-import { Actor, type ActorOpts } from './actor';
+import { Actor, Limb, type ActorOpts } from './actor';
+import { Ribbon, frameSprite } from './ribbon';
 import { BarScene, type BarFrame, type BarUpgrades } from './bar';
-import { baristaParts, lookFor, wrapPart, type BaristaFace, type Box, type Look } from './art';
-import { damp } from './anim';
+import { BARISTA_ARM_LEN, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
+import { Spring, Spring2, damp, ik2 } from './anim';
 import { Fx } from './fx';
-import { bakePaper, canvasTexture, raster } from './svg';
+import { bakePaper, canvasTexture, raster, rasterAtlas } from './svg';
 
 export { lookFor, type Look };
 
@@ -83,6 +84,7 @@ export class World {
   private skyTex!: Texture;
   private sunGlow!: Sprite;
   private clouds = new Container();
+  private readonly glare = new Graphics();
   private shaft = new Graphics();
   private shaftGrad: FillGradient | null = null;
   private lastSky = -1;
@@ -98,8 +100,6 @@ export class World {
   private jug!: Sprite;
   private baristaC = new Container();
   private bodyC = new Container();
-  private armC = new Container();
-  private arm2C = new Container();
   private headC = new Container();
   private cupC = new Container();
   private cupTop = new Graphics();
@@ -110,6 +110,15 @@ export class World {
   private readonly faces: Partial<Record<BaristaFace, Texture>> = {};
   private face: BaristaFace = 'smile';
   private joyT = 0;
+  private bArms: Limb[] = [];
+  private readonly bHands = [new Spring2(805, 386, 14, 0.7), new Spring2(942, 386, 14, 0.7)];
+  private bPose: BaristaPose = { arm: 0, arm2: 0, nod: 0, bob: 0 };
+  private readonly bHop = new Spring(0, 16, 0.35);
+  private readonly bHead = new Spring(0, 12, 0.5);
+  private readonly cupHold = new Container();
+  private turnT = 0;
+  private serveT = 0;
+  private stress = 0;
   private blinkT = 2.5;
   private blinkOn = 0;
 
@@ -218,6 +227,23 @@ export class World {
       return s;
     };
     S.addChild(place(bg, 0, 0, W, H));
+    /* мягкая тень под столиком, блик на стекле витрины */
+    const tsh = new Sprite(this.shadow);
+    tsh.anchor.set(0.5);
+    tsh.position.set(230, 658);
+    tsh.width = 190;
+    tsh.height = 34;
+    tsh.tint = 0x3b2418;
+    tsh.alpha = 0.3;
+    S.addChild(tsh);
+    const glass = new Container();
+    const gm = new Graphics().roundRect(704, 332, 76, 58, 8).fill(0xffffff);
+    this.glare.poly([-6, 58, 10, 0, 22, 0, 6, 58]).fill({ color: 0xffffff, alpha: 0.95 });
+    this.glare.poly([28, 58, 44, 0, 50, 0, 34, 58]).fill({ color: 0xffffff, alpha: 0.7 });
+    this.glare.position.set(704, 332);
+    glass.addChild(this.glare, gm);
+    glass.mask = gm;
+    S.addChild(glass);
     /* улучшения зала рисуются по первому требованию */
     this.cozy = place(Texture.EMPTY, -30, 0, 1340, 70);
     this.gold = place(Texture.EMPTY, 930, 300, 180, 120);
@@ -248,7 +274,7 @@ export class World {
     S.addChild(this.signC);
 
     /* актёры: бариста за стойкой, гости */
-    this.buildBarista();
+    await this.buildBarista();
     /* порядок: гость (ноги, торс, голова) → стол → руки и чашка → ноутбук; стул — за гостем */
     this.sitC.addChild(this.chair);
     S.addChild(this.cust, this.sitC);
@@ -316,12 +342,20 @@ export class World {
     while (this.signC.children.length > 1) this.signC.children[this.signC.children.length - 1]?.destroy();
     const st = { fontFamily: 'Caveat, Nunito, cursive', fontSize: 20, fontWeight: '700', fill: '#F6EBDC', padding: 6 } as const;
     rows.forEach((r, i) => {
-      const a = new Text({ text: r.name, style: st, resolution: this.res });
-      a.anchor.set(0, 1);
-      a.position.set(464, 163 + i * 21);
       const b = new Text({ text: String(r.price), style: st, resolution: this.res });
       b.anchor.set(1, 1);
       b.position.set(598, 163 + i * 21);
+      /* название слева, цена справа: длинное название сжимаем, а если и так не влезает — обрезаем с многоточием */
+      const room = 598 - b.width - 10 - 464;
+      let name = r.name;
+      const a = new Text({ text: name, style: st, resolution: this.res });
+      while (a.width * 0.78 > room && name.length > 3) {
+        name = name.slice(0, -2).trimEnd();
+        a.text = name + '…';
+      }
+      if (a.width > room) a.scale.set(room / a.width);
+      a.anchor.set(0, 1);
+      a.position.set(464, 163 + i * 21);
       a.alpha = b.alpha = 0.96;
       this.signC.addChild(a, b);
     });
@@ -354,7 +388,7 @@ export class World {
     });
   }
 
-  private buildBarista(): void {
+  private async buildBarista(): Promise<void> {
     const B: Box = { x: 780, y: 270, w: 190, h: 150 };
     const p = baristaParts();
     const mk = (inner: string, px: number, py: number) => {
@@ -374,11 +408,9 @@ export class World {
     const wrapper = new Container();
     this.baristaC.position.set(0, 8);
     this.bodyC = mk(p.body, 0, 0);
-    this.arm2C = mk(p.arm2, 896, 378);
-    this.armC = mk(p.arm, 834, 378);
     this.headC = mk(p.head('smile'), 865, 350);
     this.headSprite = this.headC.children[0] as Sprite;
-    (['blink', 'joy', 'focus', 'smile'] as BaristaFace[]).forEach((f) => {
+    (['blink', 'joy', 'focus', 'smile', 'tired'] as BaristaFace[]).forEach((f) => {
       void raster(wrapPart(p.head(f), B), B, this.texRes).then((t) => {
         this.faces[f] = t;
       });
@@ -394,8 +426,17 @@ export class World {
     cupG.scale.set(1.5);
     cupG.addChild(cup, this.cupTop, this.cupArt);
     this.cupC.addChild(cupG, this.cupStar);
-    this.armC.addChild(this.cupC);
-    this.bodyC.addChild(this.arm2C, this.armC);
+    /* руки: ленты из атласа с суставами; чашка едет за левой кистью */
+    const atlas = await rasterAtlas(baristaCells(), Math.ceil(this.texRes), wrapCell);
+    const us = [0.5, 9, 21, 30, 33, 36, 45, 57].map((x) => x / BARISTA_ARM_LEN);
+    for (let i = 0; i < 2; i++) {
+      const rope = new Ribbon(atlas, 'bArm', us, 12);
+      const hand = frameSprite(atlas, 'bHand', 0, 0);
+      this.bArms.push(new Limb(rope, hand));
+      this.bodyC.addChild(rope, hand);
+    }
+    this.cupHold.addChild(this.cupC);
+    this.bodyC.addChild(this.cupHold);
     this.baristaC.addChild(this.bodyC, this.headC);
     wrapper.addChild(this.baristaC);
     const mask = new Graphics().rect(760, 250, 220, 149).fill(0xffffff);
@@ -404,17 +445,65 @@ export class World {
     this.app.stage.addChild(wrapper);
   }
 
+  /** Руки баристы: кисть тянется к цели пружиной, локоть гнётся вниз (за стойкой его не видно). */
+  private stepBarista(dt: number): void {
+    const SH = [[836, 379], [894, 379]];
+    const V = [[-29, 7], [48, 7]];
+    const th = [this.bPose.arm, this.bPose.arm2];
+    if (this.serveT > 0) this.serveT = Math.max(0, this.serveT - dt);
+    const u = this.serveT > 0 ? Math.sin(Math.PI * (1 - this.serveT / 0.55)) : 0;
+    for (let i = 0; i < 2; i++) {
+      const limb = this.bArms[i];
+      const h = this.bHands[i];
+      const sh = SH[i];
+      const v = V[i];
+      if (!limb || !h || !sh || !v) continue;
+      const a = ((th[i] ?? 0) * Math.PI) / 180;
+      let tx = sh[0]! + v[0]! * Math.cos(a) - v[1]! * Math.sin(a);
+      let ty = sh[1]! + v[0]! * Math.sin(a) + v[1]! * Math.cos(a);
+      if (i === 0 && u > 0) {
+        tx -= 26 * u;
+        ty -= 5 * u;
+      }
+      h.step(dt, tx, ty);
+      const k = ik2(sh[0]!, sh[1]!, h.x, h.y, 24, 24, i === 0 ? -1 : 1);
+      limb.bend(sh[0]!, sh[1]!, k.ex, k.ey, k.hx, k.hy, 8.5);
+      limb.end.position.set(k.hx, k.hy);
+      if (i === 0) this.cupHold.position.set(k.hx - 805, k.hy - 386);
+    }
+    if (this.turnT > 0) this.turnT = Math.max(0, this.turnT - dt);
+    this.headC.rotation = this.bHead.step(dt, ((this.bPose.nod + (this.turnT > 0 ? -7 : 0) + (this.stress > 1 ? 2.5 : 0)) * Math.PI) / 180);
+    this.baristaC.y = 8 + this.bHop.step(dt, 0);
+  }
+
+  /** Новый гость подошёл: бариста поворачивает голову и кивает. */
+  baristaReact(): void {
+    if (!this.ready) return;
+    this.turnT = 1.1;
+    this.bHead.kick(1.3);
+    this.bHop.kick(-45);
+  }
+
+  /** Рука баристы протягивает чашку гостю. */
+  baristaServe(): void {
+    this.serveT = 0.55;
+  }
+
+  /** Нагрузка: 0 спокойно, 1 собранно, 2 устал и напряжён. */
+  setBaristaStress(n: number): void {
+    this.stress = n;
+  }
+
   setBarista(p: BaristaPose): void {
     if (!this.ready) return;
-    this.armC.rotation = (p.arm * Math.PI) / 180;
-    this.arm2C.rotation = (p.arm2 * Math.PI) / 180;
-    this.headC.rotation = (p.nod * Math.PI) / 180;
+    this.bPose = p;
     this.bodyC.y = p.bob;
   }
 
   /** Бариста радуется после выдачи напитка. */
   baristaJoy(sec = 1.6): void {
     this.joyT = sec;
+    this.bHop.kick(-200);
   }
 
   private stepFace(dt: number): void {
@@ -431,6 +520,8 @@ export class World {
         this.blinkT = 2.4 + ((this.now * 7919) % 3.1);
         this.blinkOn = 0.13;
       }
+      if (this.stress > 1) want = 'tired';
+      else if (this.stress > 0) want = 'focus';
     }
     if (want !== this.face) {
       const t = this.faces[want];
@@ -621,9 +712,13 @@ export class World {
     this.lamps.forEach((l, i) => (l.rotation = (1.1 * Math.sin(now * 0.8 + i * 1.9) * Math.PI) / 180));
     this.clouds.x = (now * 3.2) % 400;
     const ev = clamp((k - 0.55) / 0.45, 0, 1);
-    const flick = 1 + 0.04 * Math.sin(now * 3.1) + 0.03 * Math.sin(now * 7.3 + 1);
-    this.glows.forEach((g) => (g.alpha = (0.1 + ev * 0.3) * flick * 0.9));
-    this.pools.forEach((p) => (p.alpha = (0.04 + ev * 0.2) * flick));
+    /* у каждой лампы своё мерцание, к вечеру заметнее */
+    this.glows.forEach((g, i) => (g.alpha = (0.1 + ev * 0.3) * (1 + (0.04 + ev * 0.05) * Math.sin(now * 3.1 + i * 2.1) + 0.03 * Math.sin(now * 7.3 + i * 1.3)) * 0.9));
+    this.pools.forEach((p, i) => (p.alpha = (0.04 + ev * 0.2) * (1 + 0.05 * Math.sin(now * 3.4 + i * 2.1) + 0.03 * Math.sin(now * 8.1 + i))));
+    /* блик ползёт по стеклу витрины раз в ~11 секунд */
+    const gk = (now % 11) / 11;
+    this.glare.x = 704 + gk * 130 - 40;
+    this.glare.alpha = 0.9 * Math.sin(Math.min(1, gk * 1.6) * Math.PI);
     if (Math.abs(k - this.lastSky) > 0.002 || this.lastSky < 0) {
       this.lastSky = k;
       let a = SKY[0] as (typeof SKY)[number];
@@ -662,6 +757,7 @@ export class World {
     }
     this.shaft.alpha = (0.15 + Math.sin(clamp(k, 0, 1) * Math.PI) * 0.75) * (0.94 + 0.06 * Math.sin(now * 0.7));
     this.stepFace(dt);
+    this.stepBarista(dt);
     this.stepSitter(dt);
     this.fx.update(dt);
   }
