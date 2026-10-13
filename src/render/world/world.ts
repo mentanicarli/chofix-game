@@ -85,6 +85,7 @@ export class World {
   private sunGlow!: Sprite;
   private clouds = new Container();
   private readonly glare = new Graphics();
+  private readonly glareBands = new Graphics();
   private shaft = new Graphics();
   private shaftGrad: FillGradient | null = null;
   private lastSky = -1;
@@ -238,10 +239,13 @@ export class World {
     S.addChild(tsh);
     const glass = new Container();
     const gm = new Graphics().roundRect(704, 332, 76, 58, 8).fill(0xffffff);
-    this.glare.poly([-6, 58, 10, 0, 22, 0, 6, 58]).fill({ color: 0xffffff, alpha: 0.95 });
-    this.glare.poly([28, 58, 44, 0, 50, 0, 34, 58]).fill({ color: 0xffffff, alpha: 0.7 });
+    /* стекло чуть холоднее воздуха, на нём тёплый белый блик двумя полосами */
+    this.glare.rect(0, 0, 76, 58).fill({ color: 0x9ec7cf, alpha: 0.1 });
+    this.glareBands.poly([-6, 58, 12, 0, 26, 0, 8, 58]).fill({ color: 0xfffaf0, alpha: 0.95 });
+    this.glareBands.poly([32, 58, 48, 0, 55, 0, 39, 58]).fill({ color: 0xfffaf0, alpha: 0.8 });
     this.glare.position.set(704, 332);
-    glass.addChild(this.glare, gm);
+    this.glareBands.position.set(704, 332);
+    glass.addChild(this.glare, this.glareBands);
     glass.mask = gm;
     S.addChild(glass);
     /* улучшения зала рисуются по первому требованию */
@@ -717,8 +721,9 @@ export class World {
     this.pools.forEach((p, i) => (p.alpha = (0.04 + ev * 0.2) * (1 + 0.05 * Math.sin(now * 3.4 + i * 2.1) + 0.03 * Math.sin(now * 8.1 + i))));
     /* блик ползёт по стеклу витрины раз в ~11 секунд */
     const gk = (now % 11) / 11;
-    this.glare.x = 704 + gk * 130 - 40;
-    this.glare.alpha = 0.9 * Math.sin(Math.min(1, gk * 1.6) * Math.PI);
+    /* тонировка стекла постоянна, полосы едут (двигаем только их) */
+    this.glareBands.x = 704 + gk * 120 - 50;
+    this.glareBands.alpha = Math.sin(Math.min(1, gk * 1.5) * Math.PI);
     if (Math.abs(k - this.lastSky) > 0.002 || this.lastSky < 0) {
       this.lastSky = k;
       let a = SKY[0] as (typeof SKY)[number];

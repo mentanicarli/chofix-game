@@ -5,8 +5,8 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   const out = process.argv[3];
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const p = await require('./pw').page(b);
-  const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
-  await p.goto('file://' + tmp + (process.env.HASH || '#nopixi')); await p.waitForTimeout(600);
+  const errs = []; require('./pw').watch(p, errs);
+  await p.goto(require('./pw').url(tmp) + (process.env.HASH || '#nopixi')); await p.waitForTimeout(600);
   await p.click('[data-start]'); await p.waitForTimeout(400);
   await p.evaluate(() => { const G = window.__dbg.G; G.day = 5; G.rank = 3; G.eq_case_pastry = true; G.eq_microwave = true; if (typeof applyUpgrades === 'function') applyUpgrades(); });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
@@ -26,6 +26,6 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   await p.screenshot({ path: out + '_food3.png' }); await p.mouse.up(); await p.waitForTimeout(200);
   await p.click('[data-fooddone]'); await p.waitForTimeout(400);
   console.log('after', await p.evaluate(() => JSON.stringify({ done: window.__dbg.BR.done, res: window.__dbg.BR.res, inset: window.__dbg.BR.inset })));
-  console.log('errs', errs);
+  console.log(errs.length ? 'ERRORS ' + JSON.stringify(errs) : 'NO_ERRORS');
   await b.close();
 })();

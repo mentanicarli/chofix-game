@@ -1,5 +1,6 @@
 const path = require('path');
-const F = p => 'file://' + path.resolve(__dirname, 'node_modules/@fontsource', p);
+/* шрифты встраиваются как data-URI: так они грузятся и из файла, и со статического сервера, на любой ОС */
+const F = p => 'data:font/woff2;base64,' + require('fs').readFileSync(path.resolve(__dirname, 'node_modules/@fontsource', p)).toString('base64');
 const face = (fam, w, sub, range) => `@font-face{font-family:'${fam}';font-style:normal;font-weight:${w};font-display:swap;src:url(${F(fam.toLowerCase() + '/files/' + fam.toLowerCase() + '-' + sub + '-' + w + '-normal.woff2')}) format('woff2');unicode-range:${range};}`;
 const R = { cyrillic: 'U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116', latin: 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD', 'latin-ext': 'U+0100-02AF,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF' };
 let css = '';
@@ -10,3 +11,7 @@ exports.page = async (browser, vp = { width: 1312, height: 752 }) => {
   return p;
 };
 exports.css = css;
+/** Адрес собранной страницы: BASE=http://localhost:4173 — со статического сервера (звуки грузятся), иначе из файла. */
+exports.url = tmp => process.env.BASE ? process.env.BASE + '/' + path.basename(tmp) : 'file://' + tmp;
+/** Собирает pageerror, console.error и console.warning (кроме шума драйвера GL). */
+exports.watch = (p, errs) => { p.on('pageerror', e => errs.push('PAGE ' + e.message)); p.on('console', m => { const t = m.text(); if ((m.type() === 'error' || m.type() === 'warning') && !/GL Driver Message/.test(t)) errs.push('console ' + m.type() + ': ' + t.slice(0, 300)); }); };

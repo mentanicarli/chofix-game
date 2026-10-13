@@ -4,8 +4,8 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const p = await require('./pw').page(b);
-  const errs = []; p.on('pageerror', e => errs.push(e.message));
-  await p.goto('file://' + tmp + '#nopixi-lowfx'); await p.waitForTimeout(2500);
+  const errs = []; require('./pw').watch(p, errs);
+  await p.goto(require('./pw').url(tmp) + '#nopixi-lowfx'); await p.waitForTimeout(2500);
   await p.click('[data-start]'); await p.waitForTimeout(300);
   await p.evaluate(() => { const G = window.__dbg.G; G.rank = 5; G.helper = true; G.milk = true; G.money = 3000; G.day = 13; window.__dbg.applyUpgrades(); });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 40000 });
