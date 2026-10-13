@@ -161,7 +161,7 @@ fpEl.addEventListener('click', e => {
   const it = e.target.closest('[data-food]'); if (it) { const id = it.dataset.food; const done = runStep(MENUAPI.foodStation.pick(BR.food, id), 'food'); if (BR && BR.food && BR.food.picked) { BR.foodPicked = id; fpKey = ''; } if (done) fpKey = ''; return; }
   if (e.target.closest('[data-fooddone]')) runStep(MENUAPI.foodStation.finish(BR.food), 'food');
 });
-fpEl.addEventListener('pointerdown', e => { if (BR && e.target.closest('[data-foodheat]')) { BR.hold = true; sndTap(); } });
+fpEl.addEventListener('pointerdown', e => { if (BR && !paused && e.target.closest('[data-foodheat]')) { BR.hold = true; sndTap(); } });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => fpEl.addEventListener(t, () => { if (BR && BR.inset === 'food') BR.hold = false; }));
 window.addEventListener('pointerup', () => { if (BR && BR.inset === 'food') BR.hold = false; });
 
@@ -211,7 +211,7 @@ xEl.addEventListener('click', e => {
   const tp = e.target.closest('[data-xtemp]'); if (tp) { sndTap(); runStep(MENUAPI.brewStation.setTemp(st, +tp.dataset.xtemp), t); return; }
   if (e.target.closest('[data-xstart]')) { runStep(MENUAPI.brewStation.start(st), t); }
 });
-xEl.addEventListener('pointerdown', e => { if (BR && e.target.closest('[data-xhold]')) { BR.hold = true; sndTap(); } });
+xEl.addEventListener('pointerdown', e => { if (BR && !paused && e.target.closest('[data-xhold]')) { BR.hold = true; sndTap(); } });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => xEl.addEventListener(t, () => { if (BR && MENUAPI.PANEL_TASKS.has(BR.inset)) BR.hold = false; }));
 window.addEventListener('pointerup', () => { if (BR && MENUAPI.PANEL_TASKS.has(BR.inset)) BR.hold = false; });
 
@@ -228,7 +228,7 @@ bi.addEventListener('pointerdown', e => {
   if (BR.inset === 'tamp' && BR.tampPhase === 'level') BR.hold = true;
 });
 bi.addEventListener('pointermove', e => {
-  if (!BR) return; const p = bPt(e); const px = BR.mx, py = BR.my; BR.mx = p.x; BR.my = p.y;
+  if (!BR || paused) return; const p = bPt(e); const px = BR.mx, py = BR.my; BR.mx = p.x; BR.my = p.y;
   if (BR.inset === 'tamp' && BR.tampPhase === 'level' && BR.hold) {
     const dx = p.x - 220, dy = p.y - 190;
     if (dx * dx + dy * dy < 130 * 130) {
@@ -239,11 +239,11 @@ bi.addEventListener('pointermove', e => {
   }
   if (BR.inset === 'pour' && BR.hold) pourMove(p);
 });
-const bUp = () => { if (!BR) return; if (BR.inset === 'tamp' && BR.tampPhase === 'press' && BR.hold) tampRelease(); BR.hold = false; };
+const bUp = () => { if (!BR || paused) return; if (BR.inset === 'tamp' && BR.tampPhase === 'press' && BR.hold) tampRelease(); BR.hold = false; };
 bi.addEventListener('pointerup', bUp); bi.addEventListener('pointercancel', bUp);
-UI.close.addEventListener('click', () => { closeInset(); });
-$('#bZones').addEventListener('click', e => { const r = e.target.closest('[data-z]'); if (r) zoneClick(r.dataset.z); });
-UI.tk.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; G.tutOff = !G.hints; coachKey = ''; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
+UI.close.addEventListener('click', () => { if (!paused) closeInset(); });
+$('#bZones').addEventListener('click', e => { if (paused) return; const r = e.target.closest('[data-z]'); if (r) zoneClick(r.dataset.z); });
+UI.tk.addEventListener('click', e => { if (paused) return; const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; G.tutOff = !G.hints; coachKey = ''; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
 function barKey(c) {
   if (!BR) return false;
   if (!stage.classList.contains('inbar')) { if (c === 'Space') { barShow(true); return true; } return false; }
@@ -252,7 +252,7 @@ function barKey(c) {
   if (c === 'Tab') { barShow(false); return true; }
   return false;
 }
-function barKeyUp(c) { if (BR && c === 'Space') { if (BR.inset === 'tamp' && BR.tampPhase === 'press' && BR.hold) tampRelease(); BR.hold = false; } }
+function barKeyUp(c) { if (BR && !paused && c === 'Space') { if (BR.inset === 'tamp' && BR.tampPhase === 'press' && BR.hold) tampRelease(); BR.hold = false; } }
 function insetClick(id) {
   const B = BR;
   if (id === 'dialL' || id === 'dialR') { G.grindSet = clamp((G.grindSet || 3) + (id === 'dialL' ? -1 : 1), 1, 5); play('knock', .5, 1.4); return; }

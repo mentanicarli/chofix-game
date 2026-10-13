@@ -197,7 +197,7 @@ function drawGrind(B) {
   /* диск настройки */
   bx.save(); bx.translate(106, 150); bx.lineWidth = 3; bx.strokeStyle = ICOL.ink; bx.beginPath(); bx.arc(0, 0, 58, 0, 7); bx.fillStyle = '#F3E4CB'; bx.fill(); bx.stroke();
   for (let i = 1; i <= 5; i++) { const a = (-120 + (i - 1) * 60) * Math.PI / 180 - Math.PI / 2 + Math.PI / 2; const x = Math.sin(a + 0) * 0, y = 0; const ang = (-100 + (i - 1) * 50) * Math.PI / 180; lineW(Math.sin(ang) * 44, -Math.cos(ang) * 44, Math.sin(ang) * 54, -Math.cos(ang) * 54, ICOL.ink, i === set ? 5 : 2.5); }
-  const ang = (-100 + (set - 1) * 50) * Math.PI / 180; bx.beginPath(); bx.arc(0, 0, 30, 0, 7); bx.fillStyle = '#E8B04A'; bx.fill(); bx.stroke(); lineW(0, 0, Math.sin(ang) * 26, -Math.cos(ang) * 26, ICOL.ink, 4);
+  const ang = (-100 + (set - 1) * 50) * Math.PI / 180; bx.beginPath(); bx.arc(0, 0, 30, 0, 7); bx.fillStyle = '#E8B04A'; bx.fill(); bx.stroke(); lineW(Math.sin(ang) * 21, -Math.cos(ang) * 21, Math.sin(ang) * 29, -Math.cos(ang) * 29, ICOL.ink, 4);
   tI(String(set), 0, 10, 28, ICOL.ink, 'center'); bx.restore();
   tI('Помол', 106, 232, 14, ICOL.soft, 'center'); tI('мельче', 44, 252, 13, ICOL.soft, 'center'); tI('крупнее', 168, 252, 13, ICOL.soft, 'center');
   btnI('dialL', 30, 262, 52, 38, '◀', { col: '#F3E4CB' }); btnI('dialR', 130, 262, 52, 38, '▶', { col: '#F3E4CB' });

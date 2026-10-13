@@ -13,7 +13,7 @@ function frame(ts) {
   const rawMs = ts - last, dt = Math.min(.1, rawMs / 1000); last = ts;
   if (G && G.phase === 'day' && !paused) tickDay(dt);
   if (!paused) { tickFx(dt); animActors(dt); animBarista(dt); if (G && G.phase === 'day') barTick(dt); }
-  ambTick(); tickLoops(); MUSIC.duck(paused ? .35 : 1);
+  ambTick(); tickLoops(); MUSIC.duck(paused ? .35 : 1); stage.classList.toggle('paused', paused);
   tickSky(paused ? 0 : dt); tickMoney(dt); tickTint(dt);
   WORLD.setBar(stage.classList.contains('inbar')); WORLD.render(dt, rawMs);
 }

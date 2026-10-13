@@ -3,6 +3,7 @@ import GOLD from '../../assets/art/gold-trim.svgf?raw';
 import JUG from '../../assets/art/milk-jug.svgf?raw';
 import CLOCK from '../../assets/art/clock-face.svgf?raw';
 import BG from '../../assets/art/hall-bg.svgf?raw';
+import ITEMS from '../../assets/art/hall-items.svgf?raw';
 import FG from '../../assets/art/hall-fg.svgf?raw';
 import HILLS from '../../assets/art/sky-hills.svgf?raw';
 import LAMP0 from '../../assets/art/lamp-0.svgf?raw';
@@ -101,6 +102,11 @@ export class World {
   private gold!: Sprite;
   private jug!: Sprite;
   private baristaC = new Container();
+  /* левая рука с чашкой на время подачи едет в этот слой: он выше предметов на стойке */
+  private frontWrap = new Container();
+  private baristaF = new Container();
+  private bodyF = new Container();
+  private armFront = false;
   private bodyC = new Container();
   private headC = new Container();
   private cupC = new Container();
@@ -168,8 +174,9 @@ export class World {
 
     const full = box(0, 0, W, H);
     const lampBox = (x: number) => box(x - 60, -30, 120, 180);
-    const [bg, hills, clock, l0, l1, l2, fg, paperT] = await Promise.all([
+    const [bg, items, hills, clock, l0, l1, l2, fg, paperT] = await Promise.all([
       raster(BG, full, r),
+      raster(ITEMS, box(690, 280, 610, 140), r),
       raster(HILLS, box(80, 230, 240, 140), r),
       raster(CLOCK, box(345, 110, 80, 80), r),
       raster(LAMP0, lampBox(680), r),
@@ -248,13 +255,12 @@ export class World {
     this.glareBands.position.set(704, 332);
     glass.addChild(this.glare, this.glareBands);
     glass.mask = gm;
-    S.addChild(glass);
     /* улучшения зала рисуются по первому требованию */
     this.cozy = place(Texture.EMPTY, -30, 0, 1340, 70);
     this.gold = place(Texture.EMPTY, 930, 300, 180, 120);
     this.jug = place(Texture.EMPTY, 900, 375, 50, 45);
     this.cozy.visible = this.gold.visible = this.jug.visible = false;
-    S.addChild(this.cozy, this.gold, this.jug);
+    S.addChild(this.cozy);
 
     /* луч света из окна */
     this.shaft.blendMode = 'screen';
@@ -280,6 +286,8 @@ export class World {
 
     /* актёры: бариста за стойкой, гости */
     await this.buildBarista();
+    /* предметы на стойке (машина, витрина, кофемолка…) стоят перед баристой; блик на стекле и улучшения — поверх них */
+    S.addChild(place(items, 690, 280, 610, 140), glass, this.gold, this.jug, this.frontWrap);
     /* порядок: гость (ноги, торс, голова) → стол → руки и чашка → ноутбук; стул — за гостем */
     this.sitC.addChild(this.chair);
     S.addChild(this.cust, this.sitC);
@@ -449,6 +457,13 @@ export class World {
     wrapper.addChild(mask);
     wrapper.mask = mask;
     this.app.stage.addChild(wrapper);
+    this.baristaF.position.set(0, 8);
+    this.baristaF.addChild(this.bodyF);
+    this.frontWrap.addChild(this.baristaF);
+    const maskF = new Graphics().rect(760, 250, 220, 149).fill(0xffffff);
+    this.frontWrap.addChild(maskF);
+    this.frontWrap.mask = maskF;
+    this.frontWrap.visible = false;
   }
 
   /** Руки баристы: кисть тянется к цели пружиной, локоть гнётся вниз (за стойкой его не видно). */
@@ -480,6 +495,16 @@ export class World {
     if (this.turnT > 0) this.turnT = Math.max(0, this.turnT - dt);
     this.headC.rotation = this.bHead.step(dt, ((this.bPose.nod + (this.turnT > 0 ? -7 : 0) + (this.stress > 1 ? 2.5 : 0)) * Math.PI) / 180);
     this.baristaC.y = 8 + this.bHop.step(dt, 0);
+    /* подаёт или держит чашку: левая рука впереди предметов, иначе прячется за ними */
+    const front = this.serveT > 0 || this.cupC.visible;
+    const l0 = this.bArms[0];
+    if (l0 && front !== this.armFront) {
+      this.armFront = front;
+      (front ? this.bodyF : this.bodyC).addChild(l0.rope, l0.end, this.cupHold);
+      this.frontWrap.visible = front;
+    }
+    this.baristaF.y = this.baristaC.y;
+    this.bodyF.y = this.bodyC.y;
   }
 
   /** Новый гость подошёл: бариста поворачивает голову и кивает. */

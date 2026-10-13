@@ -21,7 +21,8 @@ export function drawGrind(b: Brush, v: GrindView): void {
   }
   const ang = ((-100 + (v.set - 1) * 50) * Math.PI) / 180;
   b.disc(106, 150, 30, '#E8B04A', { w: 3, col: INK });
-  b.line(106, 150, 106 + Math.sin(ang) * 26, 150 - Math.cos(ang) * 26, INK, 4);
+  /* указатель только на ободке диска: цифра в центре остаётся чистой */
+  b.line(106 + Math.sin(ang) * 21, 150 - Math.cos(ang) * 21, 106 + Math.sin(ang) * 29, 150 - Math.cos(ang) * 29, INK, 4);
   b.text(String(v.set), 106, 160, 28, INK, 'center');
   b.text('Помол', 106, 232, 14, SOFT, 'center');
   b.text('мельче', 44, 252, 13, SOFT, 'center');

@@ -79,9 +79,11 @@ function showSettings(from, msg) {
 function showPauseCard() { menuFrom = 'pause'; menuRender(pauseHTML(CUP_LOGO, npText()), false); focusFirst(); }
 function setPause(on) {
   if (!G || G.phase !== 'day') return;
-  paused = on;
-  if (on) showPauseCard(); else scr.hidden = true;
+  paused = on; stage.classList.toggle('paused', on);
+  if (on) { pauseFreeze(); showPauseCard(); } else scr.hidden = true;
 }
+/* Пауза замораживает шаг: зажатое отпускается (без оценки), прогресс, окно станции и тикет остаются как были */
+function pauseFreeze() { if (BR) BR.hold = false; }
 function confirmDialog(title, text, yes, onYes, onNo) {
   confirmYes = onYes; confirmBack = onNo;
   menuRender(confirmHTML({ title, text, yes }), menuFrom === 'title'); focusFirst('.ghost');

@@ -113,5 +113,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { if (e.code === 'Space' && G && G.phase === 'day' && !paused) { e.preventDefault(); barKeyUp(e.code); } });
 addEventListener('pointerdown', () => { try { audioCtx(); sfxLoad(); } catch (x) { /* без звука */ } MUSIC.unlock(); });
 addEventListener('pointerup', () => MUSIC.unlock());
-document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.phase === 'day' && !paused) setPause(true); });
+const autoPause = () => { if (G && G.phase === 'day' && !paused) setPause(true); };
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+addEventListener('blur', autoPause);
 

@@ -107,3 +107,6 @@
 .xp.hold .xpSwirl { animation: xpShake .2s linear infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .xp.hold .xpWhisk, .xp.hold .xpShake, .xp.hold .xpSwirl, .xpDots circle { animation: none; } }
 .tutTag { display: inline-block; margin-right: 6px; padding: 0 9px; border-radius: 999px; border: 2px solid var(--ink); background: #E8B04A; font-size: 12px; font-weight: 800; vertical-align: 1px; }
+
+/* Пауза: все окна игры скрыты (но не удалены: состояние и таймеры стоят), виден только экран паузы */
+#stage.paused #bar, #stage.paused .say, #stage.paused #toast, #stage.paused #frontHint, #stage.paused #helperChip, #stage.paused #banner, #stage.paused .float { visibility: hidden; }

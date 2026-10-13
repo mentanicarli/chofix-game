@@ -66,7 +66,7 @@ button.chip:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink);
 #toast.show { opacity: 1; }
 
 #screen[hidden] { display: none; }
-#screen { position: absolute; inset: 0; background: rgba(43,27,20,.55); display: flex; align-items: center; justify-content: center; }
+#screen { z-index: 10; position: absolute; inset: 0; background: rgba(43,27,20,.55); display: flex; align-items: center; justify-content: center; }
 .card { width: 760px; max-height: 660px; overflow: auto; box-sizing: border-box; padding: 28px 34px 30px; border-radius: 24px; background: var(--chip); border: 3px solid var(--ink); box-shadow: 0 9px 0 var(--ink); }
 .card h1 { margin: 0 0 6px; font-size: 44px; line-height: 1.05; text-wrap: balance; }
 .card h2 { margin: 0 0 14px; font-size: 32px; line-height: 1.1; }

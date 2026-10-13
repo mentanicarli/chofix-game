@@ -24,7 +24,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
     const n = Math.max(0, Math.round((tt - t) * 30)); t = tt;
     await p.evaluate(n => { const d = window.__dbg; for (let i = 0; i < n; i++) { window.__sim = (window.__sim || 0) + 1 / 30; (window.__at || []).forEach(e => { if (!e.done && window.__sim >= e[0]) { e.done = true; e[1](); } }); d.frame(d.last + 33.333); } d.WORLD.app.render(); }, n);
     await p.waitForTimeout(60);
-    shots.push((await p.screenshot({ clip: { x: 16 + clip[0], y: 16 + clip[1], width: clip[2], height: clip[3] } })).toString('base64'));
+    shots.push((await p.screenshot({ timeout: 120000, clip: { x: 16 + clip[0], y: 16 + clip[1], width: clip[2], height: clip[3] } })).toString('base64'));
   }
   console.log('ERRS', errs.slice(0, 6).join('\n') || 'нет');
   const pg = await ctx.newPage(); const W = Math.round(clip[2] * +scaleS), H = Math.round(clip[3] * +scaleS);
