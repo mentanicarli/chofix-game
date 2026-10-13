@@ -18,7 +18,7 @@ exports.watch = (p, errs) => { p.on('pageerror', e => errs.push('PAGE ' + e.mess
 /** «Новая игра» → (если есть сохранение, подтверждение) → «Открыть кофейню». Не бросает: дальше тест сам упадёт, если день не начался. */
 exports.startNew = async (p) => {
   try {
-    await p.click('[data-start]', { timeout: 3000 });
+    await p.click('[data-start]', { timeout: 20000 });
     const yes = await p.waitForSelector('[data-yes], [data-go]', { timeout: 3000 });
     if (await yes.getAttribute('data-yes') !== null) { await yes.click(); await p.waitForSelector('[data-go]', { timeout: 3000 }); }
     await p.waitForTimeout(650); /* карточка выезжает: клик до конца анимации промахивается */

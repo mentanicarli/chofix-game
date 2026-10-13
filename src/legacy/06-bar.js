@@ -77,6 +77,7 @@ function barMsg(txt, bad) {
 }
 function complete(t, score, msg, bad) {
   BR.done[t] = true; BR.res[t] = clamp(score, 0, 1);
+  MENUAPI.tutorialEqs(t, BR.c.order && BR.c.order.food).forEach(e => { if (!G.tutorialSeen.includes(e)) G.tutorialSeen.push(e); });
   if (msg) barMsg(msg, bad);
   (score > .8 ? play('ui_success-warm-chime', .45) : score > .45 ? play('ui_select-item', .6) : play('ui_error-soft-thud', .5));
   if (BR.tasks.every(x => BR.done[x])) { BR.ready = true; setTimeout(() => play('ui_pop-bubble', .8), 300); }
@@ -242,7 +243,7 @@ const bUp = () => { if (!BR) return; if (BR.inset === 'tamp' && BR.tampPhase ===
 bi.addEventListener('pointerup', bUp); bi.addEventListener('pointercancel', bUp);
 UI.close.addEventListener('click', () => { closeInset(); });
 $('#bZones').addEventListener('click', e => { const r = e.target.closest('[data-z]'); if (r) zoneClick(r.dataset.z); });
-UI.tk.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; coachKey = ''; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
+UI.tk.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; G.tutOff = !G.hints; coachKey = ''; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
 function barKey(c) {
   if (!BR) return false;
   if (!stage.classList.contains('inbar')) { if (c === 'Space') { barShow(true); return true; } return false; }

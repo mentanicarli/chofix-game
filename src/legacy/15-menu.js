@@ -138,7 +138,7 @@ scr.addEventListener('input', e => {
 /* ---------- клики ---------- */
 function startFromSave() {
   const sv = loadSave(); newGame();
-  if (sv) { const r = MENUAPI.restore(sv); Object.assign(G, { rank: r.rank, served: r.served, money: r.money, day: r.day, rating: r.rating, pace: r.pace, grindSet: r.grindSet }); r.up.forEach(id => { G[id] = true; }); }
+  if (sv) { const r = MENUAPI.restore(sv); Object.assign(G, { rank: r.rank, served: r.served, money: r.money, day: r.day, rating: r.rating, pace: r.pace, grindSet: r.grindSet, tutorialSeen: r.tutorialSeen }); r.up.forEach(id => { G[id] = true; }); }
   applyUpgrades(); lastHud = ''; startDay();
 }
 scr.addEventListener('click', e => {

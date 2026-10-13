@@ -19,6 +19,6 @@ muted = !SET.sfxOn;
 function loadSave() { const r = SAVE_STORE.load(); return r.kind === 'ok' ? r.data : null; }
 /* Сохраняется состояние на начало дня (деньги и рейтинг без прогресса текущей смены), как и раньше. */
 function saveGame() {
-  SAVE_STORE.save({ rank: G.rank, served: G.served, money: G.money, day: G.day, rating: G.rating, pace: G.pace, grindSet: G.grindSet, up: SHOP.filter(i => G[i.id]).map(i => i.id) });
+  SAVE_STORE.save({ rank: G.rank, served: G.served, money: G.money, day: G.day, rating: G.rating, pace: G.pace, grindSet: G.grindSet, tutorialSeen: G.tutorialSeen, up: SHOP.filter(i => G[i.id]).map(i => i.id) });
 }
 function clearSave() { SAVE_STORE.clear(); }

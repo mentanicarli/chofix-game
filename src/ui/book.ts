@@ -1,5 +1,6 @@
 // Книга рецептов: чистая функция «состояние -> HTML». Обработчики кликов — в старом ядре (data-book*).
 import { ADDONS, ALT_MILK, BOTTLES, DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, FOOD, MAX_RANK, STATIONS, SYRUPS, needsMilk, rankInfo } from '../game/menu';
+import { TUTORIALS, coachSteps, equipmentName, tutorialEqsOfDrink } from '../game/tutorial';
 import type { Drink, Family, RecipeStep, Temp } from '../game/types';
 
 const esc = (s: unknown): string =>
@@ -41,7 +42,9 @@ const EQ_NAME: Record<string, string> = { milk: 'Молоко и капучин�
 /** Чего не хватает для напитка из купленного оборудования. */
 const missing = (d: Drink, eq: Readonly<Record<string, boolean>>): string[] => [...(needsMilk(d) ? ['milk'] : []), ...(DRINK_NEEDS[d.id] ?? [])].filter((n) => !eq[n]);
 
-function card(d: Drink, rank: number, eq: Readonly<Record<string, boolean>>): string {
+const money = (n: number): string => '₽ ' + n.toLocaleString('ru-RU');
+
+function card(d: Drink, rank: number, eq: Readonly<Record<string, boolean>>, costs: Readonly<Record<string, number>>, tut: string): string {
   const open = d.rank <= rank;
   if (!open)
     return `<div class="bk lock"><div class="bkTop"><b>? ? ?</b><em>ранг ${d.rank}</em></div><p>Откроется на ранге «${esc(rankInfo(d.rank).title)}».</p></div>`;
@@ -49,13 +52,23 @@ function card(d: Drink, rank: number, eq: Readonly<Record<string, boolean>>): st
   const made = d.id in ENGINE;
   const steps = d.steps.map((s) => `<li>${esc(STEP_TXT(s))}</li>`).join('');
   const need = miss.length
-    ? `<p class="bkNeed">Нужно купить: ${miss.map((m) => esc(EQ_NAME[m] ?? m)).join(', ')}</p>`
+    ? `<p class="bkNeed">Нужно купить: ${miss.map((m) => esc(EQ_NAME[m] ?? m) + (costs[m] ? ' — ' + money(costs[m]) : '')).join(', ')}</p>`
     : '<p class="bkReady">Можно готовить</p>';
   return `<div class="bk${made && !miss.length ? '' : ' soon'}"><div class="bkTop"><b>${esc(d.name)}</b><em>${esc(FAM[d.family] || '')}</em></div>
 <div class="bkSub">${TEMP[d.temp]} · ${esc(SIZE_TXT(d))}</div>
-<ol class="bkSteps">${steps}</ol>${d.note ? `<p class="bkNote">${esc(d.note)}</p>` : ''}${need}</div>`;
+<ol class="bkSteps">${steps}</ol>${d.note ? `<p class="bkNote">${esc(d.note)}</p>` : ''}${need}${hintBlock(d, tut)}</div>`;
 }
-function tabDrinks(rank: number, eq: Readonly<Record<string, boolean>>, fam: string): string {
+/** Кнопка «Подсказка»: показывает коуча по станциям напитка ещё раз. */
+function hintBlock(d: Drink, tut: string): string {
+  const eqs = tutorialEqsOfDrink(d.id);
+  if (!eqs.length) return '';
+  const shown = tut === d.id;
+  const body = shown
+    ? `<div class="bkCoach"><i class="av">М</i><div>${eqs.map((e) => `<p><b>${esc(equipmentName(e))}.</b> ${esc(TUTORIALS[e]?.where ?? '')}<br>${coachSteps(e)}</p>`).join('')}</div></div>`
+    : '';
+  return `<button type="button" class="chip bkHint${shown ? ' on' : ''}" data-booktut="${esc(d.id)}">Подсказка</button>${body}`;
+}
+function tabDrinks(rank: number, eq: Readonly<Record<string, boolean>>, fam: string, costs: Readonly<Record<string, number>>, tut: string): string {
   const all = [...DRINKS].sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, 'ru'));
   const present = Array.from(new Set(all.filter((d) => d.rank <= rank).map((d) => d.family)));
   const chips = ['all', ...present]
@@ -63,7 +76,7 @@ function tabDrinks(rank: number, eq: Readonly<Record<string, boolean>>, fam: str
     .join('');
   const list = all.filter((d) => fam === 'all' || d.family === fam || d.rank > rank);
   const shown = fam === 'all' ? list : list.filter((d) => d.family === fam);
-  return `<div class="bkChips">${chips}</div><div class="bkGrid">${shown.map((d) => card(d, rank, eq)).join('')}</div>`;
+  return `<div class="bkChips">${chips}</div><div class="bkGrid">${shown.map((d) => card(d, rank, eq, costs, tut)).join('')}</div>`;
 }
 
 function tabFood(rank: number): string {
@@ -97,14 +110,19 @@ function tabExtra(rank: number): string {
   );
 }
 
-export interface BookState { rank: number; tab: BookTab | string; eq?: Readonly<Record<string, boolean>>; fam?: string }
+export interface BookState { rank: number; tab: BookTab | string; eq?: Readonly<Record<string, boolean>>; fam?: string;
+  /** цены оборудования в магазине: id → ₽ */
+  costs?: Readonly<Record<string, number>>;
+  /** карточка напитка, у которой раскрыта подсказка */
+  tut?: string;
+}
 export function bookHTML(state: BookState): string {
   const { rank, tab } = state;
   const eq = state.eq ?? {};
   const tabs = BOOK_TABS.map(
     ([id, n]) => `<button type="button" class="tab${id === tab ? ' on' : ''}" data-booktab="${id}">${n}</button>`
   ).join('');
-  const body = tab === 'food' ? tabFood(rank) : tab === 'extra' ? tabExtra(rank) : tabDrinks(rank, eq, state.fam ?? 'all');
+  const body = tab === 'food' ? tabFood(rank) : tab === 'extra' ? tabExtra(rank) : tabDrinks(rank, eq, state.fam ?? 'all', state.costs ?? {}, state.tut ?? '');
   const total = DRINKS.length;
   const open = DRINKS.filter((d) => d.rank <= rank).length;
   return `<div class="book"><div class="bookHead"><div><h2>Книга рецептов</h2><span>Ранг ${rank} из ${MAX_RANK}: ${esc(rankInfo(rank).title)} · напитков открыто ${open} из ${total}</span></div>

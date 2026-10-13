@@ -16,6 +16,8 @@ export interface SaveData {
   pace: PaceId;
   grindSet?: number;
   up?: string[];
+  /** оборудование, чьи подсказки игрок уже прошёл */
+  tutorialSeen?: string[];
 }
 
 const PACES: readonly PaceId[] = ['cozy', 'normal', 'hard'];
@@ -56,6 +58,7 @@ export function readSave(raw: string | null): SaveRead {
   if (num(rank) && rank >= 1) data.rank = Math.floor(rank);
   if (num(served) && served >= 0) data.served = Math.floor(served);
   if (num(grind)) data.grindSet = grind;
+  if (Array.isArray(r['tutorialSeen'])) data.tutorialSeen = r['tutorialSeen'].filter((x): x is string => typeof x === 'string');
   return { kind: 'ok', data };
 }
 
@@ -85,6 +88,7 @@ export interface Restored {
   pace: PaceId;
   grindSet: number;
   up: string[];
+  tutorialSeen: string[];
 }
 /** Загрузка с миграцией: у старых сохранений нет ранга — он выводится из дня и рейтинга. */
 export function restore(sv: SaveData): Restored {
@@ -96,5 +100,5 @@ export function restore(sv: SaveData): Restored {
     for (let n = nextRank(rank, { day: sv.day, rating: sv.rating, served }); n; n = nextRank(rank, { day: sv.day, rating: sv.rating, served }))
       rank = n.rank;
   }
-  return { rank, served, money: sv.money, day: sv.day, rating: sv.rating, pace: sv.pace, grindSet: sv.grindSet || 3, up: sv.up ?? [] };
+  return { rank, served, money: sv.money, day: sv.day, rating: sv.rating, pace: sv.pace, grindSet: sv.grindSet || 3, up: sv.up ?? [], tutorialSeen: sv.tutorialSeen ?? [] };
 }

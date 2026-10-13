@@ -65,7 +65,7 @@ function barPaint(dt) {
     gaugeDeg: run ? 70 + Math.sin(now / 120) * 4 : B.inset === 'steam' ? 40 : -30,
     steam: B.inset === 'steam' && !!B.hold,
     bell: B.ready ? .06 * Math.sin(now / 140) : 0,
-    ring: ring && G.hints ? { x: ring[0], y: ring[1], a: .7 + .3 * Math.sin(now / 260), s: 1 + .05 * Math.sin(now / 260) } : null
+    ring: ring && (G.hints || tutEq()) ? { x: ring[0], y: ring[1], a: .7 + .3 * Math.sin(now / 260), s: 1 + .05 * Math.sin(now / 260) } : null
   });
 }
 function ringTarget() {
@@ -94,8 +94,20 @@ function drawTicket() {
 <div class="tkMain"><b class="tkName">${NAME[B.drink]}</b>${tags}</div><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps">${chips}</div>
 <div class="tkBtns"><button type="button" data-hint="1" class="${G.hints ? 'on' : ''}" title="Подсказки">?</button><button type="button" data-back="1" title="К залу (Tab)">К залу</button></div>`;
 }
+/* Подсказки новой станции: пока не пройдены и пока игрок не выключил подсказки (настройкой или кнопкой «?») */
+function tutEq() {
+  const B = BR; if (!B || (SET.hintsSet && !SET.hints) || G.tutOff) return null;
+  const t = B.inset || B.tasks.find(x => !B.done[x] && !blockMsg(x));
+  if (!t || B.done[t]) return null;
+  return MENUAPI.tutorialEqs(t, B.c.order && B.c.order.food).find(e => !G.tutorialSeen.includes(e)) || null;
+}
+function tutText(eq) {
+  const T = MENUAPI.TUTORIALS[eq], tag = '<span class="tutTag">Новая станция</span>' + MENUAPI.equipmentName(eq) + '. ';
+  return tag + (BR.inset ? '<br>' + MENUAPI.coachSteps(eq) : T.where);
+}
 function coachText() {
   const B = BR; if (!B) return '';
+  const te = tutEq(); if (te) return tutText(te);
   const s = B.shot;
   if (B.inset === 'grind') return G.day === 1 ? 'Держите «Молоть» (или Пробел), пока весы не покажут ' + B.tgtDose + ' г. Настройку помола не трогайте. Потом «Готово».' : 'Доза ' + B.tgtDose + ' г. Если шот выходит слишком быстро или долго, подкрутите помол.';
   if (B.inset === 'tamp') return B.tampPhase === 'level' ? 'Проведите мышью по кофе (зажав кнопку), чтобы выровнять. Ровная «таблетка» даёт ровный шот.' : 'Зажмите «Прессовать» и отпустите, когда стрелка в зелёной зоне (около 15 кг).';
@@ -114,7 +126,7 @@ function coachText() {
   return { syrup: `Клиент просил сироп: ${B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() : ''} ×${B.c.pumps}. Нажмите на полку с сиропами и выберите бутылку: одно нажатие это одна порция.`, grind: 'Начнём с помола. Нажмите на кофемолку слева.', tamp: 'Молотый кофе нужно уплотнить. Нажмите на темпер.', shot: 'Теперь на кофемашину: вставить портафильтр и запустить шот.', water: 'Долейте горячую воду: нажмите на носик слева на машине.', milk: 'Пока кофе настаивается, займитесь молоком: нажмите на холодильник.', steam: 'Вспеньте молоко: нажмите на паровую трубку справа.', pour: 'Заливайте молоко в чашку: нажмите на чашку.' }[t] || '';
 }
 function drawCoach() {
-  const el = UI.coach; if (!BR || !G.hints) { el.hidden = true; return; }
+  const el = UI.coach; if (!BR || (!G.hints && !tutEq())) { el.hidden = true; return; }
   const t = coachText(); if (t === coachKey) return; coachKey = t;
   el.hidden = false; el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста</b><p>${t}</p></div>`;
 }

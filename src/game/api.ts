@@ -7,6 +7,7 @@ export * from './shift';
 export * from './quality';
 export * from './save';
 export * from './settings';
+export * from './tutorial';
 export type * from './types';
 export * from './stations/station';
 export * from './stations/fill';

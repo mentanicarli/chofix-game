@@ -30,6 +30,7 @@
 - Чистая логика (`src/game/`): `menu`, `orders` (генерация заказа), `phrases`, `economy` (цены, себестоимость, аренда, итоги дня `settleDay`), `shift`, `quality`, `save`, `food`, `helper` (помощник), `settings` (настройки игрока: разбор, границы, `isLowGraphics`), `recipes` + `stations/*` (универсальная система рецептов: задачи `buildTasks` по `data/menu.json`).
 - UI-модули на TS: `src/ui/book.ts` (книга рецептов), `foodPanel.ts`, `stationPanel.ts`, `menus.ts` (разметка меню, настроек, паузы, подтверждений), `music.ts` (плеер на `HTMLAudioElement`: очередь по кругу, кроссфейд, предзагрузка).
 - **Меню и настройки:** `#screen` показывает один экран; корень меню помечен `data-menu="title|pace|howto|settings|confirm|pause"` — по нему `menuView()` понимает, что открыто (Esc, клавиша P). Настройки — отдельный ключ `chofix-settings` (`SETTINGS_STORE` в `10-save.js`), применяются сразу через `applySettings()`. Сохранение игры — через `SAVE_STORE` (`load/save/clear`, сейчас localStorage; сюда подключаются аккаунты), формат версионируется (`SAVE_VERSION`, `readSave` мигрирует v1). Сохраняется состояние **на начало дня** (автосейв в `startDay`, после покупки, в конце дня); «В главное меню» посреди дня день не сохраняет — иначе деньги смены можно было бы перепройти.
+- **Подсказки новых станций:** `src/game/tutorial.ts` — по 1–2 шага на оборудование (`TUTORIALS`), `tutorialEqs(task, food)` (шаг бара → оборудование), `purchaseToast`. В баре `tutEq()`/`tutText()` (`08-bar-view.js`): пока станция не пройдена (`G.tutorialSeen`, пишется в сохранение), коуч вместо обычной подсказки ведёт по её шагам, даже если «с 3-го дня» подсказки погасли сами; не показывается, если игрок выключил подсказки (настройка или «?» → `G.tutOff`). Метка ставится в `complete()`. При покупке в магазине наверху вечернего экрана жёлтая плашка «Новое: …» (`G.buyNote`). В книге рецептов у карточки напитка кнопка «Подсказка» раскрывает тот же текст, а «Нужно купить» показывает цены. Сценарии: `e2e/tutorial_flow.js` (матча), `e2e/book_tut.js`.
 - **Музыка:** `public/music/*.mp3` + `public/music/manifest.json` (генерирует `scripts/make-music-manifest.mjs`, запускается из `predev`/`prebuild`, в git не лежит). Названия: ID3 → имя файла «Исполнитель - Название.mp3» → имя файла. mp3 в git кладём, но только с правами на использование. Нет треков — ползунок и строка «сейчас играет» скрыты. Лёгкая графика (`World.setLowFx`): без частиц, ореолов ламп, пятен света и луча, разрешение ≤ 1.
 
 ### Файлы legacy (порядок = порядок склейки)
@@ -73,7 +74,7 @@ npm install
 npm run dev            # dev-сервер Vite
 npm run build          # релиз: dist/artifact.html (~860 КБ, минифицирован) + dist/sfx
 npm run build:debug    # неминифицированная сборка для отладки/автотестов
-npm run check          # typecheck + lint + 73 теста vitest
+npm run check          # typecheck + lint + 78 тестов vitest
 npm run lint:legacy    # no-undef по склеенному legacy (ловит опечатки в именах)
 npm run menu           # пересобрать data/*.json из chofix_menu.md (нужен python3)
 npm run audio          # пересобрать звуки в public/sfx из assets/sfx (нужен ffmpeg-стек из scripts/make-audio.py)

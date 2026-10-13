@@ -57,7 +57,7 @@ function showEvening(keep) {
     : gap ? `<div class="rankcard"><b>Ранг ${G.rank}: ${MENUAPI.rankInfo(G.rank).title}</b><span>До «${gap.next.title}»: ${gap.missing.length ? gap.missing.join(', ') : 'завтра'}</span></div>` : `<div class="rankcard"><b>Высший ранг: ${MENUAPI.rankInfo(G.rank).title}</b></div>`;
   const note = G.day === 1 ? `<div class="note">Первый день позади. Деньги уходят на аренду, зерно и молоко, остальное можно вложить в улучшения. Они делают приготовление проще или точнее.</div>` : G.day === 3 ? `<div class="note">Три дня позади. Дальше клиентов станет больше, а помол будет «плавать» от погоды: следите за временем шота.</div>` : '';
   scr.innerHTML = `<div class="evening${keep ? ' still' : ''}"><div class="evh"><h2>День ${G.day} закончен</h2><div class="evstars">${st}<b>${G.rating.toFixed(1)}</b></div></div>
-<div class="cols"><div class="receipt"><div class="rcTop">Чек дня</div>
+${G.buyNote ? `<div class="note newEq" role="status"><b>${G.buyNote}</b></div>` : ''}<div class="cols"><div class="receipt"><div class="rcTop">Чек дня</div>
 ${row('Подано', s.served)}${row('Идеальных', s.perfect)}${row('Ушли без кофе', s.lost, 'int', s.lost ? 'neg' : '')}<hr>${row('Выручка', s.revenue, 'money')}${row('Чаевые', s.tips, 'money')}${row('Зерно и молоко', s.costs, 'minus')}${row('Аренда', s.rent, 'minus')}
 <div class="rcTot"><span>Итого за день</span><b class="${s.profit < 0 ? 'neg' : 'pos'}" data-count="${s.profit}" data-kind="plus">${keep ? (s.profit > 0 ? '+' : '') + money(s.profit) : 0}</b></div>
 <div class="rw bal"><span>На счёте</span><b>${money(G.money)}</b></div></div>
@@ -71,10 +71,10 @@ function showOver() {
 <div class="paper"><p class="overtxt">На счёте ${money(G.money)}, а аренду платить нечем. Попробуйте ещё раз: в «Уютном» темпе клиенты терпеливее и банкротства нет.</p><div class="foot"><button type="button" class="big" data-restart="1">Начать заново</button></div></div></div>`;
   scr.hidden = false;
 }
-let bookTab = 'drinks', bookBack = null, bookFam = 'all';
+let bookTab = 'drinks', bookBack = null, bookFam = 'all', bookTut = '';
 function showBook(back) {
   if (back) bookBack = back;
-  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
+  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
 }
 function closeBook() {
   const b = bookBack; bookBack = null;
@@ -84,11 +84,12 @@ scr.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.pace) { selPace = t.dataset.pace; scr.querySelectorAll('.pace').forEach(b => b.classList.toggle('sel', b === t)); sndOk(); }
   else if (t.dataset.tab) { shopTab = t.dataset.tab; showEvening(true); sndTap(); }
-  else if (t.dataset.buy) { const it = SHOP.find(x => x.id === t.dataset.buy); if (it && !G[it.id] && G.money >= it.cost) { G.money -= it.cost; G[it.id] = true; applyUpgrades(); saveGame(); sndCoin(); lastHud = ''; updateHud(true); showEvening(true); } }
-  else if (t.dataset.next) { G.day++; saveGame(); startDay(); }
+  else if (t.dataset.buy) { const it = SHOP.find(x => x.id === t.dataset.buy); if (it && !G[it.id] && G.money >= it.cost) { G.money -= it.cost; G[it.id] = true; G.buyNote = MENUAPI.purchaseToast(it.id.replace(/^eq_/, '')); applyUpgrades(); saveGame(); sndCoin(); lastHud = ''; updateHud(true); showEvening(true); } }
+  else if (t.dataset.next) { G.buyNote = null; G.day++; saveGame(); startDay(); }
   else if (t.dataset.restart) { newGame(); lastHud = ''; updateHud(); showTitle(); }
   else if (t.dataset.resume) setPause(false);
   else if (t.dataset.book) { showBook(t.dataset.book); sndTap(); }
+  else if (t.dataset.booktut) { const bb = scr.querySelector('.bookBody'), y = bb ? bb.scrollTop : 0; bookTut = bookTut === t.dataset.booktut ? '' : t.dataset.booktut; showBook(); const nb = scr.querySelector('.bookBody'); if (nb) nb.scrollTop = y; sndTap(); }
   else if (t.dataset.bookfam) { bookFam = t.dataset.bookfam; showBook(); sndTap(); }
   else if (t.dataset.booktab) { bookTab = t.dataset.booktab; showBook(); sndTap(); }
   else if (t.dataset.bookclose) { closeBook(); sndTap(); }
