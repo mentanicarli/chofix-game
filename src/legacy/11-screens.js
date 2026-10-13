@@ -6,7 +6,7 @@ const PACE_ICON = {
   hard: `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M27 5L11 27H22L19 43L37 20H26Z" fill="#E8B04A" ${KS}/></svg>`
 };
 /* оборудование из прогрессии: в магазине появляется только то, что уже работает в баре */
-MENUAPI.EQUIPMENT.filter(e => MENUAPI.EQ_IMPL.includes(e.id)).forEach(e => SHOP.push({ id: 'eq_' + e.id, cat: 'gear', name: e.name, desc: 'Открывает: ' + e.unlocks + '.', cost: e.cost, minRank: e.rank }));
+MENUAPI.EQUIPMENT.filter(e => MENUAPI.EQ_IMPL.includes(e.id)).forEach(e => SHOP.push({ id: 'eq_' + e.id, cat: 'gear', name: e.name, desc: 'Открывает: ' + e.unlocks + '.', cost: e.cost }));
 const SHOP_ICON = {
   milk: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M20 22H40L38 54Q30 58 22 54Z" fill="#FFF8EC" ${KS}/><path d="M40 29Q52 29 50 41Q48 49 39 47" fill="none" ${KS}/><rect x="18" y="15" width="26" height="9" rx="4.5" fill="#C4694A" ${KS}/><path d="M24 38Q30 34 36 38" fill="none" ${KS} stroke-width="2.4"/></svg>`,
   machine: `<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="14" width="44" height="34" rx="7" fill="#C4694A" ${KS}/><rect x="8" y="10" width="48" height="8" rx="4" fill="#FBF4E8" ${KS}/><rect x="14" y="44" width="36" height="6" rx="3" fill="#E8B04A" ${KS} stroke-width="2.4"/><circle cx="32" cy="29" r="6.5" fill="#FBF4E8" ${KS} stroke-width="2.4"/><path d="M32 29l3-4" fill="none" ${KS} stroke-width="2.2"/><rect x="24" y="52" width="16" height="6" rx="2" fill="#4A3328" ${KS} stroke-width="2.4"/></svg>`,
@@ -42,18 +42,22 @@ function countUp() {
 }
 
 /* ---------- экраны ---------- */
+/* Что куплено: по id позиций магазина. Правило показа карточек — MENUAPI.isShopItemAvailable */
+function shopState() { return { rank: G.rank, owned: Object.fromEntries(SHOP.map(i => [i.id, !!G[i.id]])) }; }
 function showEvening(keep) {
   const s = D.stats; if (!keep) saveGame();
   const row = (a, v, kind, cls) => `<div class="rw"><span>${a}</span><b class="${cls || ''}" data-count="${v}" data-kind="${kind || 'int'}">${keep ? (kind === 'money' ? money(v) : kind === 'plus' ? (v > 0 ? '+' : '') + money(v) : kind === 'minus' ? '−' + money(Math.abs(v)) : v) : 0}</b></div>`;
-  const tabs = SHOP_CATS.map(([id, n]) => `<button type="button" class="tab${id === shopTab ? ' on' : ''}" data-tab="${id}">${n}<em>${SHOP.filter(i => i.cat === id && !G[i.id]).length || '✓'}</em></button>`).join('');
-  const items = SHOP.filter(it => it.cat === shopTab).map(it => {
+  const shopNow = shopState(), avail = SHOP.filter(i => MENUAPI.isShopItemAvailable(i, shopNow));
+  const tabs = SHOP_CATS.map(([id, n]) => `<button type="button" class="tab${id === shopTab ? ' on' : ''}" data-tab="${id}">${n}<em>${avail.filter(i => i.cat === id && !G[i.id]).length || '✓'}</em></button>`).join('');
+  const shown = avail.filter(it => it.cat === shopTab);
+  const items = (shown.length ? shown : []).map(it => {
     const owned = G[it.id], can = G.money >= it.cost, locked = (it.minDay && G.day < it.minDay) || (it.minRank && G.rank < it.minRank), lockTxt = it.minRank && G.rank < it.minRank ? 'Ранг ' + it.minRank : 'С дня ' + it.minDay;
     return `<div class="item${owned ? ' own' : ''}">${SHOP_ICON[it.id] || SHOP_ICON.machine}<div class="tx"><b>${it.name}</b><span>${it.desc}</span></div>${owned ? '<em class="stamp">Куплено</em>' : locked ? `<button type="button" class="buy" disabled>${lockTxt}</button>` : `<button type="button" class="buy" data-buy="${it.id}"${can ? '' : ' disabled'}>${money(it.cost)}</button>`}</div>`;
-  }).join('');
+  }).join('') || '<p class="shopEmpty">Здесь пока нечего покупать. Новое появится с рангом.</p>';
   let st = ''; for (let i = 0; i < 5; i++) st += starSVG(G.rating >= i + .75 ? '#E8B04A' : G.rating >= i + .25 ? 'url(#gStarHalf)' : '#F3E4CB');
   const gap = MENUAPI.rankGap(G.rank, { day: G.day + 1, rating: G.rating, served: G.served });
   const ru = s.rankUp, nmA = ru ? MENUAPI.unlockedAt(ru.rank).drinks.map(d => d.name) : [], nm = nmA.slice(0, 3).join(', ') + (nmA.length > 3 ? ' и ещё ' + (nmA.length - 3) : '');
-  const rankCard = ru ? `<div class="rankcard up"><b>Новый ранг: ${ru.title}</b><span>В книге рецептов новое: ${MENUAPI.unlockedAt(ru.rank).drinks.length} напитков, блюда и добавки${nm ? ' (' + nm + ')' : ''}</span></div>`
+  const rankCard = ru ? `<div class="rankcard up"><b>Новый ранг: ${ru.title}</b><span>В книге рецептов новое: ${MENUAPI.unlockedAt(ru.rank).drinks.length} напитков, блюда и добавки${nm ? ' (' + nm + ')' : ''}</span>${s.shopNew ? `<span class="shopNew">${s.shopNew}</span>` : ''}</div>`
     : gap ? `<div class="rankcard"><b>Ранг ${G.rank}: ${MENUAPI.rankInfo(G.rank).title}</b><span>До «${gap.next.title}»: ${gap.missing.length ? gap.missing.join(', ') : 'завтра'}</span></div>` : `<div class="rankcard"><b>Высший ранг: ${MENUAPI.rankInfo(G.rank).title}</b></div>`;
   const note = G.day === 1 ? `<div class="note">Первый день позади. Деньги уходят на аренду, зерно и молоко, остальное можно вложить в улучшения. Они делают приготовление проще или точнее.</div>` : G.day === 3 ? `<div class="note">Три дня позади. Дальше клиентов станет больше, а помол будет «плавать» от погоды: следите за временем шота.</div>` : '';
   scr.innerHTML = `<div class="evening${keep ? ' still' : ''}"><div class="evh"><h2>День ${G.day} закончен</h2><div class="evstars">${st}<b>${G.rating.toFixed(1)}</b></div></div>
@@ -74,7 +78,7 @@ function showOver() {
 let bookTab = 'drinks', bookBack = null, bookFam = 'all', bookTut = '';
 function showBook(back) {
   if (back) bookBack = back;
-  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
+  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), avail: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), MENUAPI.isShopItemAvailable(i, shopState())])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
 }
 function closeBook() {
   const b = bookBack; bookBack = null;
@@ -84,7 +88,7 @@ scr.addEventListener('click', e => {
   const t = e.target.closest('button'); if (!t) return;
   if (t.dataset.pace) { selPace = t.dataset.pace; scr.querySelectorAll('.pace').forEach(b => b.classList.toggle('sel', b === t)); sndOk(); }
   else if (t.dataset.tab) { shopTab = t.dataset.tab; showEvening(true); sndTap(); }
-  else if (t.dataset.buy) { const it = SHOP.find(x => x.id === t.dataset.buy); if (it && !G[it.id] && G.money >= it.cost) { G.money -= it.cost; G[it.id] = true; G.buyNote = MENUAPI.purchaseToast(it.id.replace(/^eq_/, '')); applyUpgrades(); saveGame(); sndCoin(); lastHud = ''; updateHud(true); showEvening(true); } }
+  else if (t.dataset.buy) { const it = SHOP.find(x => x.id === t.dataset.buy); if (it && !G[it.id] && G.money >= it.cost) { const was = shopState(); G.money -= it.cost; G[it.id] = true; if (MENUAPI.hasOrderEffect(it.id)) G.fresh.push(it.id); G.buyNote = [MENUAPI.purchaseToast(it.id.replace(/^eq_/, '')), MENUAPI.shopNewText(MENUAPI.newlyAvailable(SHOP, was, shopState()).map(i => i.name))].filter(Boolean).join(' ') || null; applyUpgrades(); saveGame(); sndCoin(); lastHud = ''; updateHud(true); showEvening(true); } }
   else if (t.dataset.next) { G.buyNote = null; G.day++; saveGame(); startDay(); }
   else if (t.dataset.restart) { newGame(); lastHud = ''; updateHud(); showTitle(); }
   else if (t.dataset.resume) setPause(false);
@@ -100,6 +104,7 @@ $('#chPause').addEventListener('click', e => { setPause(!paused); e.currentTarge
 $('#chSound').addEventListener('click', e => { toggleAllSound(); e.currentTarget.blur(); });
 addEventListener('keydown', e => {
   MUSIC.unlock();
+  if (CARDON && !paused) { if (!e.repeat && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape')) { e.preventDefault(); closeDrinkCard(); } return; }
   if (e.repeat) return;
   const c = e.code, mv = menuView();
   if (c === 'Escape' && menuBack()) { e.preventDefault(); return; }

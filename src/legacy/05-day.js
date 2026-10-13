@@ -3,8 +3,9 @@ function interval() { return MENUAPI.arrivalInterval({ day: G.day, rating: G.rat
 function startDay() {
   G.phase = 'day'; paused = false; scr.hidden = true;
   WORLD.clearActors(); ACT.clear();
-  D = { t: 0, customers: [], nextArr: 4, lastCall: false, closing: false, closeT: 0, cup: null, hold: null, rushShown: false, idc: 0, stats: { served: 0, lost: 0, revenue: 0, tips: 0, costs: 0, perfect: 0 } };
+  D = { t: 0, customers: [], nextArr: 4, lastCall: false, closing: false, closeT: 0, cup: null, hold: null, rushShown: false, idc: 0, focus: G.fresh.slice(), focusDone: new Set(), stats: { served: 0, lost: 0, revenue: 0, tips: 0, costs: 0, perfect: 0 } };
   BR = null; renderCup(); lastHud = ''; updateHud(); stopLoops(); stage.classList.remove('inbar');
+  G.fresh = [];
   G.idealGrind = MENUAPI.idealGrind(G.day); if (G.day >= 3 && !G.hintsTouched) G.hints = false;
   saveGame();
   banner('День ' + G.day, 'Открываемся');
@@ -43,7 +44,7 @@ function endDay() {
   G.money = fin.money;
   G.served += s.served;
   const nr = MENUAPI.nextRank(G.rank, { day: G.day + 1, rating: G.rating, served: G.served });
-  if (nr) { G.rank = nr.rank; s.rankUp = nr; applyUpgrades(); }
+  if (nr) { const was = shopState(); G.rank = nr.rank; s.rankUp = nr; s.shopNew = MENUAPI.shopNewText(MENUAPI.newlyAvailable(SHOP, was, shopState()).map(i => i.name)); applyUpgrades(); }
   D.stats.rent = rent; D.stats.profit = s.revenue + s.tips - s.costs - rent;
   D.cup = null; barAbort(); renderCup(); updateHud();
   const over = fin.over;

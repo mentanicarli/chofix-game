@@ -66,7 +66,7 @@ const out = process.argv[3] || 'out/pause';
   /* заказ латте и открытие бара */
   const startOrder = async () => {
     await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.drink = 'latte'; c.strong = false; c.syrup = null; c.pumps = 2; c.pat = c.max = 9999; });
-    await p.keyboard.press('Space'); await p.waitForTimeout(600);
+    await p.keyboard.press('Space'); await p.waitForTimeout(600); await require('./pw').dismissCard(p);
   };
   await startOrder();
 

@@ -110,3 +110,20 @@ html.kbd .xp button:focus-visible { outline: 3px solid #E8B04A; outline-offset: 
 
 /* Пауза: все окна игры скрыты (но не удалены: состояние и таймеры стоят), виден только экран паузы */
 #stage.paused #bar, #stage.paused .say, #stage.paused #toast, #stage.paused #frontHint, #stage.paused #helperChip, #stage.paused #banner, #stage.paused .float { visibility: hidden; }
+
+/* подсказки: подсветка кнопки в окне станции, пропуск, карточка «Новый напиток» */
+#tutHl { position: absolute; z-index: 4; pointer-events: none; box-sizing: border-box; border-radius: 16px; border: 4px solid #E8B04A; box-shadow: 0 0 0 4px rgba(232,176,74,.45), 0 0 18px rgba(232,176,74,.8); animation: tutPulse 1s ease-in-out infinite; }
+#tutHl[hidden] { display: none; }
+@keyframes tutPulse { 50% { transform: scale(1.05); opacity: .75; } }
+.tutStep { color: #B05A3C; }
+.tutSkip { flex: none; align-self: flex-start; font-family: inherit; font-weight: 800; font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 2px solid var(--ink); background: transparent; color: var(--ink-soft); cursor: pointer; }
+.tutSkip:hover { background: #F1E3CB; }
+#drinkCard { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; background: rgba(43,27,20,.4); }
+#drinkCard[hidden] { display: none; }
+.dcard { width: 440px; max-width: 90%; box-sizing: border-box; padding: 22px 28px 20px; border-radius: 18px; background: #FBF4E8; border: 3px solid var(--ink); box-shadow: 0 9px 0 var(--ink); text-align: left; }
+.dcard h3 { margin: 8px 0 8px; font-size: 30px; }
+.dcard ol { margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 4px; font-size: 18px; font-weight: 700; }
+.dcard .tip { margin: 10px 0 0; padding: 7px 12px; border-radius: 12px; background: #F3E4C3; border: 2px solid var(--ink); font-size: 15px; font-weight: 700; line-height: 1.3; }
+.dcard .big { display: block; margin: 16px auto 0; }
+@media (prefers-reduced-motion: reduce) { #tutHl { animation: none; } }
+#stage.paused #drinkCard, #stage.paused #tutHl { visibility: hidden; }

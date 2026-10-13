@@ -9,7 +9,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   await require('./pw').startNew(p); await p.waitForTimeout(300);
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 60000 });
   await p.evaluate(() => { const G = window.__dbg.G; ['ice', 'tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker', 'case_snacks', 'case_pastry', 'case_dessert', 'fridge_deli', 'microwave'].forEach(k => G['eq_' + k] = true); window.__dbg.applyUpgrades(); });
-  await p.keyboard.press('Space'); await p.waitForTimeout(2500);
+  await p.keyboard.press('Space'); await p.waitForTimeout(2500); await require('./pw').dismissCard(p);
   await p.evaluate(() => { const D = window.__dbg.D; D.customers.forEach(c => c.pat = c.max = 9999); });
   if (process.env.HIDE !== '0') await p.evaluate(() => { ['#tint', '#hud', '#bTk', '#bCoach', '#boot'].forEach(s => { const e = document.querySelector(s); if (e) e.style.display = 'none'; }); });
   await p.waitForTimeout(1500);

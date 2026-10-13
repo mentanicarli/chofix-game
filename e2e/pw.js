@@ -25,3 +25,9 @@ exports.startNew = async (p) => {
     await p.click('[data-go]', { timeout: 3000 });
   } catch (e) { /* см. выше */ }
 };
+/** Карточка «Новый напиток» (если показана) → «Понятно». Возвращает true, если карточка была. */
+exports.dismissCard = async (p) => {
+  const on = await p.evaluate(() => { const e = document.querySelector('#drinkCard'); return !!e && !e.hidden; });
+  if (on) { await p.click('[data-cardok]'); await p.waitForTimeout(500); }
+  return on;
+};

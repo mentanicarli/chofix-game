@@ -1,6 +1,7 @@
 import { DRINKS, DRINK_NEEDS, ENGINE, FORCED_SYRUP, ICED, RECIPE_SYRUPS, SYRUPS, SYRUP_META, isOrderable, needsMilk, priceOf, syrupByName } from './menu';
 import { coldVariantOk, isNewKeyEngine } from './recipes';
-import { rollFood } from './food';
+import { forceFood, rollFood } from './food';
+import { drinkFitsItem, foodWantOfItem, orderUsesItem } from './shop';
 import { say } from './phrases';
 import type { CustomerType, Drink, Order, Rng, Size } from './types';
 
@@ -32,18 +33,20 @@ export interface OrderState {
   /** Есть ли молочная техника. */
   milk: boolean;
   eq?: Readonly<Record<string, boolean | undefined>>;
+  /** Вчерашняя покупка (id позиции магазина): этот заказ должен её использовать. Без неё заказы считаются как обычно. */
+  focus?: string;
 }
 
 /** Бросок заказа: что гость закажет сейчас. key — механика бара. */
 export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math.random): Order {
   const eq = state.eq ?? {};
-  const pool = DRINKS.filter(
-    (d) =>
-      isOrderable(d, state) &&
-      (!needsMilk(d) || state.milk) &&
-      (DRINK_NEEDS[d.id] ?? []).every((n) => eq[n]) &&
-      !(type === 'student' && d.family === 'milk' && state.day < 3)
-  );
+  const unlocked = DRINKS.filter((d) => isOrderable(d, state) && (!needsMilk(d) || state.milk) && (DRINK_NEEDS[d.id] ?? []).every((n) => eq[n]));
+  let pool = unlocked.filter((d) => !(type === 'student' && d.family === 'milk' && state.day < 3));
+  if (state.focus) {
+    const focus = state.focus;
+    const fit = unlocked.filter((d) => drinkFitsItem(focus, d));
+    if (fit.length) pool = fit;
+  }
   const from = pool.length ? pool : DRINKS.filter((d) => d.id === 'americano');
   const d = wpick(rng, from.map((x) => [x, baseW(x)] as const));
   let key = ENGINE[d.id] as string;
@@ -54,11 +57,11 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
   let size: Size;
   if (fresh) {
     // напиток из меню по шагам: размер из его списка; чай бывает холодным по желанию гостя
-    cold = !!eq['ice'] && coldVariantOk(d) && !!coldSize && rng() < 0.3;
+    cold = !!eq['ice'] && coldVariantOk(d) && !!coldSize && (rng() < 0.3 || state.focus === 'eq_ice');
     const sizes = Object.keys(d.sizes) as Size[];
     size = cold && coldSize ? coldSize : (sizes[Math.floor(rng() * sizes.length) % sizes.length] as Size);
   } else {
-    cold = !!eq['ice'] && key in ICED && !!coldSize && rng() < 0.3;
+    cold = !!eq['ice'] && key in ICED && !!coldSize && (rng() < 0.3 || state.focus === 'eq_ice');
     size = cold && coldSize ? coldSize : '0.2';
   }
   const baseKey = key;
@@ -89,6 +92,8 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
   if (syrup && !forced) order.price += SYRUP_PRICE;
   // еда с витрины: только если витрины куплены (иначе случайные числа не расходуются)
   order.food = rollFood({ rank: state.rank, day: state.day, eq }, rng);
+  const want = state.focus ? foodWantOfItem(state.focus) : null;
+  if (want && state.focus && !orderUsesItem(state.focus, order)) order.food = forceFood({ rank: state.rank, day: state.day, eq }, rng, want) ?? order.food;
   order.line = say(order, type, rng);
   return order;
 }

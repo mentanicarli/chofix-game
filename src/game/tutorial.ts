@@ -96,6 +96,7 @@ export function exampleDrink(eq: string): string | null {
 
 /** Текст тоста при покупке. */
 export function purchaseToast(eq: string): string | null {
+  if (eq === 'milk') return 'Новое: молоко. Первый молочный заказ подскажет, как взбивать пену.';
   if (!(eq in TUTORIALS)) return null;
   const d = exampleDrink(eq);
   const tail = d ? `Попробуйте на заказе: ${d}` : 'Попробуйте на заказе с едой';

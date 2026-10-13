@@ -17,7 +17,7 @@ const id = process.argv[4]; const out = process.argv[3];
     return { id: o.id, key: o.key, size: o.size, cold: o.cold, base: o.base, line: o.line };
   }, id);
   console.log('order', JSON.stringify(info));
-  await p.keyboard.press('Space'); await p.waitForTimeout(500);
+  await p.keyboard.press('Space'); await p.waitForTimeout(500); await require('./pw').dismissCard(p);
   const tasks = await p.evaluate(() => window.__dbg.BR.tasks.slice()); console.log('tasks', tasks.join(','));
   await p.screenshot({ path: out + '_0.png' });
   const money0 = await p.evaluate(() => window.__dbg.G.money);

@@ -1,6 +1,9 @@
+import { Playlist } from '../game/playlist';
+
 /**
  * Фоновая музыка. Потоковое воспроизведение через HTMLAudioElement (файлы не декодируются целиком):
- * треки идут по кругу, следующий подгружается заранее, на стыке — кроссфейд. Запуск только после первого жеста игрока.
+ * порядок случайный и на каждом запуске новый (круг: все треки по разу, затем новая перестановка),
+ * следующий подгружается заранее, на стыке — кроссфейд. Запуск только после первого жеста игрока.
  * Список треков берётся из music/manifest.json рядом со страницей (его пишет scripts/make-music-manifest.mjs).
  */
 export interface Track {
@@ -16,11 +19,12 @@ const FADE = 1.5; // секунд на стык треков
 const STEP = 100; // мс между шагами таймера
 const curve = (v: number): number => v * v; // ползунок линейный, слух — нет
 
-export const trackLabel = (t: Track): string => (t.artist ? `${t.artist} — ${t.title}` : t.title);
+/** Подпись «сейчас играет»: только название, без исполнителя. */
+export const trackLabel = (t: Track): string => t.title;
 
 export class MusicPlayer {
   tracks: Track[] = [];
-  private idx = 0;
+  private pl = new Playlist(0, Math.random);
   private cur: HTMLAudioElement | null = null;
   private nxt: HTMLAudioElement | null = null;
   private enabled = true;
@@ -52,8 +56,9 @@ export class MusicPlayer {
       this.tracks = [];
     }
     if (!this.tracks.length) return;
-    this.cur = this.make(this.idx);
-    this.nxt = this.make(this.after(this.idx));
+    this.pl = new Playlist(this.tracks.length, Math.random);
+    this.cur = this.make(this.pl.current);
+    this.nxt = this.make(this.pl.peek());
     this.timer = window.setInterval(() => this.step(STEP / 1000), STEP);
     this.emit();
   }
@@ -70,7 +75,7 @@ export class MusicPlayer {
 
   /** Трек, который звучит сейчас (или вот-вот зазвучит). */
   get track(): Track | null {
-    return this.tracks[this.idx] ?? null;
+    return this.tracks[this.pl.current] ?? null;
   }
 
   onChange(fn: () => void): void {
@@ -103,9 +108,6 @@ export class MusicPlayer {
     const t = this.tracks[i];
     return t ? new URL('music/' + encodeURIComponent(t.file), document.baseURI).href : '';
   }
-  private after(i: number): number {
-    return (i + 1) % this.tracks.length;
-  }
   private make(i: number): HTMLAudioElement {
     const a = new Audio();
     a.preload = 'metadata';
@@ -130,7 +132,10 @@ export class MusicPlayer {
       return;
     }
     if (a === this.cur) this.advance();
-    else this.nxt = this.make(this.after(this.after(this.idx)));
+    else {
+      this.pl.skipNext();
+      this.nxt = this.make(this.pl.peek());
+    }
   }
 
   private play(a: HTMLAudioElement): void {
@@ -149,8 +154,8 @@ export class MusicPlayer {
   private advance(): void {
     this.cur?.pause();
     this.cur = this.nxt;
-    this.idx = this.after(this.idx);
-    this.nxt = this.make(this.after(this.idx));
+    this.pl.advance();
+    this.nxt = this.make(this.pl.peek());
     this.fade = -1;
     this.emit();
   }
@@ -185,8 +190,8 @@ export class MusicPlayer {
       if (this.fade >= 1) {
         cur.pause();
         this.cur = this.nxt;
-        this.idx = this.after(this.idx);
-        this.nxt = this.make(this.after(this.idx));
+        this.pl.advance();
+        this.nxt = this.make(this.pl.peek());
         this.fade = -1;
         this.fails = 0;
         this.emit();

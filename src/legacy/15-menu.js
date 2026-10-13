@@ -70,7 +70,7 @@ function showPace() {
   const paces = Object.keys(PACE).map(k => `<button type="button" class="pace${k === selPace ? ' sel' : ''}" data-pace="${k}">${PACE_ICON[k]}<b>${PACE[k].name}</b><span>${PACE[k].text}</span></button>`).join('');
   menuRender(paceScreenHTML(CUP_LOGO, paces), true); focusFirst('.pace.sel');
 }
-function showHowto() { menuRender(howtoHTML(), menuFrom === 'title'); focusFirst('.big'); }
+function showHowto(msg) { menuRender(howtoHTML(msg), menuFrom === 'title'); focusFirst('.big'); }
 function showSettings(from, msg) {
   if (from) menuFrom = from;
   menuRender(settingsHTML({ s: SET, hints: hintsNow(), music: MUSIC.available, msg }), menuFrom === 'title');
@@ -140,7 +140,7 @@ scr.addEventListener('input', e => {
 /* ---------- клики ---------- */
 function startFromSave() {
   const sv = loadSave(); newGame();
-  if (sv) { const r = MENUAPI.restore(sv); Object.assign(G, { rank: r.rank, served: r.served, money: r.money, day: r.day, rating: r.rating, pace: r.pace, grindSet: r.grindSet, tutorialSeen: r.tutorialSeen }); r.up.forEach(id => { G[id] = true; }); }
+  if (sv) { const r = MENUAPI.restore(sv); Object.assign(G, { rank: r.rank, served: r.served, money: r.money, day: r.day, rating: r.rating, pace: r.pace, grindSet: r.grindSet, tutorialSeen: MENUAPI.migrateSeen(r.tutorialSeen, { rank: r.rank, day: r.day, served: r.served, milk: r.up.includes('milk') }) }); r.up.forEach(id => { G[id] = true; }); }
   applyUpgrades(); lastHud = ''; startDay();
 }
 scr.addEventListener('click', e => {
@@ -155,6 +155,11 @@ scr.addEventListener('click', e => {
   else if (d.settings) { sndTap(); showSettings(d.settings); }
   else if (d.howto) { sndTap(); showHowto(); }
   else if (d.menuback) { sndTap(); menuBack(); }
+  else if (d.tutreset) {
+    sndTap(); const r = SAVE_STORE.load();
+    if (r.kind === 'ok') { SAVE_STORE.save({ ...r.data, tutorialSeen: MENUAPI.freshSeen() }); showHowto('Готово: подсказки и карточки новых напитков покажутся снова.'); }
+    else showHowto('Сохранения пока нет: в новой игре подсказки покажутся сами.');
+  }
   else if (d.set) {
     sndTap();
     if (d.set === 'hints') { SET.hints = !hintsNow(); SET.hintsSet = true; } else SET[d.set] = !SET[d.set];

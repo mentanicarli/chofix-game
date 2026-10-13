@@ -65,7 +65,7 @@ function barPaint(dt) {
     gaugeDeg: run ? 70 + Math.sin(now / 120) * 4 : B.inset === 'steam' ? 40 : -30,
     steam: B.inset === 'steam' && !!B.hold,
     bell: B.ready ? .06 * Math.sin(now / 140) : 0,
-    ring: ring && (G.hints || tutEq()) ? { x: ring[0], y: ring[1], a: .7 + .3 * Math.sin(now / 260), s: 1 + .05 * Math.sin(now / 260) } : null
+    ring: ring && (G.hints || tutKey()) ? { x: ring[0], y: ring[1], a: .7 + .3 * Math.sin(now / 260), s: 1 + .05 * Math.sin(now / 260) } : null
   });
 }
 function ringTarget() {
@@ -94,20 +94,45 @@ function drawTicket() {
 <div class="tkMain"><b class="tkName">${NAME[B.drink]}</b>${tags}</div><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps">${chips}</div>
 <div class="tkBtns"><button type="button" data-hint="1" class="${G.hints ? 'on' : ''}" title="Подсказки">?</button><button type="button" data-back="1" title="К залу (Tab)">К залу</button></div>`;
 }
-/* Подсказки новой станции: пока не пройдены и пока игрок не выключил подсказки (настройкой или кнопкой «?») */
-function tutEq() {
-  const B = BR; if (!B || (SET.hintsSet && !SET.hints) || G.tutOff) return null;
+/* Подсказки новых станций и шагов (молоко, пар, заливка, сироп): пока не пройдены и пока игрок не выключил подсказки (настройкой или кнопкой «?») */
+const tutOffNow = () => (SET.hintsSet && !SET.hints) || G.tutOff;
+function tutCtx() {
+  const B = BR, o = B.c.order, rc = RECIPE[B.drink] || {};
+  return { drinkId: o.id, drinkName: o.name, ml: rc.milk, foam: rc.foam, thermo: !!G.thermo, steam: !(/^iced/.test(B.drink) || rc.cupMilk), syrupName: B.c.syrup ? SYR[B.c.syrup].name : undefined, pumps: B.c.pumps };
+}
+function tutKey() {
+  const B = BR; if (!B || tutOffNow()) return null;
   const t = B.inset || B.tasks.find(x => !B.done[x] && !blockMsg(x));
   if (!t || B.done[t]) return null;
-  return MENUAPI.tutorialEqs(t, B.c.order && B.c.order.food).find(e => !G.tutorialSeen.includes(e)) || null;
+  return MENUAPI.nextTutorial(t, B.c.order.id, B.c.order.food, G.tutorialSeen);
 }
-function tutText(eq) {
-  const T = MENUAPI.TUTORIALS[eq], tag = '<span class="tutTag">Новая станция</span>' + MENUAPI.equipmentName(eq) + '. ';
-  return tag + (BR.inset ? '<br>' + MENUAPI.coachSteps(eq) : T.where);
+/* где игрок сейчас на шагах подсказки и что подсветить */
+function tutLive(key) {
+  const B = BR, p = B.pit, rc = RECIPE[B.drink] || {};
+  return MENUAPI.lessonStep(key, { ml: B.inset === 'milk' ? B.fill : p.ml, line: rc.milk, foam: p.foam, targetFoam: rc.foam, temp: p.T, thermo: !!G.thermo, started: !!B.started, pumps: B.pumps || 0, wantPumps: B.c.pumps }, { syrupKey: B.c.syrup });
+}
+function tutText(key) {
+  const L = MENUAPI.lesson(key, tutCtx()); if (!L) return '';
+  const head = `<span class="tutTag">${L.tag}</span>${L.title}. `;
+  if (!BR.inset) return head + L.where;
+  if (!L.paced) return head + '<br>' + MENUAPI.coachSteps(key);
+  const st = tutLive(key).step;
+  return head + `<br><b class="tutStep">Шаг ${st + 1} из ${L.steps.length}.</b> ${L.steps[st]}`;
+}
+const hlEl = $('#tutHl'); let hlKey = '';
+/* подсветка кнопки в окне станции (координаты HIT совпадают с холстом 440×450 внутри рамки) */
+function tutHl() {
+  const key = BR && BR.inset && !paused ? tutKey() : null;
+  const L = key && MENUAPI.lesson(key, tutCtx()), g = L && L.paced ? tutLive(key).glow : null;
+  const h = g && HIT.find(x => x.id === g && !x.off);
+  const k = h ? [h.x, h.y, h.w, h.h].join() : '';
+  if (k === hlKey) return; hlKey = k;
+  if (!h) { hlEl.hidden = true; return; }
+  hlEl.style.cssText = `left:${19 + h.x}px;top:${205 + h.y}px;width:${h.w}px;height:${h.h}px`; hlEl.hidden = false;
 }
 function coachText() {
   const B = BR; if (!B) return '';
-  const te = tutEq(); if (te) return tutText(te);
+  const te = tutKey(); if (te) return tutText(te);
   const s = B.shot;
   if (B.inset === 'grind') return G.day === 1 ? 'Держите «Молоть» (или Пробел), пока весы не покажут ' + B.tgtDose + ' г. Настройку помола не трогайте. Потом «Готово».' : 'Доза ' + B.tgtDose + ' г. Если шот выходит слишком быстро или долго, подкрутите помол.';
   if (B.inset === 'tamp') return B.tampPhase === 'level' ? 'Проведите мышью по кофе (зажав кнопку), чтобы выровнять. Ровная «таблетка» даёт ровный шот.' : 'Зажмите «Прессовать» и отпустите, когда стрелка в зелёной зоне (около 15 кг).';
@@ -126,9 +151,9 @@ function coachText() {
   return { syrup: `Клиент просил сироп: ${B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() : ''} ×${B.c.pumps}. Нажмите на полку с сиропами и выберите бутылку: одно нажатие это одна порция.`, grind: 'Начнём с помола. Нажмите на кофемолку слева.', tamp: 'Молотый кофе нужно уплотнить. Нажмите на темпер.', shot: 'Теперь на кофемашину: вставить портафильтр и запустить шот.', water: 'Долейте горячую воду: нажмите на носик слева на машине.', milk: 'Пока кофе настаивается, займитесь молоком: нажмите на холодильник.', steam: 'Вспеньте молоко: нажмите на паровую трубку справа.', pour: 'Заливайте молоко в чашку: нажмите на чашку.' }[t] || '';
 }
 function drawCoach() {
-  const el = UI.coach; if (!BR || (!G.hints && !tutEq())) { el.hidden = true; return; }
-  const t = coachText(); if (t === coachKey) return; coachKey = t;
-  el.hidden = false; el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста</b><p>${t}</p></div>`;
+  const el = UI.coach, tk = BR && tutKey(); if (!BR || (!G.hints && !tk)) { el.hidden = true; return; }
+  const t = coachText() + '|' + (tk || ''); if (t === coachKey) return; coachKey = t;
+  el.hidden = false; el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста</b><p>${coachText()}</p></div>${tk ? `<button type="button" class="tutSkip" data-tutskip="${tk}">Пропустить</button>` : ''}`;
 }
 
 /* ---------- прорисовка инсета ---------- */

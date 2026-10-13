@@ -40,6 +40,8 @@ function blockMsg(t) {
 function barOpen(c) {
   if (!G || G.phase !== 'day' || paused || c.leaving) return;
   if (BR) { if (BR.c === c) barShow(true); else hint('Сначала закончите текущий напиток'); return; }
+  const card = c.order && !tutOffNow() ? MENUAPI.newDrinkCard(c.order.id, G.tutorialSeen, RECIPE[c.drink] && RECIPE[c.drink].foam) : null;
+  if (card) { showDrinkCard(card, () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); }); return; }
   const d = c.drink, tasks = MENUAPI.buildTasks(d, { cold: !!(c.order && c.order.cold), syrup: !!c.syrup });
   if (c.order && c.order.food) tasks.push('food');
   const cost = drinkCost(d) + (c.order && c.order.food ? Math.round(c.order.food.price * MENUAPI.FOOD_COST_SHARE) : 0); D.stats.costs += cost; G.money -= cost; updateHud(true);
@@ -53,6 +55,20 @@ function barOpen(c) {
   barShow(true); play('clink', .6);
   barMsg('Заказ принят: ' + NAME[d].toLowerCase());
 }
+/* Карточка «Новый напиток»: рецепт по шагам, пока гость ждёт (его терпение на это время стоит) */
+const dcEl = $('#drinkCard'); let CARDON = null;
+const escH = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function markSeen(key) { if (!G.tutorialSeen.includes(key)) G.tutorialSeen.push(key); }
+function showDrinkCard(card, next) {
+  markSeen(card.key); CARDON = { next };
+  dcEl.innerHTML = `<div class="dcard" role="dialog" aria-label="Новый напиток"><span class="tutTag">Новый напиток</span><h3>${escH(card.name)}</h3><ol>${card.steps.map(s => `<li>${escH(s)}</li>`).join('')}</ol>${card.tip ? `<p class="tip">${escH(card.tip)}</p>` : ''}<button type="button" class="big" data-cardok="1">Понятно</button></div>`;
+  dcEl.hidden = false; sndTap();
+  const b = dcEl.querySelector('button'); if (b) b.focus({ preventScroll: true });
+}
+function closeDrinkCard() {
+  if (!CARDON) return; const f = CARDON.next; CARDON = null; dcEl.hidden = true; dcEl.innerHTML = ''; sndTap(); f();
+}
+dcEl.addEventListener('click', e => { if (e.target.closest('[data-cardok]')) closeDrinkCard(); });
 function barShow(on) {
   stage.classList.toggle('inbar', on);
   if (on) { UI.close.hidden = !BR || !BR.inset; coachKey = ''; tkKey = ''; }
@@ -77,7 +93,7 @@ function barMsg(txt, bad) {
 }
 function complete(t, score, msg, bad) {
   BR.done[t] = true; BR.res[t] = clamp(score, 0, 1);
-  MENUAPI.tutorialEqs(t, BR.c.order && BR.c.order.food).forEach(e => { if (!G.tutorialSeen.includes(e)) G.tutorialSeen.push(e); });
+  MENUAPI.tutorialKeys(t, BR.c.order.id, BR.c.order.food).forEach(markSeen);
   if (msg) barMsg(msg, bad);
   (score > .8 ? play('ui_success-warm-chime', .45) : score > .45 ? play('ui_select-item', .6) : play('ui_error-soft-thud', .5));
   if (BR.tasks.every(x => BR.done[x])) { BR.ready = true; setTimeout(() => play('ui_pop-bubble', .8), 300); }
@@ -242,6 +258,7 @@ bi.addEventListener('pointermove', e => {
 const bUp = () => { if (!BR || paused) return; if (BR.inset === 'tamp' && BR.tampPhase === 'press' && BR.hold) tampRelease(); BR.hold = false; };
 bi.addEventListener('pointerup', bUp); bi.addEventListener('pointercancel', bUp);
 UI.close.addEventListener('click', () => { if (!paused) closeInset(); });
+UI.coach.addEventListener('click', e => { const b = e.target.closest('[data-tutskip]'); if (b && !paused) { markSeen(b.dataset.tutskip); coachKey = ''; } });
 $('#bZones').addEventListener('click', e => { if (paused) return; const r = e.target.closest('[data-z]'); if (r) zoneClick(r.dataset.z); });
 UI.tk.addEventListener('click', e => { if (paused) return; const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; G.tutOff = !G.hints; coachKey = ''; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
 function barKey(c) {

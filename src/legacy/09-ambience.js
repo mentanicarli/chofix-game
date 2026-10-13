@@ -9,9 +9,9 @@ function ambTick() {
 }
 /* ---------- кадр бара ---------- */
 function barTick(dt) {
-  if (!BR) { if (LP.amb === undefined) { /* амбиент играет вне заказа */ } return; }
+  if (!BR) { hlEl.hidden = true; hlKey = ''; return; }
   barSim(dt); barPaint(dt);
-  if (stage.classList.contains('inbar')) { drawInset(); drawTicket(); drawCoach(); }
+  if (stage.classList.contains('inbar')) { drawInset(); drawTicket(); drawCoach(); tutHl(); }
   const xin = MENUAPI.PANEL_TASKS.has(BR.inset);
   bi.style.display = BR.inset && BR.inset !== 'food' && !xin && stage.classList.contains('inbar') ? 'block' : 'none';
   fpEl.hidden = !(BR.inset === 'food' && stage.classList.contains('inbar'));

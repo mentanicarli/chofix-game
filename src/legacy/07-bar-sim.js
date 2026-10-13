@@ -1,4 +1,5 @@
 /* ---------- симуляция ---------- */
+const STEAM = MENUAPI.STEAM; /* числа пара живут в src/game/lessons.ts: по ним же пишутся подсказки */
 function grindRate() { return 3.4 + .5 * Math.sin(performance.now() / 90); }
 function shotRate() {
   const B = BR, ideal = G.idealGrind || 3, set = G.grindSet || 3;
@@ -39,7 +40,7 @@ function fillDone() {
 function steamDone() {
   const B = BR, p = B.pit; if (p.T < 30) { barMsg('Молоко ещё холодное: подержите пар', true); return; }
   const tgtF = RECIPE[B.drink].foam, fs = clamp(1 - Math.abs(p.foam - tgtF) / .35, 0, 1);
-  const lo = G.thermo ? 53 : 55, hi = G.thermo ? 68 : 65;
+  const [lo, hi] = G.thermo ? STEAM.zoneThermo : STEAM.zone;
   const ts = p.burnt ? 0 : clamp(1 - (p.T < lo ? lo - p.T : p.T > hi ? p.T - hi : 0) / 12, 0, 1);
   const silk = clamp(1 - p.coarse, 0, 1);
   const sc = .35 * fs + .4 * ts + .25 * silk;
@@ -101,11 +102,11 @@ function barSim(dt) {
   let steamMode = 0;
   if (B.inset === 'steam' && B.hold && !B.pit.steamed) {
     const p = B.pit, vol = (p.ml * (1 + .6 * p.foam)) / 330, surf = 330 - vol * 220, depth = B.my - surf;
-    p.T += 7 * dt; B.steamT += dt;
+    p.T += STEAM.heatPerSec * dt; B.steamT += dt;
     if (depth < 0) { p.coarse = Math.min(1, p.coarse + .45 * dt); steamMode = 3; p.T -= 3 * dt; }
-    else if (depth <= 16) { steamMode = 1; if (p.T < 46) p.foam = Math.min(1, p.foam + .2 * dt); else p.coarse = Math.min(1, p.coarse + .18 * dt); }
+    else if (depth <= 16) { steamMode = 1; if (p.T < STEAM.airUntil) p.foam = Math.min(1, p.foam + STEAM.foamPerSec * dt); else p.coarse = Math.min(1, p.coarse + .18 * dt); }
     else { steamMode = 2; p.coarse = Math.max(0, p.coarse - .22 * dt); }
-    if (p.T >= 76) { p.burnt = true; steamDone(); }
+    if (p.T >= STEAM.burnAt) { p.burnt = true; steamDone(); }
   }
   /* заливка */
   let pouring = false;

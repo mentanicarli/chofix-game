@@ -17,7 +17,7 @@ const drink = process.argv[4] || 'espresso';
   const ic = async (x, y) => { const r = await p.evaluate(() => { const r = document.querySelector('#bi').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }); return [r[0] + x * r[2] / 440, r[1] + y * r[3] / 450]; };
   const zone = z => p.click(`[data-z=${z}]`, { force: true });
   const waitFor = (fn, arg, to = 20000) => p.waitForFunction(fn, arg, { timeout: to, polling: 30 });
-  await p.keyboard.press('Space'); await p.waitForTimeout(600);
+  await p.keyboard.press('Space'); await p.waitForTimeout(600); await require('./pw').dismissCard(p);
   await p.screenshot({ path: out + '_0bar.png' });
   const syrup = drink === 'cappuccino' || drink === 'vanillaraf';
   if (syrup) { await zone('syr1'); await p.waitForTimeout(300); let [sx, sy] = await ic(82, 112); await p.mouse.click(sx, sy); await p.waitForTimeout(200); await p.mouse.click(sx, sy); await p.waitForTimeout(300); await p.screenshot({ path: out + '_1syrup.png' }); [sx, sy] = await ic(357, 408); await p.mouse.click(sx, sy); await p.waitForTimeout(300); console.log('syrup', await st()); }

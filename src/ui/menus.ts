@@ -36,7 +36,7 @@ export function paceScreenHTML(logo: string, paces: string): string {
 <div class="foot"><button type="button" class="ghost" data-menuback="1">Назад</button><button type="button" class="big" data-go="1">Открыть кофейню</button></div></div></div>`;
 }
 
-export function howtoHTML(): string {
+export function howtoHTML(msg = ''): string {
   return `<div class="paper howto" data-menu="howto"><h2>Как играть</h2>
 <ul>
 <li><b>Принять заказ.</b> Нажмите на гостя в зале или <kbd>Пробел</kbd>.</li>
@@ -45,10 +45,11 @@ export function howtoHTML(): string {
 <li><b>Подать.</b> Позвоните в звонок на баре, затем нажмите на гостя.</li>
 <li><b>Вернуться к залу.</b> <kbd>Tab</kbd>, <kbd>Esc</kbd> или кнопка «К залу».</li>
 <li><b>Пауза</b> — <kbd>P</kbd>, <b>звук</b> — <kbd>M</kbd>.</li>
-<li><b>Подсказки.</b> Кнопка «?» на тикете включает и выключает их.</li>
+<li><b>Подсказки.</b> Кнопка «?» на тикете включает и выключает их. Новые напитки и станции объясняются один раз.</li>
 </ul>
 <p class="hnote">Вечером тратьте выручку на улучшения. Хорошие напитки поднимают рейтинг и ранг.</p>
-<div class="foot"><button type="button" class="big" data-menuback="1">Назад</button></div></div>`;
+<p class="smsg hmsg" role="status">${esc(msg)}</p>
+<div class="foot"><button type="button" class="ghost" data-tutreset="1">Показать подсказки заново</button><button type="button" class="big" data-menuback="1">Назад</button></div></div>`;
 }
 
 export interface SettingsOpts {

@@ -5,7 +5,10 @@ ICON.flatwhite = ICON.latte; ICON.vanillaraf = ICON.raf = ICON.rafhalva = ICON.l
 function reindex() { D.customers.forEach((c, i) => { c.x = SLOTS[i]; c.tx = SLOTS[i]; }); }
 function spawn() {
   const type = wpick(G.day === 1 ? [['regular', .6], ['student', .4]] : [['regular', .45], ['student', .3], ['hurry', .25]]);
-  const order = MENUAPI.rollOrder({ rank: G.rank, day: G.day, milk: !!G.milk, eq: Object.fromEntries(MENUAPI.EQ_IMPL.map(e => [e, !!G['eq_' + e]])) }, type);
+  /* вчерашние покупки: в первых 5 гостях каждая должна встретиться хотя бы в одном заказе */
+  const left = D.focus.filter(f => !D.focusDone.has(f)), focus = left.length && D.idc < 5 && 5 - D.idc <= left.length ? left[0] : undefined;
+  const order = MENUAPI.rollOrder({ rank: G.rank, day: G.day, milk: !!G.milk, eq: Object.fromEntries(MENUAPI.EQ_IMPL.map(e => [e, !!G['eq_' + e]])), focus }, type);
+  D.focus.forEach(f => { if (MENUAPI.orderUsesItem(f, order)) D.focusDone.add(f); });
   const drink = order.key;
   const max = MENUAPI.patienceMax(type, { pace: G.pace, cozy: !!G.cozy, helper: !!G.helper });
   const c = { id: ++D.idc, type, drink, max, pat: max, leaving: false, lastW: -1, look: ART.look(type), wk: 0, ty: 0, mood: 'neutral', arrived: false, walkOn: false, order, strong: order.strong, syrup: order.syrup ? order.syrup.shelf : null, pumps: order.syrup ? order.syrup.pumps : 1, art: Math.random() < .5 ? 'heart' : 'leaf' };

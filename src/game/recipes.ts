@@ -97,7 +97,7 @@ export function brewOf(key: string): { temp: number; minutes: number } {
 }
 
 export interface LegacyRecipe { milk?: number; foam?: number; art?: boolean; total?: number; ice?: number; cupMilk?: boolean }
-const THICK: Readonly<Record<string, number>> = { thick: 0.55, thin: 0.26, micro: 0.16 };
+export const THICK: Readonly<Record<string, number>> = { thick: 0.55, thin: 0.26, micro: 0.16 };
 /** Рецепт для старой механики налива/пара. */
 export function legacyRecipe(key: string): LegacyRecipe {
   const d = isMenuKey(key) ? drinkById[key] : undefined;

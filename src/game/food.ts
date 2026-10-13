@@ -34,6 +34,14 @@ export function rollFood(s: ShowcaseState, rng: Rng): OrderFood | null {
   return { id: f.id, name: f.name, price: f.price, case: f.case, heat };
 }
 
+/** Блюдо под вчерашнюю покупку: из нужной витрины или такое, что можно разогреть. Если подходящих нет, null. */
+export function forceFood(s: ShowcaseState, rng: Rng, want: { case?: string; heat?: boolean }): OrderFood | null {
+  const pool = foodAvailable(s).filter((f) => (!want.case || f.case === want.case) && (!want.heat || f.heatable));
+  if (!pool.length) return null;
+  const f = pool[Math.floor(rng() * pool.length) % pool.length] as Food;
+  return { id: f.id, name: f.name, price: f.price, case: f.case, heat: !!want.heat && !!s.eq?.[MICROWAVE] };
+}
+
 /** Блюда на выбор игроку: нужное и до n−1 других (перемешаны). */
 export function foodChoices(s: ShowcaseState, targetId: string, rng: Rng, n = 8): Food[] {
   const pool = foodAvailable(s);

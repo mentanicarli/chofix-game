@@ -11,7 +11,7 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   await p.evaluate(() => { const G = window.__dbg.G; G.day = 5; G.rank = 3; G.eq_case_pastry = true; G.eq_microwave = true; if (typeof applyUpgrades === 'function') applyUpgrades(); });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   const info = await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.drink = 'espresso'; c.strong = false; c.syrup = null; c.pat = c.max = 999; c.order.food = { id: 'food_018', name: 'Блюдо', price: 120, case: 'case_pastry', heat: true }; return 1; });
-  await p.keyboard.press('Space'); await p.waitForTimeout(600);
+  await p.keyboard.press('Space'); await p.waitForTimeout(600); await require('./pw').dismissCard(p);
   console.log('tasks', await p.evaluate(() => Object.keys(window.__dbg.BR.done || {}) + ' | food=' + !!window.__dbg.BR.food + ' choices=' + JSON.stringify((window.__dbg.BR.foodChoices || []).map(x => x.id))));
   await p.click('[data-z=food]', { force: true }); await p.waitForTimeout(400);
   await p.screenshot({ path: out + '_food1.png' });
