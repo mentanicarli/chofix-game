@@ -1,5 +1,6 @@
 import { DRINKS, DRINK_NEEDS, ENGINE, FOOD, FORCED_SYRUP, ICED, RECIPE_SYRUPS, SYRUPS, SYRUP_META, drinkById, isOrderable, needsMilk, priceOf, syrupByName } from './menu';
 import { coldVariantOk, isNewKeyEngine } from './recipes';
+import { SIZE_ML, recipePumps, shotsOf } from './volumes';
 import { forceFood, rollFood } from './food';
 import { drinkFitsItem, foodWantOfItem, orderUsesItem } from './shop';
 import { say } from './phrases';
@@ -16,7 +17,8 @@ export const MILKY = /^(milk|raf|foamlatte)$/;
 export const SYRUP_PRICE = 20;
 
 const WEIGHTS: Readonly<Record<string, number>> = {
-  espresso_double: 0.4,
+  espresso: 0.3,
+  espresso_double: 0.2,
   americano: 0.3,
   cappuccino: 0.25,
   latte: 0.25,
@@ -26,6 +28,18 @@ const WEIGHTS: Readonly<Record<string, number>> = {
   raf_halva: 0.15
 };
 const baseW = (d: Drink): number => WEIGHTS[d.id] ?? 0.2;
+
+/** Размеры классических напитков (ручная механика): мелкий чаще. Крупные размеры — с 3-го дня, чтобы первый день остался прежним. */
+const OLD_SIZE_W: ReadonlyArray<readonly [Size, number]> = [['0.2', 0.5], ['0.3', 0.25], ['0.4', 0.15], ['0.6', 0.1]];
+const OLD_COLD_W: ReadonlyArray<readonly [Size, number]> = [['0.3', 0.5], ['0.4', 0.3], ['0.6', 0.2]];
+const pickSize = (rng: Rng, d: Drink, w: ReadonlyArray<readonly [Size, number]>): Size => {
+  const ok = w.filter((x) => d.sizes[x[0]] !== undefined);
+  return ok.length ? wpick(rng, ok) : ((Object.keys(d.sizes)[0] as Size | undefined) ?? '0.2');
+};
+/** Напитки, к которым сироп гость не просит. */
+const NO_GUEST_SYRUP: ReadonlySet<string> = new Set(['espresso', 'espresso_double']);
+/** Раф: классический, без молока: альтернативное молоко к нему не предлагается. */
+const isRaf = (d: Drink): boolean => d.family === 'raf';
 
 /**
  * Подмена заказа для песочницы (#dev). Подменяет только названные поля, остальное бросается как обычно.
@@ -59,6 +73,9 @@ export interface OrderState {
   override?: OrderOverride;
 }
 
+/** Помпы сиропа: у напитков с сиропом в рецепте их число зависит от размера, у сиропа по просьбе гостя 1–2 (случайное число бросается всегда, чтобы поток случайных чисел не менялся). */
+const syrupPumps = (recipe: number, rolled: number): number => recipe || rolled;
+
 /** Бросок заказа: что гость закажет сейчас. key — механика бара. */
 export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math.random): Order {
   const eq = state.eq ?? {};
@@ -87,7 +104,8 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
     size = cold && coldSize ? coldSize : (sizes[Math.floor(rng() * sizes.length) % sizes.length] as Size);
   } else {
     cold = !!eq['ice'] && key in ICED && !!coldSize && (rng() < 0.3 || state.focus === 'eq_ice');
-    size = cold && coldSize ? coldSize : '0.2';
+    const bigOk = state.day >= 3 || state.rank >= 2;
+    size = cold && coldSize ? (bigOk ? pickSize(rng, d, OLD_COLD_W) : coldSize) : bigOk ? pickSize(rng, d, OLD_SIZE_W) : '0.2';
   }
   if (ov) {
     if (ov.cold !== undefined) {
@@ -104,7 +122,7 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
   const forced = FORCED_SYRUP[d.id];
   const open = SYRUPS.filter((s) => s.rank <= state.rank && SYRUP_META[s.name] && !RECIPE_SYRUPS.has(s.name));
   const canSyrup = !fresh || d.steps.some((x) => x.st === 'milk' || x.st === 'shot');
-  const withSyrup = forced || (canSyrup && open.length > 0 && baseKey !== 'espresso' && state.day >= 2 && rng() < 0.3);
+  const withSyrup = forced || (canSyrup && open.length > 0 && !NO_GUEST_SYRUP.has(d.id) && state.day >= 2 && rng() < 0.3);
   let syrup = forced ? syrupByName[forced] : withSyrup ? open[Math.floor(rng() * open.length) % open.length] : undefined;
   if (ov && ov.syrup !== undefined && !forced) syrup = ov.syrup ? syrupByName[ov.syrup] : undefined;
   const meta = syrup ? SYRUP_META[syrup.name] : undefined;
@@ -114,12 +132,13 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
     name: d.name,
     size,
     strong,
+    shots: shotsOf(d, size),
     price: priceOf(d.id, size),
     base: priceOf(d.id, size),
     syrup:
-      syrup && meta ? { name: syrup.name, shelf: meta.key, pumps: 1 + Math.floor(rng() * 2) } : null,
+      syrup && meta ? { name: syrup.name, shelf: meta.key, pumps: syrupPumps(forced ? recipePumps(d, size) : 0, 1 + Math.floor(rng() * 2)) } : null,
     syrupImplied: !!forced,
-    altMilk: ov?.altMilk ? { name: ov.altMilk } : null,
+    altMilk: ov?.altMilk && !isRaf(d) ? { name: ov.altMilk } : null,
     cold,
     food: null,
     line: ''
@@ -133,6 +152,6 @@ export function rollOrder(state: OrderState, type: CustomerType, rng: Rng = Math
     const f = ov.food ? FOOD.find((x) => x.id === ov.food) : undefined;
     order.food = f ? { id: f.id, name: f.name, price: f.price, case: f.case, heat: !!ov.heat && f.heatable } : null;
   }
-  order.line = say(order, type, rng);
+  order.line = say({ ...order, sizeMl: Object.keys(d.sizes).length > 1 ? SIZE_ML[size] : 0 }, type, rng);
   return order;
 }

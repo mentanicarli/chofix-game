@@ -5,7 +5,7 @@
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 const out = process.argv[3] || 'out/milk';
 (async () => {
-  const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, endDay, barAbort, SET, spawn, exit, RECIPE };');
+  const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, endDay, barAbort, SET, spawn, exit };');
   const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const pw = require('./pw'), p = await pw.page(b);
@@ -62,7 +62,7 @@ const out = process.argv[3] || 'out/milk';
   const makeLatte = () => p.evaluate(() => {
     const d = window.__dbg, M = window.__MENUAPI; d.spawn();
     const c = d.D.customers[d.D.customers.length - 1]; let o;
-    for (let i = 0; i < 8000 && !(o && o.id === 'latte' && !o.syrup && !o.food); i++) o = M.rollOrder({ rank: d.G.rank, day: d.G.day, milk: true, eq: {} }, 'regular');
+    for (let i = 0; i < 8000 && !(o && o.id === 'latte' && o.size === '0.2' && !o.cold && !o.syrup && !o.food); i++) o = M.rollOrder({ rank: d.G.rank, day: d.G.day, milk: true, eq: {} }, 'regular');
     c.order = o; c.drink = o.key; c.syrup = null; c.pumps = 1; c.strong = false; c.pat = c.max = 99999; return o.id;
   });
   console.log('латте 1:', await makeLatte());
@@ -86,11 +86,11 @@ const out = process.argv[3] || 'out/milk';
   const at = async (x, y) => { const r = await bi(); return { x: r.x + x * r.width / 440, y: r.y + y * r.height / 450 }; };
   await p.click('[data-z=milk]', { force: true }); await p.waitForTimeout(700);
   t = await coach(); console.log('коуч в молоке:', JSON.stringify(t));
-  ok('молоко, шаг 1: «Лить молоко» и линия 200 мл', /Шаг 1 из 2/.test(t) && /Лить молоко/.test(t) && /200 мл/.test(t));
+  ok('молоко, шаг 1: «Лить молоко» и линия 142 мл (латте 0,2 л)', /Шаг 1 из 2/.test(t) && /Лить молоко/.test(t) && /142 мл/.test(t));
   ok('молоко, шаг 1: подсвечена кнопка «Лить»', (await glow()) === '49px/561px');
   await p.screenshot({ path: out + '_6milk_inset.png' });
   let pt = await at(150, 384); await p.mouse.move(pt.x, pt.y); await p.mouse.down();
-  await p.waitForFunction(() => window.__dbg.BR.fill >= 192, null, { timeout: 20000, polling: 25 }); await p.mouse.up(); await p.waitForTimeout(300);
+  await p.waitForFunction(() => window.__dbg.BR.fill >= 135, null, { timeout: 20000, polling: 25 }); await p.mouse.up(); await p.waitForTimeout(300);
   t = await coach(); ok('молоко, шаг 2: «Готово»', /Шаг 2 из 2/.test(t) && (await glow()) === '315px/561px');
   await p.screenshot({ path: out + '_7milk_done.png' });
   pt = await at(353, 384); await p.mouse.click(pt.x, pt.y); await p.waitForTimeout(500);
@@ -102,14 +102,14 @@ const out = process.argv[3] || 'out/milk';
   ok('пар: коуч ведёт к паровой трубке', /Пар и пена/.test(t) && /паровую трубку/.test(t));
   await p.click('[data-z=steam]', { force: true }); await p.waitForTimeout(700);
   t = await coach(); console.log('коуч в паре:', JSON.stringify(t));
-  ok('пар, шаг 1: воздух, лёгкая пена латте (около 28 %, меньше 2 с)', /Шаг 1 из 3/.test(t) && /Воздух/.test(t) && /лёгкая пена/.test(t) && /28%/.test(t) && /около 1,5 с/.test(t));
+  ok('пар, шаг 1: воздух, лёгкая пена латте (около 22 %, около 1 с)', /Шаг 1 из 3/.test(t) && /Воздух/.test(t) && /лёгкая пена/.test(t) && /22%/.test(t) && /около 1 с/.test(t));
   await p.screenshot({ path: out + '_8steam_1.png' });
   pt = await at(150, 200); await p.mouse.move(pt.x, pt.y); await p.mouse.down();
-  const surf = () => p.evaluate(() => { const p = window.__dbg.BR.pit; return 330 - (p.ml * (1 + .6 * p.foam)) / 330 * 220; });
+  const surf = () => p.evaluate(() => { const p = window.__dbg.BR.pit; return 330 - ((p.ml + p.es) * (1 + .6 * p.foam)) / window.__dbg.BR.pitCap * 220; });
   let tries = 0;
   while (tries++ < 400) {
     const s = await surf(); const q = await at(150, s + 8); await p.mouse.move(q.x, q.y);
-    if (await p.evaluate(() => { const B = window.__dbg.BR; return B.pit.foam >= window.__dbg.RECIPE.latte.foam - .04 || B.pit.T >= 44; })) break;
+    if (await p.evaluate(() => { const B = window.__dbg.BR; return B.pit.foam >= B.rc.foam - .04 || B.pit.T >= 44; })) break;
     await p.waitForTimeout(30);
   }
   t = await coach(); console.log('коуч, пена набрана:', JSON.stringify(t));
@@ -123,7 +123,7 @@ const out = process.argv[3] || 'out/milk';
   }
   await p.mouse.up();
   t = await coach(); console.log('коуч, молоко нагрето:', JSON.stringify(t), 'T=', await p.evaluate(() => window.__dbg.BR.pit.T));
-  ok('пар, шаг 3: «Остановите», зона 55–65°', /Шаг 3 из 3/.test(t) && /55–65°/.test(t));
+  ok('пар, шаг 3: «Остановите», зона латте 55–62°', /Шаг 3 из 3/.test(t) && /55–62°/.test(t));
   ok('пар, шаг 3: подсвечена кнопка «Готово»', (await glow()) === '315px/589px');
   await p.screenshot({ path: out + '_10steam_3.png' });
   pt = await at(353, 410); await p.mouse.click(pt.x, pt.y); await p.waitForTimeout(500);

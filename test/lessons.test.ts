@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-  DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, drinkSeenKey, foamLine, freshSeen, lesson, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
+  DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, recipeCard, drinkSeenKey, foamLine, freshSeen, lesson, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
   newDrinkCard, nextTutorial, purchaseToast, recipeLines, steamKind, steamSeconds, stepKeysOf, tutorialKeys
 } from '../src/game/api';
 
@@ -8,21 +8,23 @@ describe('карточка «Новый напиток»', () => {
   test('первый заказ: рецепт тот же, что в книге; повторно карточки нет', () => {
     const c = newDrinkCard('latte', freshSeen());
     expect(c?.name).toBe('Латте');
-    expect(c?.steps).toEqual(recipeLines('latte'));
+    // шаги карточки — те же, что в книге (recipeCard), с количествами
+    expect(c?.steps).toEqual(recipeCard('latte', '0.2')?.steps.map((x) => (x.detail ? `${x.label}: ${x.detail}` : x.label)));
+    expect(recipeLines('latte').length).toBeGreaterThan(3);
     expect(c?.steps.length).toBeGreaterThan(3);
     expect(c?.tip).toMatch(/лёгкая пена/);
     expect(newDrinkCard('latte', [...freshSeen(), drinkSeenKey('latte')])).toBeNull();
   });
   test('цель пены из бара подменяет значение меню (латте в баре 28 %)', () => {
     expect(newDrinkCard('latte', freshSeen(), 0.28)?.tip).toContain('28%');
-    expect(newDrinkCard('latte', freshSeen())?.tip).toContain('26%');
+    expect(newDrinkCard('latte', freshSeen())?.tip).toContain('22%');
   });
   test('у напитка без пара нет совета про пену; неизвестный напиток — null', () => {
     expect(newDrinkCard('americano', freshSeen())?.tip).toBe('');
     expect(newDrinkCard('нет такого', freshSeen())).toBeNull();
   });
   test('каждый напиток меню получает карточку со всеми шагами', () => {
-    for (const d of DRINKS) expect(newDrinkCard(d.id, [])?.steps.length, d.id).toBe(d.steps.length);
+    for (const d of DRINKS) expect(newDrinkCard(d.id, [])?.steps.length, d.id).toBe(recipeCard(d.id, Object.keys(d.sizes)[0] as '0.2')?.tasks.length);
   });
 });
 
@@ -46,7 +48,8 @@ describe('вид пены', () => {
     for (const d of DRINKS.filter((x) => x.steps.some((s) => s.st === 'steam'))) {
       const foam = legacyRecipe(d.id).foam;
       if (foam === undefined) continue;
-      expect(foamLine(steamKind(d.id)), d.id).toBe(foamLine(steamKind(d.id), foam));
+      // подсказка книги и бара получает цель пены из рецепта (у рафа 33% при виде «лёгкая»)
+      expect(lesson(`step:steam:${steamKind(d.id)}`, { drinkId: d.id, foam })?.steps[0], d.id).toContain(`${Math.round(foam * 100)}%`);
     }
   });
 });
@@ -57,10 +60,10 @@ describe('шаги подсказок', () => {
     expect(l?.steps).toHaveLength(3);
     expect(l?.steps[0]).toContain('Капучино: густая пена');
     expect(l?.steps[0]).toContain(`${STEAM.airUntil}°`);
-    expect(l?.steps[2]).toContain('55–65°');
+    expect(l?.steps[2]).toContain('60–65°');
     expect(l?.steps[2]).toContain(`${STEAM.burnAt}°`);
-    expect(lesson('step:steam:thin', { drinkId: 'latte', thermo: true })?.steps[2]).toContain('53–68°');
-    expect(steamSeconds()).toEqual([7, 8]);
+    expect(lesson('step:steam:thin', { drinkId: 'latte', thermo: true })?.steps[2]).toContain('53–65°');
+    expect(steamSeconds('latte')).toEqual([7, 8]);
     expect(lesson('step:steam:мусор', { drinkId: 'latte' })).toBeNull();
   });
   test('молоко: питчер или стакан, линия в миллилитрах', () => {
@@ -85,6 +88,9 @@ describe('шаги подсказок', () => {
     expect(stepKeysOf('milk', 'latte')).toEqual(['step:milk']);
     expect(stepKeysOf('steam', 'cappuccino')).toEqual(['step:steam:thick']);
     expect(stepKeysOf('grind', 'latte')).toEqual([]);
+    expect(stepKeysOf('grind', 'latte', 2)).toEqual(['step:shots']);
+    expect(stepKeysOf('shot', 'raf')).toEqual(['step:pitcher']);
+    expect(stepKeysOf('shot', 'latte')).toEqual([]);
     expect(tutorialKeys('whisk', 'matcha_latte')).toEqual(['matcha']);
     const seen = freshSeen();
     expect(nextTutorial('milk', 'latte', null, seen)).toBe('step:milk');
@@ -95,12 +101,15 @@ describe('шаги подсказок', () => {
   });
   test('на каждую задачу бара у каждого напитка есть текст', () => {
     for (const d of DRINKS)
-      for (const task of ['milk', 'steam', 'pour', 'syrup', 'whisk', 'brew', 'ice', 'blend', 'shake', 'foam', 'whip'])
-        for (const k of tutorialKeys(task, d.id)) expect(lesson(k, { drinkId: d.id }), `${d.id} ${k}`).not.toBeNull();
+      for (const task of ['milk', 'steam', 'pour', 'syrup', 'whisk', 'brew', 'ice', 'blend', 'shake', 'foam', 'whip', 'grind', 'shot'])
+        for (const k of tutorialKeys(task, d.id, null, 2)) expect(lesson(k, { drinkId: d.id }), `${d.id} ${k}`).not.toBeNull();
   });
   test('подсказки книги для молочного напитка', () => {
-    expect(lessonKeysOfDrink('latte')).toEqual(['step:milk', 'step:steam:thin', 'step:pour']);
-    expect(lessonKeysOfDrink('americano')).toEqual([]);
+    expect(lessonKeysOfDrink('latte')).toEqual(['step:shots', 'step:milk', 'step:steam:thin', 'step:pour']);
+    expect(lessonKeysOfDrink('raf')).toEqual(['step:pitcher', 'step:shots', 'step:milk', 'step:steam:thin', 'step:pour']);
+    expect(lessonKeysOfDrink('americano')).toEqual(['step:shots']);
+    expect(lessonKeysOfDrink('espresso')).toEqual([]);
+    expect(lessonKeysOfDrink('espresso_double')).toEqual(['step:shots']);
   });
   test('в текстах слово «бариста» не склоняется, обращение на «вы»', () => {
     const all: string[] = [];

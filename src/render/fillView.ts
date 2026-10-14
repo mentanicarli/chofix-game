@@ -22,7 +22,8 @@ const GH = 250;
 
 export function drawFill(b: Brush, v: FillView): void {
   const k = v.kind;
-  const cap = k === 'milk' ? 330 : 200;
+  /* шкала растёт с размером напитка: линия «нужно» всегда в верхней трети стакана */
+  const cap = k === 'milk' ? Math.max(330, v.line * 1.3) : Math.max(200, v.line * 1.35);
   const my = (ml: number) => GY + GH - (ml / cap) * GH;
   const inset = (y: number) => (14 * (y - GY)) / GH;
   const left = (y: number) => GX + inset(y);

@@ -1,7 +1,7 @@
 /* ---------- клиенты ---------- */
 const ICE_CUBES = '<rect x="-6" y="-9" width="6" height="6" rx="1.5" fill="#FFFFFF" fill-opacity=".85" transform="rotate(-12 -3 -6)"/><rect x="1" y="-4" width="6" height="6" rx="1.5" fill="#FFFFFF" fill-opacity=".85" transform="rotate(10 4 -1)"/>';
 ICON.icedlatte = ICON.latte + ICE_CUBES; ICON.icedcappuccino = ICON.cappuccino + ICE_CUBES;
-ICON.flatwhite = ICON.latte; ICON.vanillaraf = ICON.raf = ICON.rafhalva = ICON.latte;
+ICON.espresso2 = ICON.espresso; ICON.flatwhite = ICON.latte; ICON.vanillaraf = ICON.raf = ICON.rafhalva = ICON.latte;
 function reindex() { D.customers.forEach((c, i) => { c.x = SLOTS[i]; c.tx = SLOTS[i]; }); }
 function spawn() {
   const type = (SBX.on && SBX.type) || wpick(G.day === 1 ? [['regular', .6], ['student', .4]] : [['regular', .45], ['student', .3], ['hurry', .25]]);
@@ -14,11 +14,14 @@ function spawn() {
   const max = MENUAPI.patienceMax(type, { pace: G.pace, cozy: !!G.cozy, helper: !!G.helper });
   const c = { id: ++D.idc, type, drink, max, pat: max, leaving: false, lastW: -1, look: ART.look(type), wk: 0, ty: 0, mood: 'neutral', arrived: false, walkOn: false, order, strong: order.strong, syrup: order.syrup ? order.syrup.shelf : null, pumps: order.syrup ? order.syrup.pumps : 1, art: Math.random() < .5 ? 'heart' : 'leaf' };
   const tags = [];
+  const multi = Object.keys(MENUAPI.drinkById[order.id].sizes).length > 1;
+  if (multi && order.size !== '0.2') tags.push({ text: String(order.size).replace('.', ',') + ' л', color: '#8FA58A' });
+  if (order.shots > 1) tags.push({ text: order.shots === 2 ? '2 шота' : order.shots + ' шотов', color: '#7A5A4A' });
   if (order.strong) tags.push({ text: 'крепкий', color: '#C4694A' });
   if (c.syrup) tags.push({ text: SYR[c.syrup].name.toLowerCase() + (c.pumps ? ' ×' + c.pumps : ''), color: SYR[c.syrup].col });
   const slot = SLOTS[Math.min(D.customers.length, SLOTS.length - 1)];
   c.px = -110; c.tx = slot; c.x = slot; c.ph = Math.random() * 6.28; c.walk = Math.random() * 6;
-  c.act = WORLD.addActor({ look: c.look, icon: iconOf(drink), iconKey: drink, title: NAME[drink], tags, x: c.px, onTap: () => serve(c) });
+  c.act = WORLD.addActor({ look: c.look, icon: iconOf(drink), iconKey: drink, iconK: MENUAPI.legacyRecipe(drink, order.size, !!order.cold).cupK || 1, title: NAME[drink], tags, x: c.px, onTap: () => serve(c) });
   ACT.add(c);
   if (SBX.on) c.t0 = SBX.clock;
   D.customers.push(c);
@@ -66,10 +69,11 @@ function deliver(c, d, q, flawless, byPlayer) {
   c.act.hideBubbleNow(); hideSay(c);
   (q === 2 ? sndPerfect : sndCoin)(); if (q === 2) setTimeout(sndCoin, 220);
   const topCol = MENUAPI.isMenuKey(d) ? MENUAPI.topColorOf(d) : d === 'cappuccino' ? '#F1DFC2' : d === 'americano' ? '#8A5B3A' : '#5A3A2A';
-  cupFly(byPlayer ? 791 : 700, byPlayer ? 396 : 420, gx(c, 40), gy(508), topCol); c.hold = 1.5; c.hopT = 0; c.act.reach(true);
+  const ck = c.order ? (MENUAPI.legacyRecipe(c.drink, c.order.size, !!c.order.cold).cupK || 1) : 1;
+  cupFly(byPlayer ? 791 : 700, byPlayer ? 396 : 420, gx(c, 40), gy(508), topCol, ck); c.hold = 1.5; c.hopT = 0; c.act.reach(true);
   setTimeout(() => {
     if (!c.act.alive) return;
-    c.got = true; c.hopT = .6; c.act.takeCup(topCol);
+    c.got = true; c.hopT = .6; c.act.takeCup(topCol, ck);
     if (q === 2) { loveBurst(c.x, gy(425), 3); sparkBurst(gx(c, 40), gy(500), 7); } else if (q === 1) { loveBurst(c.x, gy(425), 1); if (tip) sparkBurst(gx(c, 40), gy(500), 3); } else puffBurst(c.x, gy(440));
   }, 400);
   exit(c);

@@ -1,16 +1,14 @@
 // Книга рецептов: чистая функция «состояние -> HTML». Обработчики кликов — в старом ядре (data-book*).
 import { ADDONS, ALT_MILK, BOTTLES, DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, FOOD, MAX_RANK, SYRUPS, needsMilk, rankInfo } from '../game/menu';
-import { lesson, lessonKeysOfDrink, recipeStepText } from '../game/lessons';
+import { lesson, lessonKeysOfDrink } from '../game/lessons';
+import { cardVariants, recipeCard, type RecipeCard } from '../game/recipeCard';
 import { TUTORIALS, coachSteps, equipmentName, tutorialEqsOfDrink } from '../game/tutorial';
-import type { Drink, Family, Temp } from '../game/types';
+import type { Drink, Family, Size, Temp } from '../game/types';
 
 const esc = (s: unknown): string =>
   String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
 
-const SIZE_TXT = (d: Drink): string =>
-  Object.entries(d.sizes)
-    .map(([s, p]) => `${s.replace('.', ',')} л — ${p} ₽`)
-    .join(' · ');
+const ru1 = (n: number): string => String(Math.round(n * 10) / 10).replace('.', ',');
 const TEMP: Record<Temp, string> = { hot: 'горячий', cold: 'холодный', both: 'горячий или холодный' };
 const FAM: Record<Family, string> = {
   espresso: 'Эспрессо', milk: 'Молочные', raf: 'Раф', powder: 'Порошковые', matcha: 'Матча', tea: 'Чай',
@@ -41,22 +39,58 @@ function needText(miss: string[], costs: Readonly<Record<string, number>>, avail
   return `<p class="bkNeed">${a}${b}</p>`;
 }
 
+/** Состав одной строкой: «Шоты 30 мл · Молоко 113 мл · …». Числа те же, что цели налива в баре (recipeCard → recipeNumbers). */
+const partsText = (c: RecipeCard): string =>
+  c.parts.map((p) => `${esc(p.label)} ${p.unit === 'помп' ? p.amount + ' ' + (p.amount === 1 ? 'помпа' : p.amount < 5 ? 'помпы' : 'помп') : ru1(p.amount) + ' ' + p.unit}`).join(' · ');
+/** Пена: сколько мл получается из молока при вспенивании. */
+function foamText(c: RecipeCard): string {
+  const r = c.recipe;
+  if (r.foamX && r.milk) return `+${Math.round(r.foamX * 100)}%: ≈${Math.round(r.milk * r.foamX)} мл пены, ${Math.round(r.milk * (1 + r.foamX))} мл всего`;
+  if (r.coldX && r.milk) return `холодная, +${Math.round(r.coldX * 100)}%`;
+  if (r.topFoam) return `сверху ${r.topFoam} мл`;
+  return '—';
+}
+const variantName = (c: RecipeCard, d: Drink): string => (d.temp === 'both' ? (c.cold ? 'холодный ' : 'горячий ') : '') + c.sizeLabel;
+const shotsText = (n: number): string => (n === 0 ? '—' : n === 1 ? '1 шот' : `${n} шота`);
+
+/** Таблица «размер → шоты → состав → пена → цена» и шаги каждого варианта (они лежат под спойлером, первый открыт). */
+function recipeBlock(d: Drink): string {
+  const cards = cardVariants(d).map((v) => recipeCard(d.id, v.size, v.cold)).filter((c): c is RecipeCard => !!c);
+  const rows = cards
+    .map((c) => `<tr><td>${esc(variantName(c, d))}</td><td>${shotsText(c.shots)}</td><td>${partsText(c)}</td><td>${esc(foamText(c))}</td><td>${c.price}&nbsp;₽</td></tr>`)
+    .join('');
+  const table = `<table class="bkTbl"><thead><tr><th>Размер</th><th>Шоты</th><th>Состав</th><th>Пена</th><th>Цена</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const first = cards[0];
+  const temp = first?.temperature ? `<p class="bkTemp">${esc(first.temperature)}</p>` : '';
+  const cup = first ? `<p class="bkCup">${cards.map((c) => `${esc(variantName(c, d))}: чашка ${c.cupMl} мл`).filter((t, i, a) => a.indexOf(t) === i).join(' · ')}</p>` : '';
+  const steps = cards
+    .map(
+      (c, i) =>
+        `<details class="bkVar"${i === 0 ? ' open' : ''}><summary>${esc(variantName(c, d))} · шаги</summary><ol class="bkSteps">${c.steps
+          .map((x) => `<li><b>${esc(x.label)}</b>${x.detail ? ': ' + esc(x.detail) : ''}</li>`)
+          .join('')}</ol></details>`
+    )
+    .join('');
+  return `${table}${temp}${cup}${steps}`;
+}
+
 function card(d: Drink, rank: number, eq: Readonly<Record<string, boolean>>, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string): string {
   const open = d.rank <= rank;
   if (!open)
     return `<div class="bk lock"><div class="bkTop"><b>? ? ?</b><em>ранг ${d.rank}</em></div><p>Откроется на ранге «${esc(rankInfo(d.rank).title)}».</p></div>`;
   const miss = missing(d, eq);
   const made = d.id in ENGINE;
-  const steps = d.steps.map((s) => `<li>${esc(recipeStepText(s))}</li>`).join('');
   const need = miss.length ? needText(miss, costs, avail) : '<p class="bkReady">Можно готовить</p>';
   return `<div class="bk${made && !miss.length ? '' : ' soon'}"><div class="bkTop"><b>${esc(d.name)}</b><em>${esc(FAM[d.family] || '')}</em></div>
-<div class="bkSub">${TEMP[d.temp]} · ${esc(SIZE_TXT(d))}</div>
-<ol class="bkSteps">${steps}</ol>${d.note ? `<p class="bkNote">${esc(d.note)}</p>` : ''}${need}${hintBlock(d, tut)}</div>`;
+<div class="bkSub">${TEMP[d.temp]} · ранг ${d.rank} «${esc(rankInfo(d.rank).title)}»</div>
+<p class="bkIng">Ингредиенты: ${esc(d.ing.join(', '))}</p>${recipeBlock(d)}${d.note ? `<p class="bkNote">${esc(d.note)}</p>` : ''}${need}${hintBlock(d, tut)}</div>`;
 }
 /** Кнопка «Подсказка»: показывает коуча по станциям напитка ещё раз. */
 function hintBlock(d: Drink, tut: string): string {
   const eqs = tutorialEqsOfDrink(d.id);
-  const steps = lessonKeysOfDrink(d.id).flatMap((k) => lesson(k, { drinkId: d.id, drinkName: d.name, steam: true }) ?? []);
+  const sz = Object.keys(d.sizes)[0] as Size;
+  const rc = recipeCard(d.id, sz);
+  const steps = lessonKeysOfDrink(d.id).flatMap((k) => lesson(k, { drinkId: d.id, drinkName: d.name, steam: true, foam: rc?.recipe.foam, cream: d.family === 'raf', shots: rc?.shots, ml: rc?.recipe.milk }) ?? []);
   if (!eqs.length && !steps.length) return '';
   const shown = tut === d.id;
   const body = shown
@@ -72,7 +106,15 @@ function tabDrinks(rank: number, eq: Readonly<Record<string, boolean>>, fam: str
     .join('');
   const list = all.filter((d) => fam === 'all' || d.family === fam || d.rank > rank);
   const shown = fam === 'all' ? list : list.filter((d) => d.family === fam);
-  return `<div class="bkChips">${chips}</div><div class="bkGrid">${shown.map((d) => card(d, rank, eq, costs, avail, tut)).join('')}</div>`;
+  let last = 0;
+  const cards = shown
+    .map((d) => {
+      const head = d.rank !== last ? `<h4 class="bkRank">Ранг ${d.rank}: ${esc(rankInfo(d.rank).title)}${d.rank > rank ? ' <small>(ещё закрыто)</small>' : ''}</h4>` : '';
+      last = d.rank;
+      return head + card(d, rank, eq, costs, avail, tut);
+    })
+    .join('');
+  return `<div class="bkChips">${chips}</div><div class="bkGrid">${cards}</div>`;
 }
 
 function tabFood(rank: number): string {

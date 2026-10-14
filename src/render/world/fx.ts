@@ -10,6 +10,8 @@ export interface Particle {
   x?: number; y?: number; vx?: number; vy?: number; g?: number;
   r?: number; grow?: number; a?: number; col?: string;
   x0?: number; y0?: number; tx?: number; ty?: number; arc?: number;
+  /** масштаб летящей чашки (по объёму напитка) */
+  cs?: number;
   /** внутреннее: спрайт частицы */
   _s?: Sprite | Graphics;
 }
@@ -157,6 +159,7 @@ export class Fx {
         }
         g.position.set(p.x0! + (p.tx! - p.x0!) * u, p.y0! + (p.ty! - p.y0!) * u - Math.sin(u * Math.PI) * 64);
         g.rotation = (u - 0.4) * 0.7;
+        g.scale.set(p.cs ?? 1);
         continue;
       }
       p.vy += p.g * dt;

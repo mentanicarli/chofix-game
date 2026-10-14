@@ -14,10 +14,14 @@
 .tkBar u { display: block; height: 100%; transition: width .3s; }
 .tkMain { grid-area: main; display: flex; align-items: center; gap: 7px; }
 .tkName { font-size: 22px; font-weight: 800; }
+.tkIcon { flex: none; margin: -8px -4px -8px -8px; }
 .tkMain i { font-style: normal; font-size: 13px; font-weight: 800; color: #FFF8EC; padding: 3px 9px; border-radius: 999px; border: 2px solid var(--ink); }
 .tkSteps { grid-area: steps; display: flex; align-items: center; gap: 3px; flex-wrap: nowrap; }
 .tkSteps b { color: var(--ink-soft); font-size: 14px; margin: 0 1px; }
 .tkSteps button, .tkBtns button { font-family: inherit; font-weight: 800; font-size: 14px; padding: 4px 9px; border-radius: 10px; border: 2.5px solid var(--ink); background: #F3E4CB; color: var(--ink); cursor: pointer; }
+.tkSteps button { white-space: nowrap; }
+.tkSteps.many button { font-size: 12.5px; padding: 4px 6px; }
+.tkSteps.many b { margin: 0; }
 .tkSteps button.done { background: #CFE0C0; color: #3F7A34; }
 .tkSteps button.next { background: #E8B04A; box-shadow: 0 0 0 3px rgba(232,176,74,.4); }
 .tkSteps button.lock { color: #9B8574; border-color: #9B8574; background: #EFE4D0; }

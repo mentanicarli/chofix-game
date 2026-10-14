@@ -32,7 +32,8 @@ export const rankInfo = (r: number): RankDef => RANKS.find((x) => x.rank === r) 
 
 /** Напитки, которые уже умеет готовить бар: id меню → ключ механики старого ядра. Растёт вместе со станциями. */
 export const ENGINE: Readonly<Record<string, string>> = {
-  espresso_double: 'espresso',
+  espresso: 'espresso',
+  espresso_double: 'espresso2',
   americano: 'americano',
   cappuccino: 'cappuccino',
   latte: 'latte',
@@ -63,10 +64,20 @@ export const DRINK_NEEDS: Readonly<Record<string, readonly string[]>> = Object.f
     return [d.id, [...need]] as const;
   })
 );
-/** Нужно ли напитку молоко (холодильник с молоком). */
+/** Нужно ли напитку молоко (холодильник с молоком). У рафа молока нет: ему нужен кувшин сливок (eq_cream). */
 export const needsMilk = (d: Drink): boolean => d.steps.some((s) => s.st === 'milk');
 /** Холодные версии (льдогенератор): ключ механики обычного напитка → ключ холодного. */
 export const ICED: Readonly<Record<string, string>> = { americano: 'icedamericano', latte: 'icedlatte', cappuccino: 'icedcappuccino' };
+/** Ключ механики → напиток меню и холодный ли он (для старых ручных напитков; новые идут по своему id). */
+export const KEY_DRINK: Readonly<Record<string, { id: string; cold: boolean }>> = {
+  espresso: { id: 'espresso', cold: false }, espresso2: { id: 'espresso_double', cold: false },
+  americano: { id: 'americano', cold: false }, icedamericano: { id: 'americano', cold: true },
+  cappuccino: { id: 'cappuccino', cold: false }, icedcappuccino: { id: 'cappuccino', cold: true },
+  latte: { id: 'latte', cold: false }, icedlatte: { id: 'latte', cold: true },
+  flatwhite: { id: 'flat_white', cold: false }, raf: { id: 'raf', cold: false }, vanillaraf: { id: 'vanilla_raf', cold: false }, rafhalva: { id: 'raf_halva', cold: false }
+};
+/** Напиток меню и холодность по ключу механики. */
+export const drinkOfKey = (key: string): { id: string; cold: boolean } => KEY_DRINK[key] ?? { id: key, cold: false };
 
 /** Напитки, где сироп — часть рецепта (гость не просит его отдельно). */
 export const FORCED_SYRUP: Readonly<Record<string, string>> = {
@@ -74,7 +85,7 @@ export const FORCED_SYRUP: Readonly<Record<string, string>> = {
   latte_coconut: 'Кокос', matcha_coconut: 'Кокос', cappuccino_pumpkin: 'Тыква',
   latte_sakura: 'Сакура-вишня', latte_banana: 'Банан', latte_lemon: 'Лимонная меренга',
   boba_guava: 'Гуава-персик', boba_raspberry: 'Малина-лимон',
-  milkshake_vanilla: 'Ваниль', milkshake_banana: 'Банан', frappe_caramel: 'Карамель'
+  milkshake_vanilla: 'Ваниль', frappe_caramel: 'Карамель'
 };
 
 /** Старые молочные напитки (ручная механика пара). */

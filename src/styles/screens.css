@@ -71,7 +71,9 @@ padding-bottom: 26px; margin-bottom: 8px; }
 .bookHead h2 { margin: 0; font-size: 28px; }
 .bookHead span { font-size: 14px; font-weight: 700; opacity: .8; }
 .bookBody { overflow-y: auto; padding: 4px 6px 8px 2px; }
-.bkGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.bkGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.bkRank { grid-column: 1 / -1; margin: 6px 0 0; font-size: 15px; }
+.bkRank small { font-weight: 600; opacity: .65; }
 .bk { padding: 10px 12px; border: 2px solid var(--ink); border-radius: 12px; background: #FFF9EE; font-size: 13px; line-height: 1.3; }
 .bk.lock { background: #EADCC4; opacity: .75; border-style: dashed; }
 .bk.soon { opacity: .9; border-style: dashed; }
@@ -79,7 +81,15 @@ padding-bottom: 26px; margin-bottom: 8px; }
 .bkTop b { font-size: 16px; font-weight: 800; }
 .bkTop em { font-style: normal; font-size: 11px; font-weight: 800; background: var(--ink); color: #FFF8EC; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
 .bkSub { margin: 3px 0 6px; font-weight: 700; opacity: .8; }
-.bkSteps { margin: 0; padding-left: 18px; }
+.bkSteps { margin: 4px 0 0; padding-left: 18px; }
+.bkIng { margin: 0 0 6px; opacity: .85; }
+.bkTbl { width: 100%; border-collapse: collapse; font-size: 12px; margin: 4px 0; }
+.bkTbl th { text-align: left; font-weight: 800; border-bottom: 2px solid var(--ink); padding: 2px 4px; }
+.bkTbl td:first-child { white-space: nowrap; }
+.bkTbl td { vertical-align: top; border-bottom: 1px solid rgba(74, 47, 37, .25); padding: 3px 4px; }
+.bkTemp, .bkCup { margin: 4px 0 0; font-weight: 700; opacity: .85; }
+.bkVar { margin-top: 4px; }
+.bkVar summary { cursor: pointer; font-weight: 800; }
 .bkNote { margin: 6px 0 0; font-style: italic; opacity: .85; }
 .book h4 { margin: 14px 0 6px; font-size: 16px; }
 .book h4 small { font-weight: 700; opacity: .6; margin-left: 6px; }

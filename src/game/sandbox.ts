@@ -1,7 +1,7 @@
 import typicalJson from '../../data/typical-progress.json';
 import { DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, MAX_RANK, needsMilk, rankInfo } from './menu';
 import { rentFor } from './economy';
-import { FOAM_KINDS, SEEN_MARK, drinkSeenKey, freshSeen, lessonKeysOfDrink } from './lessons';
+import { FOAM_KINDS, SEEN_MARK, STEP_KEYS, drinkSeenKey, freshSeen, lessonKeysOfDrink } from './lessons';
 import { SHOP_BASE, SHOP_DEFS, isPurchasable } from './playerModel';
 import { TUTORIALS } from './tutorial';
 import type { PaceId } from './types';
@@ -207,7 +207,7 @@ export function seenFor(day: number, rank: number, items: readonly string[]): st
 
 /** Всё обучение уже пройдено: карточки новых напитков, шаги и подсказки станций не показываются. */
 export function fullSeen(): string[] {
-  return [SEEN_MARK, ...DRINKS.map((d) => drinkSeenKey(d.id)), 'step:milk', 'step:pour', 'step:syrup', ...FOAM_KINDS.map((k) => `step:steam:${k}`), ...Object.keys(TUTORIALS)];
+  return [SEEN_MARK, ...DRINKS.map((d) => drinkSeenKey(d.id)), ...STEP_KEYS, ...FOAM_KINDS.map((k) => `step:steam:${k}`), ...Object.keys(TUTORIALS)];
 }
 
 export type SandboxState = {

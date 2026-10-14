@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { fillStation, syrupStation } from '../src/game/api';
+import { fillCap, fillRate, fillStation, syrupStation } from '../src/game/api';
 
 const names = { vanilla: 'Ваниль', caramel: 'Карамель' };
 const syr = (want: string | null = 'vanilla', wantPumps = 2) => syrupStation.init({ want, wantPumps, names });
@@ -42,11 +42,30 @@ describe('станция сиропа', () => {
 
 describe('станция налива', () => {
   const hold = (st: ReturnType<typeof fillStation.init>, sec: number) => { for (let i = 0; i < sec * 100; i++) fillStation.update(st, 0.01, true); };
-  test('скорость 38 мл/с и потолок 330', () => {
+  test('скорость 38 мл/с и потолок 340 для молока на 200 мл', () => {
     const s = fillStation.init({ kind: 'milk', target: 200 });
     hold(s, 1); expect(s.ml).toBeCloseTo(38);
-    hold(s, 20); expect(s.ml).toBe(330);
-    fillStation.update(s, 1, false); expect(s.ml).toBe(330);
+    hold(s, 20); expect(s.ml).toBe(fillCap('milk', 200));
+    fillStation.update(s, 1, false); expect(s.ml).toBe(fillCap('milk', 200));
+  });
+  test('крупный размер льётся быстрее и с шире допуском, чтобы время и сложность не росли', () => {
+    expect(fillRate('milk', 200)).toBe(38);
+    expect(fillRate('milk', 450)).toBeCloseTo(38 * 2.25);
+    expect(fillRate('milk', 50)).toBe(38);
+    expect(fillCap('milk', 450)).toBeCloseTo(765);
+    const s = fillStation.init({ kind: 'milk', target: 450 });
+    s.ml = 450 - 10; // для 200 мл допуск 10, для 450 мл — 22,5
+    expect(fillStation.finish(s).result?.score).toBe(1);
+    s.ml = 450 - 30;
+    expect(fillStation.finish(s).result?.score).toBeLessThan(1);
+  });
+  test('щепотка специй: свои единицы и десятые доли грамма', () => {
+    const s = fillStation.init({ kind: 'topping', target: 0.5, cfg: { rate: 0.3, max: 1.5, tol: 0.15, span: 0.6, unit: 'г', noun: 'Специй', min: 0.1 } });
+    expect(fillStation.finish(s).message?.bad).toBe(true);
+    for (let i = 0; i < 200; i++) { fillStation.update(s, 0.01, true); if (s.ml >= 0.5) break; }
+    const r = fillStation.finish(s).result;
+    expect(r?.score).toBe(1);
+    expect(r?.message?.text).toMatch(/^Специй 0,?\.?5 г/);
   });
   test('оценка воды: допуск ±8 мл', () => {
     const s = fillStation.init({ kind: 'water', target: 100 }); s.ml = 108;

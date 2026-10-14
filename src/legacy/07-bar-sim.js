@@ -1,22 +1,24 @@
 /* ---------- симуляция ---------- */
 const STEAM = MENUAPI.STEAM; /* числа пара живут в src/game/lessons.ts: по ним же пишутся подсказки */
+/* Эспрессо копится в чашке (у рафа в питчере): esPrev — уже сделанные шоты */
+function setEs(v) { if (BR.rc.pitcherShot) BR.pit.es = v; else BR.cup.es = v; }
 function grindRate() { return 3.4 + .5 * Math.sin(performance.now() / 90); }
 function shotRate() {
   const B = BR, ideal = G.idealGrind || 3, set = G.grindSet || 3;
   const f = Math.pow(1.45, set - ideal) * (1 - ((B.res.tamp == null ? 0 : (B.tampP - 15)) * .02)) * (1 - (B.dose - B.tgtDose) * .04) * (G.machine ? 1 : (.97 + .06 * Math.sin(performance.now() / 700)));
-  return 3.857 * f * (B.tgtMl / 36);
+  return 3.857 * f * (B.tgtMl / 30);
 }
 function stopShot() {
   const B = BR, s = B.shot; if (s.st !== 'run') return;
-  s.st = 'done'; B.cup.es = s.ml;
-  const ml = s.ml, t = s.t, tgt = B.tgtMl;
+  s.st = 'done'; setEs(B.esPrev + s.ml);
+  const ml = s.ml, t = s.t, tgt = B.tgtMl, K = 30 / 36;
   const ts = t >= 24 && t <= 33 ? 1 : 1 - (t < 24 ? 24 - t : t - 33) / 12;
-  const ys = Math.abs(ml - tgt) <= 2 ? 1 : 1 - (Math.abs(ml - tgt) - 2) / 14;
+  const ys = Math.abs(ml - tgt) <= 2 * K ? 1 : 1 - (Math.abs(ml - tgt) - 2 * K) / (14 * K);
   const sc = clamp(.6 * ts + .4 * ys, 0, 1);
-  let msg = 'Шот ' + Math.round(ml) + ' мл за ' + Math.round(t) + ' с';
+  let msg = (B.shots > 1 ? 'Шот ' + B.shotIdx + '/' + B.shots + ' ' : 'Шот ') + Math.round(ml) + ' мл за ' + Math.round(t) + ' с';
   if (t < 22) msg += ': слишком быстро, кисло. Помол мельче';
   else if (t > 35) msg += ': слишком долго, горько. Помол крупнее';
-  else if (Math.abs(ml - tgt) > 4) msg += ml < tgt ? ': маловато' : ': слишком много';
+  else if (Math.abs(ml - tgt) > 4 * K) msg += ml < tgt ? ': маловато' : ': слишком много';
   else msg += ': отлично';
   B.shotNote = { t, ml };
   play('lock', .5, .8);
@@ -33,19 +35,19 @@ function tampRelease() {
 }
 function fillDone() {
   const B = BR, k = B.fillKind;
-  const target = k === 'water' ? RECIPE[B.drink].total - B.cup.es : k === 'ice' ? RECIPE[B.drink].ice : RECIPE[B.drink].milk;
+  const target = k === 'water' ? B.rc.water : k === 'ice' ? B.rc.ice : B.rc.milk;
   const st = MENUAPI.fillStation.init({ kind: k, target }); st.ml = k === 'water' ? B.cup.water : k === 'ice' ? B.cup.ice : B.pit.ml;
   runStep(MENUAPI.fillStation.finish(st), k);
 }
 function steamDone() {
   const B = BR, p = B.pit; if (p.T < 30) { barMsg('Молоко ещё холодное: подержите пар', true); return; }
-  const tgtF = RECIPE[B.drink].foam, fs = clamp(1 - Math.abs(p.foam - tgtF) / .35, 0, 1);
-  const [lo, hi] = G.thermo ? STEAM.zoneThermo : STEAM.zone;
+  const tgtF = B.rc.foam, fs = clamp(1 - Math.abs(p.foam - tgtF) / .35, 0, 1);
+  const [lo, hi] = MENUAPI.steamZoneOf(B.c.order.id, !!G.thermo);
   const ts = p.burnt ? 0 : clamp(1 - (p.T < lo ? lo - p.T : p.T > hi ? p.T - hi : 0) / 12, 0, 1);
   const silk = clamp(1 - p.coarse, 0, 1);
   const sc = .35 * fs + .4 * ts + .25 * silk;
   p.steamed = true; p.score = sc;
-  barMsg(p.burnt ? 'Молоко пригорело' : ts < .5 ? (p.T < 55 ? 'Холодновато: ' + Math.round(p.T) + '°' : 'Горячо: ' + Math.round(p.T) + '°') : fs < .5 ? (p.foam < tgtF ? 'Мало пены' : 'Слишком много пены') : silk < .6 ? 'Пена с пузырями' : 'Шёлковое молоко', sc < .5);
+  barMsg(p.burnt ? 'Молоко пригорело' : ts < .5 ? (p.T < lo ? 'Холодновато: ' + Math.round(p.T) + '°' : 'Горячо: ' + Math.round(p.T) + '°') : fs < .5 ? (p.foam < tgtF ? 'Мало пены' : 'Слишком много пены') : silk < .6 ? 'Пена с пузырями' : 'Шёлковое молоко', sc < .5);
   complete('steam', sc);
 }
 function guideFor(kind) {
@@ -56,7 +58,7 @@ function guideFor(kind) {
   }
   return pts;
 }
-function pourDown(p) { if (!BR.guide) { BR.guide = guideFor(BR.c.art); BR.cov = []; } BR.started = true; BR.pourMax = Math.min(1, BR.pit.ml / RECIPE[BR.drink].milk); pourMove(p); }
+function pourDown(p) { if (!BR.guide) { BR.guide = guideFor(BR.c.art); BR.cov = []; } BR.started = true; BR.pourMax = Math.min(1, BR.pit.ml / BR.rc.milk); pourMove(p); }
 function pourMove(p) {
   const B = BR; if (!B.guide) return;
   const inCup = Math.hypot(p.x - 220, p.y - 205) < 130; if (!inCup) return;
@@ -89,19 +91,19 @@ function barSim(dt) {
   /* вода/молоко */
   let filling = false;
   if (B.inset === 'water' || B.inset === 'milk' || B.inset === 'ice') {
-    if (B.hold) { filling = true; B.fill += 38 * dt; if (B.fill > 330) B.fill = 330; }
-    if (B.fillKind === 'water') B.cup.water = B.fill; else if (B.fillKind === 'ice') B.cup.ice = B.fill; else { B.pit.ml = B.fill; if (/^iced/.test(B.drink) || RECIPE[B.drink].cupMilk) B.cup.milk = B.fill; }
+    if (B.hold) { filling = true; const fk = B.fillKind, tg = (fk === 'water' ? B.rc.water : fk === 'ice' ? B.rc.ice : B.rc.milk) || 0; B.fill = Math.min(MENUAPI.fillCap(fk, tg), B.fill + MENUAPI.fillRate(fk, tg) * dt); }
+    if (B.fillKind === 'water') B.cup.water = B.fill; else if (B.fillKind === 'ice') B.cup.ice = B.fill; else { B.pit.ml = B.fill; if (/^iced/.test(B.drink) || B.rc.cupMilk) B.cup.milk = B.fill; }
   }
   /* шот */
   let shotRun = false;
   if (B.shot.st === 'run') {
-    shotRun = true; const s = B.shot; s.t += dt * TS; s.ml += shotRate() * dt; B.cup.es = s.ml;
-    if (s.ml >= 62) { stopShot(); barMsg('Перелив! Шот нужно было остановить раньше', true); }
+    shotRun = true; const s = B.shot; s.t += dt * TS; s.ml += shotRate() * dt; setEs(B.esPrev + s.ml);
+    if (s.ml >= 52) { stopShot(); barMsg('Перелив! Шот нужно было остановить раньше', true); }
   }
   /* пар */
   let steamMode = 0;
   if (B.inset === 'steam' && B.hold && !B.pit.steamed) {
-    const p = B.pit, vol = (p.ml * (1 + .6 * p.foam)) / 330, surf = 330 - vol * 220, depth = B.my - surf;
+    const p = B.pit, vol = ((p.ml + p.es) * (1 + .6 * p.foam)) / B.pitCap, surf = 330 - vol * 220, depth = B.my - surf;
     p.T += STEAM.heatPerSec * dt; B.steamT += dt;
     if (depth < 0) { p.coarse = Math.min(1, p.coarse + .45 * dt); steamMode = 3; p.T -= 3 * dt; }
     else if (depth <= 16) { steamMode = 1; if (p.T < STEAM.airUntil) p.foam = Math.min(1, p.foam + STEAM.foamPerSec * dt); else p.coarse = Math.min(1, p.coarse + .18 * dt); }
@@ -111,7 +113,7 @@ function barSim(dt) {
   /* заливка */
   let pouring = false;
   if (B.inset === 'pour' && B.hold && B.guide) {
-    const p = B.pit, tgt = RECIPE[B.drink].milk, maxL = clamp(p.ml / tgt, 0, 1.1); B.pourMax = Math.min(1, maxL);
+    const p = B.pit, tgt = B.rc.milk, maxL = clamp(p.ml / tgt, 0, 1.1); B.pourMax = Math.min(1, maxL);
     B.artA = clamp(.3 + p.foam * 1.1, .3, 1) * (1 - p.coarse * .5);
     if (Math.hypot(B.mx - 220, B.my - 205) < 130) {
       pouring = true; B.pourFlow = .5;

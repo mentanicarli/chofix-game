@@ -108,7 +108,7 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
         ends.push(g.at + g.pat);
         continue;
       }
-      const tasks = buildTasks(g.order.key, { cold: g.order.cold, syrup: !!g.order.syrup }).length + (g.order.food ? 1 : 0);
+      const tasks = buildTasks(g.order.key, { cold: g.order.cold, syrup: !!g.order.syrup, shots: g.order.shots }).length + (g.order.food ? 1 : 0);
       free = start + (12 + 7 * tasks) * prof.speed;
       ends.push(free);
       if (free > DAY_LEN + 90) {
@@ -119,7 +119,7 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
       const quality = (r < prof.q[0] ? 0 : r < prof.q[0] + prof.q[1] ? 1 : 2) as Quality;
       const st = settle({ basePrice: g.order.base, beans: !!owned['beans'], paidSyrup: !!g.order.syrup && !g.order.syrupImplied, quality, type: g.type, flawless: quality === 2 && rng() < 0.5, cards: !!owned['cards'], rating, extra: g.order.food?.price ?? 0 });
       revenue += st.total;
-      costs += drinkCost(g.order.key, !!owned['beans']) + (g.order.food ? Math.round(g.order.food.price * FOOD_COST_SHARE) : 0);
+      costs += drinkCost(g.order.key, !!owned['beans'], { size: g.order.size, cold: g.order.cold }) + (g.order.food ? Math.round(g.order.food.price * FOOD_COST_SHARE) : 0);
       rating = st.rating;
       served++;
     }

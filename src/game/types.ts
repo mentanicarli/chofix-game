@@ -33,6 +33,8 @@ export interface Drink {
   temp: Temp;
   ing: string[];
   note: string;
+  /** шоты эспрессо: число или 'size' (по размеру, см. volumes.ts) */
+  shots: number | 'size';
   sizes: Partial<Record<Size, number>>;
   coldSizes: Size[];
 }
@@ -83,6 +85,8 @@ export interface Order {
   name: string;
   size: Size;
   strong: boolean;
+  /** шоты эспрессо в этом заказе */
+  shots: number;
   price: number;
   /** Цена напитка выбранного размера без надбавок за сироп и еду. */
   base: number;

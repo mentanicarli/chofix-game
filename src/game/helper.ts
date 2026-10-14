@@ -1,13 +1,13 @@
 import type { Quality, Rng } from './types';
 
 /** Помощник справляется только с простыми напитками без сиропов и блюд. */
-export const HELPER_KEYS: ReadonlySet<string> = new Set(['espresso', 'americano', 'icedamericano']);
+export const HELPER_KEYS: ReadonlySet<string> = new Set(['espresso', 'espresso2', 'americano', 'icedamericano']);
 export const HELPER_MIN_RANK = 5;
 
 export interface HelperGuest { id: number; drink: string; arrived: boolean; leaving: boolean; pat: number; syrup: string | null; food: boolean }
 
-/** Сколько секунд помощник готовит напиток. */
-export const helperPrepTime = (key: string): number => (key === 'espresso' ? 16 : key === 'americano' ? 20 : 26);
+/** Сколько секунд помощник готовит напиток: каждый шот сверх первого (двойной эспрессо, 0.4 и 0.6 л) добавляет ещё один полный цикл. */
+export const helperPrepTime = (key: string, shots = 1): number => (key === 'espresso' || key === 'espresso2' ? 16 : key === 'americano' ? 20 : 26) + 16 * (Math.max(1, shots) - 1);
 
 /** Берёт самого нетерпеливого из тех, кого можно отдать помощнику. */
 export function helperPick(guests: readonly HelperGuest[], busyId: number | null): HelperGuest | null {

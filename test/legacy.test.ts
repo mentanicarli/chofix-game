@@ -30,12 +30,15 @@ describe('экономика', () => {
     expect(settleDay({ money: -500, pace: 'normal' }).over).toBe(true);
   });
   test('себестоимость', () => {
-    expect(drinkCost('espresso', false)).toBe(18);
-    expect(drinkCost('americano', true)).toBe(28);
-    expect(drinkCost('latte', false)).toBe(54);
-    expect(drinkCost('flatwhite', false)).toBe(50);
-    expect(drinkCost('cappuccino', false)).toBe(56);
-    expect(drinkCost('raf', true)).toBe(62);
+    // по реальным объёмам (src/game/economy.ts, recipeCost): шот × число шотов, молоко/сливки/вода по мл, расходники по размеру чашки
+    expect(drinkCost('espresso', false)).toBe(26);
+    expect(drinkCost('espresso2', false)).toBe(45);
+    expect(drinkCost('americano', false)).toBe(34);
+    expect(drinkCost('americano', true)).toBe(40);
+    expect(drinkCost('latte', false)).toBe(52);
+    expect(drinkCost('flatwhite', false)).toBe(67);
+    expect(drinkCost('cappuccino', false)).toBe(47);
+    expect(drinkCost('raf', true)).toBe(61);
   });
 });
 
@@ -98,10 +101,10 @@ describe('сохранение', () => {
 
 describe('холодный американо', () => {
   test('себестоимость и вес льда в оценке', () => {
-    expect(drinkCost('icedamericano', false)).toBe(25);
-    expect(drinkCost('icedamericano', true)).toBe(31);
-    expect(drinkCost('icedlatte', false)).toBe(57);
-    expect(drinkCost('icedcappuccino', false)).toBe(59);
+    expect(drinkCost('icedamericano', false, { size: '0.3' })).toBe(39);
+    expect(drinkCost('icedamericano', true, { size: '0.3' })).toBe(45);
+    expect(drinkCost('icedlatte', false, { size: '0.3' })).toBe(56);
+    expect(drinkCost('icedcappuccino', false, { size: '0.3' })).toBe(49);
     expect(score(['ice'], { ice: 1 })).toBe(1);
   });
 });

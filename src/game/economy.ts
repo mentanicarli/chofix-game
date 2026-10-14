@@ -1,8 +1,31 @@
-import { drinkById, priceOf } from './menu';
-import { isMenuKey } from './recipes';
-import type { CustomerType, PaceId, Quality } from './types';
+import { drinkById, drinkOfKey } from './menu';
+import { recipeNumbers } from './volumes';
+import type { Recipe } from './volumes';
+import type { CustomerType, PaceId, Quality, Size } from './types';
 
-export const COST = { E: 18, W: 4, M: 28, ICE: 3 } as const;
+/** Цены ингредиентов. E — за шот, остальное за мл или грамм; расходники (стакан, крышка) растут с размером. */
+export const COST = { E: 18, W: 0.03, M: 0.16, ICE: 0.03 } as const;
+export const UNIT_COST = {
+  /** сливки для рафа, мл */
+  cream: 0.2,
+  /** помпа сиропа */
+  pump: 2.5,
+  tonic: 0.08,
+  /** сок или пюре по напитку, мл (г) */
+  juice: { orange_bumble: 0.12, pomegranate_bumble: 0.2, hot_bumble: 0.12, matcha_bumble: 0.12, tea_currant: 0.3, milkshake_banana: 0.25 } as Readonly<Record<string, number>>,
+  powder: { cocoa: 0.5, chicory_latte: 0.6, protein_milk: 1.2, protein_water: 1.2 } as Readonly<Record<string, number>>,
+  tea: 1.5,
+  matcha: 6,
+  tapioca: 0.5,
+  iceCream: 0.35,
+  topFoam: 0.4,
+  /** сливочная пена аэрокано (сливки 33%) */
+  whip: 0.5,
+  sauce: 0.5,
+  /** стакан, крышка, салфетка: 5 + 0,03 · мл */
+  cupBase: 5,
+  cupPerMl: 0.03
+} as const;
 export const SYRUP_SURCHARGE = 20;
 
 export interface Pace { name: string; pat: number; rent: number; text: string }
@@ -69,18 +92,34 @@ export function settleDay(i: { money: number; pace: PaceId; rank?: number; wage?
 /** Напитки с молочным циклом (молоко, вспенивание, подача) в баре. */
 export const MILKY_KEYS: ReadonlySet<string> = new Set(['cappuccino', 'latte', 'flatwhite', 'raf', 'vanillaraf', 'rafhalva']);
 
-/** Себестоимость напитка по ключу механики бара. */
-export function drinkCost(key: string, beans: boolean): number {
-  let c: number;
-  if (key === 'espresso') c = COST.E;
-  else if (key === 'americano') c = COST.E + COST.W;
-  else if (key === 'icedamericano') c = COST.E + COST.W + COST.ICE;
-  else if (key === 'icedlatte') c = COST.E + COST.M + 8 + COST.ICE;
-  else if (key === 'icedcappuccino') c = COST.E + COST.M + 10 + COST.ICE;
-  else if (key === 'latte') c = COST.E + COST.M + 8;
-  else if (key === 'flatwhite') c = COST.E + COST.M + 4;
-  else if (MILKY_KEYS.has(key)) c = COST.E + COST.M + 10;
-  else if (isMenuKey(key)) c = Math.round(priceOf(key, (Object.keys(drinkById[key]?.sizes ?? {})[0] ?? '0.3') as '0.3') * 0.33);
-  else c = COST.E + COST.M;
-  return c + (beans ? 6 : 0);
+/** Себестоимость рецепта: ингредиенты по реальным объёмам плюс расходники. */
+export function recipeCost(r: Recipe): number {
+  let c = r.shots * COST.E;
+  const raf = drinkById[r.id]?.family === 'raf';
+  if (r.milk !== undefined) c += r.milk * (raf ? UNIT_COST.cream : COST.M);
+  if (r.water !== undefined) c += r.water * COST.W;
+  if (r.ice !== undefined) c += r.ice * COST.ICE;
+  c += r.pumps * UNIT_COST.pump;
+  if (r.juice !== undefined) c += r.juice * (UNIT_COST.juice[r.id] ?? 0.12);
+  if (r.tonic !== undefined) c += r.tonic * UNIT_COST.tonic;
+  if (r.powder !== undefined) c += r.powder * (UNIT_COST.powder[r.id] ?? 0.5);
+  if (r.tea) c += r.tea.g * UNIT_COST.tea;
+  if (r.matcha) c += r.matcha.g * UNIT_COST.matcha;
+  if (r.boba !== undefined) c += r.boba * UNIT_COST.tapioca;
+  if (r.id === 'aerocano') c += (r.topFoam ?? 0) * UNIT_COST.whip;
+  else if (r.topFoam) c += r.topFoam * UNIT_COST.topFoam;
+  if (r.id === 'milkshake_vanilla' || r.id === 'milkshake_banana') c += 0.3 * r.drinkMl * UNIT_COST.iceCream;
+  if (r.parts.some((p) => p.task === 'topping' && p.label.startsWith('Карамельный'))) c += 8 * UNIT_COST.sauce;
+  c += UNIT_COST.cupBase + UNIT_COST.cupPerMl * r.cupMl;
+  return Math.round(c);
+}
+
+/** Себестоимость заказа: по ключу механики бара, размеру и холодности (без размера берётся первый из меню). */
+export function drinkCost(key: string, beans: boolean, o: { size?: Size; cold?: boolean } = {}): number {
+  const dk = drinkOfKey(key);
+  const d = drinkById[dk.id];
+  if (!d) return COST.E;
+  const size = o.size && d.sizes[o.size] !== undefined ? o.size : ((Object.keys(d.sizes)[0] as Size | undefined) ?? '0.2');
+  const r = recipeNumbers(d, size, !!o.cold || dk.cold);
+  return recipeCost(r) + (beans ? 6 * r.shots : 0);
 }

@@ -1,28 +1,30 @@
 /* Слои чашки для напитков нового ядра: то, что идёт под кофе/молоком, и пена сверху */
 function xLayers(B, px) {
-  const pal = MENUAPI.paletteOf(B.drink), list = [], top = [];
+  const pal = MENUAPI.paletteOf(B.drink), rc = B.rc, list = [], top = [];
+  let bobaH = 0;
   B.tasks.forEach(t => {
     const st = B.xs[t]; if (!st) return;
-    if (t === 'juice') list.push({ col: pal.juice, h: st.ml * px * .85 });
-    else if (t === 'tonic') list.push({ col: pal.tonic, h: st.ml * px * .85 });
-    else if (t === 'brew') list.push({ col: pal.tea, h: Math.min(1, st.t / st.minutes) * 54 });
-    else if (t === 'whisk') list.push({ col: pal.matcha, h: st.t > 0 || B.done.whisk ? 14 + Math.min(1, st.t / st.target) * 14 : 0 });
-    else if (t === 'powder') list.push({ col: pal.powder, h: st.ml * 1.1 });
-    else if (t === 'boba') list.push({ col: '#3A2A24', h: st.ml > 0 ? 8 + st.ml * .2 : 0 });
-    else if (t === 'foam' || t === 'whip') top.push({ col: pal.foam, h: Math.min(1, st.t / st.target) * 12 });
+    if (t === 'juice') list.push({ col: pal.juice, h: st.ml * px });
+    else if (t === 'tonic') list.push({ col: pal.tonic, h: st.ml * px });
+    else if (t === 'brew') list.push({ col: pal.tea, h: Math.min(1, st.t / st.minutes) * (rc.tea ? rc.tea.waterMl : 120) * px });
+    else if (t === 'whisk') list.push({ col: pal.matcha, h: st.t > 0 || B.done.whisk ? (rc.matcha ? rc.matcha.waterMl : 50) * px * (.5 + .5 * Math.min(1, st.t / st.target)) : 0 });
+    else if (t === 'powder') list.push({ col: pal.powder, h: st.ml * px });
+    else if (t === 'boba') bobaH = st.ml * px; /* шарики всегда на дне стакана, даже если их кладут после шейкера */
+    else if (t === 'foam' || t === 'whip') top.push({ col: pal.foam, h: Math.min(1, st.t / st.target) * (rc.topFoam || 40) * px });
   });
   const h = list.reduce((a, x) => a + x.h, 0);
-  return { list: list.filter(x => x.h > .2), h, top, mix: !!(B.done.blend || B.done.shake), pal, topCol: null };
+  return { list: list.filter(x => x.h > .2), h, bobaH, top, mix: !!(B.done.blend || B.done.shake), pal, topCol: null };
 }
 /* слои «нового ядра»: возвращает прямоугольники жидкости и новую высоту поверхности */
 function paintX(B, XL, base, legH, topY, rects) {
-  const hide = XL.mix;
+  const hide = XL.mix, bh = XL.bobaH;
+  if (bh > .2) rects.push({ y: 2 - bh, h: bh, col: '#3A2A24' });
   if (XL.mix) {
     const tot = XL.h + legH;
-    rects.push({ y: 2 - tot, h: tot, col: XL.pal.blend });
-    topY = 2 - tot; XL.topCol = XL.pal.blend;
+    rects.push({ y: 2 - bh - tot, h: tot, col: XL.pal.blend });
+    topY = 2 - bh - tot; XL.topCol = XL.pal.blend;
   } else {
-    let acc = 2;
+    let acc = 2 - bh;
     XL.list.slice(0, 4).forEach(l => { acc -= l.h; rects.push({ y: acc, h: l.h, col: l.col }); });
     if (!legH && XL.list.length) XL.topCol = XL.list[XL.list.length - 1].col;
   }
@@ -34,11 +36,18 @@ function paintX(B, XL, base, legH, topY, rects) {
 /* ---------- прорисовка обзора: считаем кадр и отдаём его Pixi ---------- */
 function barPaint(dt) {
   const B = BR; if (!B) return;
-  const cup = B.cup, pxMl = 72 / 200, XL = MENUAPI.isMenuKey(B.drink) ? xLayers(B, pxMl) : null, base = 2 - (XL && !XL.mix ? XL.h : 0);
-  const sy = cup.pumps * 8 * pxMl, ey = cup.es * pxMl, wy = Math.max(cup.water, cup.milk) * pxMl, fo = cup.milk > 0 ? cup.foam * 10 + 4 : 0;
+  /* Высота слоёв считается от объёма чашки этого заказа: 72 px внутри чашки = rc.cupMl мл (чашка сама масштабируется по объёму, см. WORLD.paintBar cupK) */
+  const cup = B.cup, rc = B.rc, pxMl = 72 / rc.cupMl, XL = MENUAPI.isMenuKey(B.drink) ? xLayers(B, pxMl) : null, base = 2 - (XL ? XL.bobaH : 0) - (XL && !XL.mix ? XL.h : 0);
+  const raf = rc.pitcherShot, pour = raf ? clamp(B.pourLevel || 0, 0, 1) : 1;
+  /* у рафа эспрессо в питчере и попадает в чашку вместе со сливками при заливке */
+  const sy = cup.pumps * 8 * pxMl, ey = raf ? 0 : cup.es * pxMl;
+  const milkMl = cup.milk * (rc.cupMilk ? 1 + (rc.coldX || 0) : 1) + (raf ? B.pit.es * pour : 0);
+  const wy = Math.max(cup.water * pxMl, milkMl * pxMl);
+  /* пена: доля молока по шкале «Пена» (расширение x = пена / 1,1) */
+  const fo = cup.milk > 0 && !rc.cupMilk ? cup.milk * (cup.foam / 1.1) * pxMl + 2 : 0;
   const rects = [];
   let topY = base - sy - ey - wy - fo, hide = false;
-  const liqCol = cup.milk > 0 ? mixC('#8A5B3A', '#C99B6E', clamp(cup.milk / 120, 0, 1)) : '#8A5B3A';
+  const liqCol = raf && cup.milk > 0 ? mixC('#8A5B3A', '#C99B6E', .6) : cup.milk > 0 ? mixC('#8A5B3A', '#C99B6E', clamp(cup.milk / ((rc.milk || 120) * .6), 0, 1)) : '#8A5B3A';
   const std = [
     { y: base - sy, h: sy, col: B.syrId ? SYR[B.syrId].col : '#E8C766' },
     { y: base - sy - ey, h: ey, col: '#4A2E20' },
@@ -55,13 +64,16 @@ function barPaint(dt) {
   }
   const run = B.shot.st === 'run', now = performance.now();
   const ring = ringTarget();
+  const k = rc.cupK || 1;
+  /* раф: эспрессо льётся в питчер под группой, пока в него не налили сливки */
+  const pitUnder = raf && B.pit.ml === 0 && !B.done.steam ? { level: clamp((B.pit.es || 0) / ((rc.shots || 1) * 30), 0, 1) } : null;
   WORLD.paintBar({
     pf: B.pf0, cof: B.dose > 2 && !B.done.shot,
     grindDeg: ((G.grindSet || 3) - 3) * 40, dose: B.dose,
-    tamperUp: B.inset === 'tamp', espresso: B.drink === 'espresso',
-    ice: clamp(cup.ice / 100, 0, 1), rects, topY, topRx: 46 + (-topY) * .12, topCol, topOn: topY < -10, art,
-    pitH: Math.min(74, B.pit.ml / 330 * 74 * 1.6),
-    stream: run ? { y: 354, h: Math.max(8, 478 + topY * (B.drink === 'espresso' ? .78 : 1) - 354), col: mixC('#4A2E20', '#C99B6E', clamp((B.shot.t - 14) / 24, 0, 1)) } : null,
+    tamperUp: B.inset === 'tamp', cupK: k, pitUnder,
+    ice: rc.ice ? clamp(cup.ice / rc.ice, 0, 1) : 0, rects, topY, topRx: 46 + (-topY) * .12, topCol, topOn: topY < -10, art,
+    pitH: Math.min(74, (B.pit.ml + B.pit.es) / B.pitCap * 74 * 1.6),
+    stream: run ? { y: 354, h: Math.max(8, (pitUnder ? 470 : 478 + topY * k) - 354), col: mixC('#4A2E20', '#C99B6E', clamp((B.shot.t - 14) / 24, 0, 1)) } : null,
     gaugeDeg: run ? 70 + Math.sin(now / 120) * 4 : B.inset === 'steam' ? 40 : -30,
     steam: B.inset === 'steam' && !!B.hold,
     bell: B.ready ? .06 * Math.sin(now / 140) : 0,
@@ -81,35 +93,43 @@ function ringTarget() {
 /* ---------- тикет и подсказки ---------- */
 const TCOL = { food: '#C98B5A', ice: '#9FC3C7', syrup: '#C99028', grind: '#8A5B3A', tamp: '#6B4C3D', shot: '#C4694A', water: '#7FA7AE', milk: '#9AA79A', steam: '#8FA58A', pour: '#C98B5A' };
 const WHO = { regular: 'Преподаватель', student: 'Студент', hurry: 'Опаздывает на пару' };
+/* Шаги билета: повторы цикла «помол, темпер, шот» (двойной эспрессо, 0.4 и 0.6 л) подписаны «Шот 1/2», «Шот 2/2» */
+function ticketChips() {
+  const B = BR, labels = MENUAPI.stepLabels(B.exp, B.c.order.id), tot = {}, seen = {};
+  B.exp.forEach(t => { tot[t] = (tot[t] || 0) + 1; });
+  return B.exp.map((t, i) => { const k = seen[t] || 0; seen[t] = k + 1; const rep = tot[t] > 1; return { t, label: labels[i], done: rep ? (k < B.shotIdx - 1 || (k === B.shotIdx - 1 && !!B.done[t])) : !!B.done[t], cur: !rep || k === B.shotIdx - 1 }; });
+}
+const sizeTxt = o => String(o.size).replace('.', ',') + ' л';
 function drawTicket() {
   const B = BR; if (!B) { UI.tk.innerHTML = ''; return; }
-  const c = B.c, f = Math.max(0, c.pat / c.max);
-  const key = [B.tasks.map(t => (B.done[t] ? 1 : 0)).join(''), B.inset, B.shot.st, B.ready, Math.round(f * 20), G.hints, B.pumps].join('|');
+  const c = B.c, f = Math.max(0, c.pat / c.max), cs = ticketChips();
+  const key = [cs.map(x => (x.done ? 1 : 0)).join(''), B.shotIdx, B.inset, B.shot.st, B.ready, Math.round(f * 20), G.hints, B.pumps].join('|');
   if (key === tkKey) return; tkKey = key;
-  const next = B.tasks.find(t => !B.done[t] && !blockMsg(t));
-  const tags = (c.strong ? '<i style="background:#C4694A">крепкий</i>' : '') + (c.order && c.order.food ? `<i style="background:#C98B5A">${c.order.food.heat ? 'разогреть' : 'еда'}</i>` : '') + (c.syrup ? `<i style="background:${SYR[c.syrup].col};color:#4A2F25">${SYR[c.syrup].name.toLowerCase()} ×${c.pumps}</i>` : '');
-  const chips = B.tasks.map(t => `<button type="button" data-t="${t}" class="${B.done[t] ? 'done' : t === next ? 'next' : blockMsg(t) ? 'lock' : ''}">${B.done[t] ? '✓ ' : ''}${TASK_NAME[t]}</button>`).join('<b>›</b>');
+  const next = cs.find(x => x.cur && !x.done && !blockMsg(x.t));
+  const o = c.order, multi = MENUAPI.drinkById[o.id] && Object.keys(MENUAPI.drinkById[o.id].sizes).length > 1;
+  const tags = (multi && o.size !== '0.2' ? `<i style="background:#8FA58A">${sizeTxt(o)}</i>` : '') + (B.shots > 1 ? `<i style="background:#7A5A4A">${B.shots === 2 ? '2 шота' : B.shots + ' шотов'}</i>` : '') + (c.strong ? '<i style="background:#C4694A">крепкий</i>' : '') + (c.order && c.order.food ? `<i style="background:#C98B5A">${c.order.food.heat ? 'разогреть' : 'еда'}</i>` : '') + (c.syrup ? `<i style="background:${SYR[c.syrup].col};color:#4A2F25">${SYR[c.syrup].name.toLowerCase()} ×${c.pumps}</i>` : '');
+  const chips = cs.map(x => `<button type="button" data-t="${x.t}" class="${x.done ? 'done' : x === next ? 'next' : !x.cur || blockMsg(x.t) ? 'lock' : ''}">${x.done ? '✓ ' : ''}${x.label}</button>`).join('<b>›</b>');
   const bar = f > .5 ? '#93A684' : f > .25 ? '#E8B04A' : '#C4694A';
   UI.tk.innerHTML = `<div class="tkWho"><span>${WHO[c.type] || 'Гость'} · №${c.id}</span><div class="tkBar"><u style="width:${(f * 100).toFixed(0)}%;background:${bar}"></u></div></div>
-<div class="tkMain"><b class="tkName">${NAME[B.drink]}</b>${tags}</div><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps">${chips}</div>
+<div class="tkMain"><svg class="tkIcon" viewBox="-30 -30 60 60" width="${Math.round(44 * (B.rc.cupK || 1))}" height="${Math.round(44 * (B.rc.cupK || 1))}" aria-hidden="true"><g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${iconOf(B.drink)}</g></svg><b class="tkName">${NAME[B.drink]}</b>${tags}</div><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps${cs.length > 7 ? ' many' : ''}">${chips}</div>
 <div class="tkBtns"><button type="button" data-hint="1" class="${G.hints ? 'on' : ''}" title="Подсказки">?</button><button type="button" data-back="1" title="К залу (Tab)">К залу</button></div>`;
 }
 /* Подсказки новых станций и шагов (молоко, пар, заливка, сироп): пока не пройдены и пока игрок не выключил подсказки (настройкой или кнопкой «?») */
 const tutOffNow = () => (SET.hintsSet && !SET.hints) || G.tutOff;
 function tutCtx() {
-  const B = BR, o = B.c.order, rc = RECIPE[B.drink] || {};
-  return { drinkId: o.id, drinkName: o.name, ml: rc.milk, foam: rc.foam, thermo: !!G.thermo, steam: !(/^iced/.test(B.drink) || rc.cupMilk), syrupName: B.c.syrup ? SYR[B.c.syrup].name : undefined, pumps: B.c.pumps };
+  const B = BR, o = B.c.order, rc = B.rc;
+  return { drinkId: o.id, drinkName: o.name, ml: rc.milk, foam: rc.foam, thermo: !!G.thermo, steam: !(/^iced/.test(B.drink) || rc.cupMilk), syrupName: B.c.syrup ? SYR[B.c.syrup].name : undefined, pumps: B.c.pumps, cream: !!rc.pitcherShot, shots: B.shots };
 }
 function tutKey() {
   const B = BR; if (!B || tutOffNow()) return null;
   const t = B.inset || B.tasks.find(x => !B.done[x] && !blockMsg(x));
   if (!t || B.done[t]) return null;
-  return MENUAPI.nextTutorial(t, B.c.order.id, B.c.order.food, G.tutorialSeen);
+  return MENUAPI.nextTutorial(t, B.c.order.id, B.c.order.food, G.tutorialSeen, B.shots);
 }
 /* где игрок сейчас на шагах подсказки и что подсветить */
 function tutLive(key) {
-  const B = BR, p = B.pit, rc = RECIPE[B.drink] || {};
-  return MENUAPI.lessonStep(key, { ml: B.inset === 'milk' ? B.fill : p.ml, line: rc.milk, foam: p.foam, targetFoam: rc.foam, temp: p.T, thermo: !!G.thermo, started: !!B.started, pumps: B.pumps || 0, wantPumps: B.c.pumps }, { syrupKey: B.c.syrup });
+  const B = BR, p = B.pit, rc = B.rc;
+  return MENUAPI.lessonStep(key, { ml: B.inset === 'milk' ? B.fill : p.ml, line: rc.milk, foam: p.foam, targetFoam: rc.foam, temp: p.T, thermo: !!G.thermo, zone: MENUAPI.steamZoneOf(B.c.order.id, !!G.thermo), started: !!B.started, pumps: B.pumps || 0, wantPumps: B.c.pumps, shotIdx: B.shotIdx }, { syrupKey: B.c.syrup });
 }
 function tutText(key) {
   const L = MENUAPI.lesson(key, tutCtx()); if (!L) return '';
@@ -134,21 +154,22 @@ function coachText() {
   const B = BR; if (!B) return '';
   const te = tutKey(); if (te) return tutText(te);
   const s = B.shot;
-  if (B.inset === 'grind') return G.day === 1 ? 'Держите «Молоть» (или Пробел), пока весы не покажут ' + B.tgtDose + ' г. Настройку помола не трогайте. Потом «Готово».' : 'Доза ' + B.tgtDose + ' г. Если шот выходит слишком быстро или долго, подкрутите помол.';
+  const gr = u => String(u / 2).replace('.', ','), nth = B.shots > 1 ? ' (шот ' + B.shotIdx + ' из ' + B.shots + ')' : '';
+  if (B.inset === 'grind') return G.day === 1 ? 'Держите «Молоть» (или Пробел), пока весы не покажут ' + gr(B.tgtDose) + ' г' + nth + '. Настройку помола не трогайте. Потом «Готово».' : 'Доза ' + gr(B.tgtDose) + ' г' + nth + '. Если шот выходит слишком быстро или долго, подкрутите помол.';
   if (B.inset === 'tamp') return B.tampPhase === 'level' ? 'Проведите мышью по кофе (зажав кнопку), чтобы выровнять. Ровная «таблетка» даёт ровный шот.' : 'Зажмите «Прессовать» и отпустите, когда стрелка в зелёной зоне (около 15 кг).';
-  if (B.inset === 'shot') return !s.locked ? 'Вставьте портафильтр в группу.' : s.st === 'idle' ? 'Запустите шот. Остановите, когда уровень дойдёт до линии, и посмотрите на время.' : 'Следите за линией! Остановить можно здесь, кнопкой на машине или Пробелом.';
+  if (B.inset === 'shot') return !s.locked ? 'Вставьте портафильтр в группу.' : s.st === 'idle' ? 'Запустите шот' + nth + (B.rc.pitcherShot ? ' (он льётся в питчер)' : '') + '. Остановите, когда уровень дойдёт до линии, и посмотрите на время.' : 'Следите за линией! Остановить можно здесь, кнопкой на машине или Пробелом.';
   if (B.inset === 'food') return B.food && B.food.picked ? 'Разогрейте блюдо: держите кнопку и отпустите, когда шкала в зелёной зоне. Потом «Готово».' : 'Найдите на витрине блюдо, которое просил гость: «' + (B.c.order.food ? B.c.order.food.name : '') + '».';
   if (MENUAPI.PANEL_TASKS.has(B.inset)) return B.xv[B.inset] ? B.xv[B.inset].hint : '';
   if (B.inset === 'water') return 'Держите кнопку, пока вода не дойдёт до линии на чашке.';
-  if (B.inset === 'ice') return 'Держите кнопку: лёд сыплется в чашку. Остановитесь у линии: ' + RECIPE[B.drink].ice + ' г.';
-  if (B.inset === 'milk') return 'Налейте молоко до линии: ' + RECIPE[B.drink].milk + ' мл. Лишнее можно вылить.';
-  if (B.inset === 'steam') return 'Зажмите мышь: пар включён. Трубка у самой поверхности добавляет пену, глубже греет. Остановите на 55 – 65°.';
+  if (B.inset === 'ice') return 'Держите кнопку: лёд сыплется в чашку. Остановитесь у линии: ' + B.rc.ice + ' г.';
+  if (B.inset === 'milk') return (B.rc.pitcherShot ? 'Налейте холодные сливки до линии: ' : 'Налейте молоко до линии: ') + B.rc.milk + ' мл. Лишнее можно вылить.';
+  if (B.inset === 'steam') { const z = MENUAPI.steamZoneOf(B.c.order.id, !!G.thermo); return 'Зажмите мышь: пар включён. Трубка у самой поверхности добавляет пену, глубже греет. Остановите на ' + z[0] + ' – ' + z[1] + '°.'; }
   if (B.inset === 'pour') return 'Зажмите и ведите мышью по контуру над чашкой. Заливка заканчивается, когда питчер опустеет.';
   if (B.shot.st === 'run') return 'Шот идёт! Нажмите на машину или Пробел, когда уровень дойдёт до линии.';
   if (B.ready) return 'Всё готово. Нажмите на звонок, чтобы подать напиток.';
   if (B.inset === 'syrup') return 'Выберите бутылку: каждое нажатие это одна порция. Нужно: ' + (B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() + ' ×' + B.c.pumps : '') + '. Потом «Готово».';
   const t = B.tasks.find(x => !B.done[x] && !blockMsg(x));
-  return { syrup: `Клиент просил сироп: ${B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() : ''} ×${B.c.pumps}. Нажмите на полку с сиропами и выберите бутылку: одно нажатие это одна порция.`, grind: 'Начнём с помола. Нажмите на кофемолку слева.', tamp: 'Молотый кофе нужно уплотнить. Нажмите на темпер.', shot: 'Теперь на кофемашину: вставить портафильтр и запустить шот.', water: 'Долейте горячую воду: нажмите на носик слева на машине.', milk: 'Пока кофе настаивается, займитесь молоком: нажмите на холодильник.', steam: 'Вспеньте молоко: нажмите на паровую трубку справа.', pour: 'Заливайте молоко в чашку: нажмите на чашку.' }[t] || '';
+  return { syrup: `Клиент просил сироп: ${B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() : ''} ×${B.c.pumps}. Нажмите на полку с сиропами и выберите бутылку: одно нажатие это одна порция.`, grind: 'Начнём с помола. Нажмите на кофемолку слева.', tamp: 'Молотый кофе нужно уплотнить. Нажмите на темпер.', shot: 'Теперь на кофемашину: вставить портафильтр и запустить шот.', water: 'Долейте воду (' + (B.rc.water || 0) + ' мл): нажмите на носик слева на машине.', milk: B.rc.pitcherShot ? 'Теперь холодные сливки: нажмите на холодильник.' : 'Пока кофе настаивается, займитесь молоком: нажмите на холодильник.', steam: 'Вспеньте молоко: нажмите на паровую трубку справа.', pour: 'Заливайте молоко в чашку: нажмите на чашку.' }[t] || '';
 }
 function drawCoach() {
   const el = UI.coach, tk = BR && tutKey(); if (!BR || (!G.hints && !tk)) { el.hidden = true; return; }
@@ -180,11 +201,11 @@ function pxScene(B, m, title) {
   }
   if (m === 'grind') return { mode: m, title, view: { set: G.grindSet || 3, ideal: G.idealGrind || 3, pro: !!G.grinderPro, hold: !!B.hold, done: !!B.done.grind, dose: B.dose, target: B.tgtDose, now: performance.now() } };
   if (m === 'tamp') return { mode: m, title, view: { phase: B.tampPhase, press: B.tampP, uneven: B.uneven, hold: !!B.hold, mx: B.mx, my: B.my, wide: !!G.tamper, seeds: SEED } };
-  if (m === 'shot') return { mode: m, title, view: { ml: B.shot.ml, t: B.shot.t, state: B.shot.st, locked: !!B.shot.locked, target: B.tgtMl, lastShot: B.shotNote ? B.shotNote.t : null, now: performance.now() } };
-  if (m === 'steam') { const p = B.pit; return { mode: m, title, view: { ml: p.ml, foam: p.foam, coarse: p.coarse, temp: p.T, steamed: !!p.steamed, hold: !!B.hold, my: B.my, thermo: !!G.thermo, targetFoam: RECIPE[B.drink].foam, now: performance.now() } }; }
+  if (m === 'shot') return { mode: m, title, view: { ml: B.shot.ml, t: B.shot.t, state: B.shot.st, locked: !!B.shot.locked, target: B.tgtMl, lastShot: B.shotNote ? B.shotNote.t : null, idx: B.shots > 1 ? B.shotIdx + '/' + B.shots : '', now: performance.now() } };
+  if (m === 'steam') { const p = B.pit; return { mode: m, title, view: { ml: p.ml + p.es, foam: p.foam, coarse: p.coarse, temp: p.T, steamed: !!p.steamed, hold: !!B.hold, my: B.my, thermo: !!G.thermo, zone: MENUAPI.steamZoneOf(B.c.order.id, !!G.thermo), cap: B.pitCap, targetFoam: B.rc.foam, now: performance.now() } }; }
   if (m === 'pour') return { mode: m, title, view: { level: B.pourLevel, blobs: B.blobs, guide: (G.hints || G.stencil) ? (B.guide || guideFor(B.c.art)) : null, hold: !!B.hold, mx: B.mx, my: B.my, started: !!B.started } };
-  const k = B.fillKind, tl = k === 'water' ? RECIPE[B.drink].total : k === 'ice' ? RECIPE[B.drink].ice : RECIPE[B.drink].milk;
-  return { mode: m, title, view: { kind: k, ml: B.fill, espresso: B.cup.es, line: tl, holding: !!B.hold, label: k === 'water' ? 'Лить воду (держите)' : k === 'ice' ? 'Сыпать лёд (держите)' : /raf/.test(B.drink) ? 'Лить молоко со сливками' : 'Лить молоко (держите)', now: performance.now() } };
+  const k = B.fillKind, tl = k === 'water' ? B.rc.total : k === 'ice' ? B.rc.ice : B.rc.milk;
+  return { mode: m, title, view: { kind: k, ml: B.fill, espresso: B.cup.es, line: tl, holding: !!B.hold, label: k === 'water' ? 'Лить воду (держите)' : k === 'ice' ? 'Сыпать лёд (держите)' : B.rc.pitcherShot ? 'Лить сливки (держите)' : 'Лить молоко (держите)', now: performance.now() } };
 }
 function drawInset() {
   HIT = [];
@@ -192,7 +213,7 @@ function drawInset() {
   if (!m) { pxOn = false; return; }
   if (m === 'food') { pxOn = false; bp.style.display = 'none'; renderFood(B); return; }
   if (MENUAPI.PANEL_TASKS.has(m)) { pxOn = false; bp.style.display = 'none'; xRender(B); return; }
-  const title = { grind: 'Кофемолка', tamp: 'Темпер', shot: 'Группа кофемашины', water: B && B.drink === 'icedamericano' ? 'Холодная вода' : 'Горячая вода', ice: 'Льдогенератор', milk: B && (/^iced/.test(B.drink) || RECIPE[B.drink].cupMilk) ? 'Молоко в стакан' : 'Молоко в питчер', syrup: 'Сиропы', steam: 'Паровая трубка', pour: 'Заливка и рисунок' }[m];
+  const title = { grind: 'Кофемолка', tamp: 'Темпер', shot: 'Группа кофемашины', water: B && B.drink === 'icedamericano' ? 'Холодная вода' : 'Горячая вода', ice: 'Льдогенератор', milk: B && (/^iced/.test(B.drink) || B.rc.cupMilk) ? 'Молоко в стакан' : B && B.rc.pitcherShot ? 'Сливки в питчер' : 'Молоко в питчер', syrup: 'Сиропы', steam: 'Паровая трубка', pour: 'Заливка и рисунок' }[m];
   pxOn = PX.ready && !!PX_MODES[m];
   if (pxOn) { const hits = PX.draw(pxScene(B, m, title)); if (hits) { HIT = hits; bi.style.opacity = 0; bp.style.display = 'block'; return; } pxOn = false; }
   bi.style.opacity = 1; bp.style.display = 'none';
@@ -239,7 +260,7 @@ function drawGrind(B) {
   /* весы */
   const e = Math.abs(B.dose - B.tgtDose), col = e <= .5 ? '#7BC46A' : e <= 1.5 ? '#E8B04A' : '#E0745A';
   rrI(220, 252, 190, 54, 12); bx.fillStyle = '#2F2A27'; bx.fill(); bx.lineWidth = 3; bx.strokeStyle = ICOL.ink; bx.stroke();
-  tI(f1(B.dose) + ' г', 396, 292, 32, col, 'right'); tI('цель ' + B.tgtDose, 236, 290, 14, '#BFB5A5');
+  tI(f1(B.dose / 2) + ' г', 396, 292, 32, col, 'right'); tI('цель ' + String(B.tgtDose / 2).replace('.', ','), 236, 290, 14, '#BFB5A5');
   if (B.dose > B.tgtDose + 1.6 && !B.done.grind) btnI('dump', 220, 312, 190, 30, 'Высыпать (−₽ 5)', { size: 14, col: '#F0B3A0' });
   btnI('grindHold', 30, 356, 250, 56, 'Молоть (держите)', { hold: true, col: '#C98B5A' });
   btnI('grindDone', 296, 356, 114, 56, 'Готово', { col: '#B9CAA9' });
@@ -274,7 +295,7 @@ function drawTamp(B) {
 function drawShot(B) {
   const s = B.shot, tgt = B.tgtMl;
   /* стакан */
-  const gx = 110, gy = 96, gw = 100, gh = 220, my = ml => gy + gh - ml / 64 * gh;
+  const gx = 110, gy = 96, gw = 100, gh = 220, my = ml => gy + gh - ml / 54 * gh;
   bx.save(); bx.lineWidth = 3; bx.strokeStyle = ICOL.ink;
   bx.beginPath(); bx.moveTo(gx, gy); bx.lineTo(gx + gw, gy); bx.lineTo(gx + gw - 8, gy + gh); bx.lineTo(gx + 8, gy + gh); bx.closePath(); bx.fillStyle = 'rgba(214,232,230,.55)'; bx.fill();
   if (s.ml > 0) { bx.save(); bx.clip(); bx.fillStyle = mixC('#4A2E20', '#C99B6E', clamp((s.t - 14) / 24, 0, 1)); bx.fillRect(gx, my(s.ml), gw, gy + gh - my(s.ml)); bx.fillStyle = '#B07A4F'; bx.fillRect(gx, my(s.ml), gw, 7); bx.restore(); }
@@ -285,7 +306,7 @@ function drawShot(B) {
   /* линия цели */
   const ty = my(tgt); bx.save(); bx.setLineDash([8, 6]); lineW(gx - 18, ty, gx + gw + 18, ty, '#C4694A', 3.5); bx.restore(); tI(tgt + ' мл', gx - 22, ty + 5, 15, '#C4694A', 'right');
   /* время */
-  tI(f1(s.t) + ' с', 396, 128, 40, ICOL.ink, 'right'); tI(Math.round(s.ml) + ' мл', 396, 160, 22, ICOL.soft, 'right');
+  tI(f1(s.t) + ' с', 396, 128, 40, ICOL.ink, 'right'); tI(Math.round(s.ml) + ' мл', 396, 160, 22, ICOL.soft, 'right'); if (B.shots > 1) tI('Шот ' + B.shotIdx + '/' + B.shots, 396, 100, 18, ICOL.soft, 'right');
   const bx0 = 250, bw = 150; rrI(bx0, 186, bw, 16, 8); bx.fillStyle = '#E7D6BC'; bx.fill(); bx.lineWidth = 2.5; bx.strokeStyle = ICOL.ink; bx.stroke();
   const tx = t => bx0 + clamp(t / 45, 0, 1) * bw; rrI(tx(24), 186, tx(33) - tx(24), 16, 4); bx.fillStyle = '#93A684'; bx.fill(); bx.stroke(); lineW(tx(s.t), 180, tx(s.t), 208, '#C4694A', 4);
   tI('идеальное время 24–33 с', 400, 226, 13, ICOL.soft, 'right');
@@ -295,7 +316,7 @@ function drawShot(B) {
   else if (s.st === 'run') btnI('stopShot', 30, 356, 380, 56, 'Остановить шот (Пробел)', { col: '#E0745A' });
 }
 function drawFill(B) {
-  const k = B.fillKind, cap = k === 'milk' ? 330 : 200, ml = B.fill, gx = 90, gy = 80, gw = 140, gh = 250, my = v => gy + gh - v / cap * gh;
+  const k = B.fillKind, tl0 = k === 'water' ? B.rc.total : k === 'ice' ? B.rc.ice : B.rc.milk, cap = k === 'milk' ? Math.max(330, tl0 * 1.3) : Math.max(200, tl0 * 1.35), ml = B.fill, gx = 90, gy = 80, gw = 140, gh = 250, my = v => gy + gh - v / cap * gh;
   bx.save(); bx.lineWidth = 3; bx.strokeStyle = ICOL.ink;
   bx.beginPath(); bx.moveTo(gx, gy); bx.lineTo(gx + gw, gy); bx.lineTo(gx + gw - 14, gy + gh); bx.lineTo(gx + 14, gy + gh); bx.closePath(); bx.fillStyle = k === 'milk' ? 'rgba(200,200,194,.5)' : '#FFF8EC'; bx.fill();
   bx.save(); bx.clip();
@@ -306,16 +327,16 @@ function drawFill(B) {
   if (k === 'milk') { lineW(gx + gw, gy + 30, gx + gw + 44, gy + 30, ICOL.ink, 5); }
   if (B.hold) { bx.strokeStyle = k === 'milk' ? '#FBF4E8' : k === 'ice' ? '#CFE6EA' : '#9FC3C7'; bx.lineWidth = 7; bx.setLineDash([6, 5]); bx.lineDashOffset = -performance.now() / 25; bx.beginPath(); bx.moveTo(gx + gw / 2, 54); bx.lineTo(gx + gw / 2, my(k === 'water' ? B.cup.es + ml : ml)); bx.stroke(); bx.setLineDash([]); }
   bx.restore();
-  const tl = k === 'water' ? RECIPE[B.drink].total : k === 'ice' ? RECIPE[B.drink].ice : RECIPE[B.drink].milk;
+  const tl = k === 'water' ? B.rc.total : k === 'ice' ? B.rc.ice : B.rc.milk;
   const ty = my(tl); bx.save(); bx.setLineDash([8, 6]); lineW(gx - 14, ty, gx + gw + 14, ty, '#C4694A', 3.5); bx.restore(); tI('линия', gx - 18, ty + 5, 14, '#C4694A', 'right');
   const shown = k === 'water' ? B.cup.es + ml : ml;
   const unit = k === 'ice' ? ' г' : ' мл'; tI(Math.round(shown) + unit, 396, 140, 38, ICOL.ink, 'right'); tI('нужно ' + Math.round(tl) + unit, 396, 168, 17, ICOL.soft, 'right');
   if (k === 'milk') btnI('fillDump', 270, 200, 130, 34, 'Вылить', { size: 15, col: '#F0B3A0' });
-  btnI('fillHold', 30, 356, 250, 56, k === 'water' ? 'Лить воду (держите)' : k === 'ice' ? 'Сыпать лёд (держите)' : /raf/.test(B.drink) ? 'Лить молоко со сливками' : 'Лить молоко (держите)', { hold: true, col: k === 'water' || k === 'ice' ? '#9FC3C7' : '#C98B5A', size: 17 });
+  btnI('fillHold', 30, 356, 250, 56, k === 'water' ? 'Лить воду (держите)' : k === 'ice' ? 'Сыпать лёд (держите)' : B.rc.pitcherShot ? 'Лить сливки (держите)' : 'Лить молоко (держите)', { hold: true, col: k === 'water' || k === 'ice' ? '#9FC3C7' : '#C98B5A', size: 17 });
   btnI('fillDone', 296, 356, 114, 56, 'Готово', { col: '#B9CAA9' });
 }
 function drawSteam(B) {
-  const p = B.pit, cap = 330, vol = (p.ml * (1 + .6 * p.foam)) / cap, surf = 330 - vol * 220, mil = 330 - (p.ml / cap) * 220;
+  const p = B.pit, cap = B.pitCap, vol = ((p.ml + p.es) * (1 + .6 * p.foam)) / cap, surf = 330 - vol * 220, mil = 330 - ((p.ml + p.es) / cap) * 220;
   const px = 62, pw = 150;
   bx.save(); bx.lineWidth = 3; bx.strokeStyle = ICOL.ink; bx.lineJoin = 'round';
   /* ручка */
@@ -336,11 +357,11 @@ function drawSteam(B) {
   /* термометр */
   const tx0 = 330, ty0 = 80, th = 240, yT = v => ty0 + th - v / 90 * th;
   rrI(tx0 - 11, ty0, 22, th, 11); bx.fillStyle = '#E7D6BC'; bx.fill(); bx.lineWidth = 3; bx.strokeStyle = ICOL.ink; bx.stroke();
-  const hi = G.thermo ? 68 : 65, lo = G.thermo ? 53 : 55; rrI(tx0 - 11, yT(hi), 22, yT(lo) - yT(hi), 5); bx.fillStyle = '#93A684'; bx.fill(); bx.stroke();
+  const zn = MENUAPI.steamZoneOf(B.c.order.id, !!G.thermo), hi = zn[1], lo = zn[0]; rrI(tx0 - 11, yT(hi), 22, yT(lo) - yT(hi), 5); bx.fillStyle = '#93A684'; bx.fill(); bx.stroke();
   rrI(tx0 - 7, yT(p.T), 14, ty0 + th - yT(p.T), 6); bx.fillStyle = p.T > hi ? '#E0745A' : '#C4694A'; bx.fill();
   tI(Math.round(p.T) + '°', tx0, ty0 + th + 26, 20, ICOL.ink, 'center');
   /* пена */
-  const tf = RECIPE[B.drink].foam, fx0 = 30, fw = 230; tI('Пена', 30, 352, 14, ICOL.soft);
+  const tf = B.rc.foam, fx0 = 30, fw = 230; tI('Пена', 30, 352, 14, ICOL.soft);
   rrI(fx0, 358, fw, 14, 7); bx.fillStyle = '#E7D6BC'; bx.fill(); bx.lineWidth = 2.5; bx.strokeStyle = ICOL.ink; bx.stroke();
   rrI(fx0 + (tf - .12) * fw, 358, .24 * fw, 14, 4); bx.fillStyle = '#93A684'; bx.fill(); bx.stroke(); rrI(fx0, 358, Math.max(8, p.foam * fw), 14, 7); bx.fillStyle = 'rgba(255,255,255,.85)'; bx.fill(); bx.stroke();
   btnI('steamDone', 296, 384, 114, 52, 'Готово', { col: '#B9CAA9' });

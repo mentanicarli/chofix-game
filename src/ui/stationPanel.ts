@@ -163,7 +163,8 @@ export function panelUpdate(root: HTMLElement, v: PanelView, l: PanelLive): void
   if (sg) sg.setAttribute('opacity', l.brewStarted ? '1' : '0');
 }
 
-export const readoutFill = (value: number, unit: string, target: number) => `${Math.round(value)} ${unit} · нужно ${Math.round(target)}`;
+const num = (v: number, target: number): string => (target < 5 ? f1(v) : String(Math.round(v)));
+export const readoutFill = (value: number, unit: string, target: number) => `${num(value, target)} ${unit} · нужно ${num(target, target)}`;
 export const readoutTime = (t: number, target: number) => `${f1(t)} с · нужно ${f1(target)}`;
 export const readoutBrew = (min: number, show: { temp: number; minutes: number } | null) =>
   `${f1(min)} мин` + (show ? ` · рецепт: ${show.temp}°, ${show.minutes} мин` : '');

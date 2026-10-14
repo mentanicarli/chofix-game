@@ -25,6 +25,8 @@ export interface ActorOpts {
   /** Разметка иконки напитка для пузыря заказа (рисуется вокруг точки 0,0). */
   icon: string;
   iconKey: string;
+  /** масштаб иконки чашки в пузыре по объёму напитка */
+  iconK?: number;
   title: string;
   tags: { text: string; color: string }[];
   x: number;
@@ -120,6 +122,8 @@ export class Actor {
   private cupBody = new Graphics();
   private cupState: 'none' | 'hand' | 'table' = 'none';
   private cupScale = new Spring(0, 14, 0.45);
+  /** масштаб модели чашки по объёму напитка: умножается на рост гостя (чашка живёт внутри его контейнера) */
+  cupK = 1;
   private steamT = 0;
   private mood: MoodId = 'neutral';
   private gaze: GazeKey = 'c';
@@ -383,7 +387,8 @@ export class Actor {
   }
 
   /** Чашка оказалась в руке: рука подносит её к груди, гость радуется. */
-  takeCup(top: string): void {
+  takeCup(top: string, k = 1): void {
+    this.cupK = k;
     this.drawCup(top);
     this.cupState = 'hand';
     this.cup.visible = true;
@@ -395,7 +400,8 @@ export class Actor {
   }
 
   /** Гость идёт с чашкой (пришёл в зал с кофе). */
-  holdCup(top: string): void {
+  holdCup(top: string, k = 1): void {
+    this.cupK = k;
     this.drawCup(top);
     this.cupState = 'hand';
     this.cup.visible = true;
@@ -547,7 +553,7 @@ export class Actor {
     this.cupHolder.addChild(this.cup);
     this.cup.position.set(T.x, T.y);
     this.cup.rotation = 0;
-    this.cup.scale.set(1);
+    this.cup.scale.set(this.cupK);
     this.carry = false;
   }
 
@@ -1030,7 +1036,7 @@ export class Actor {
   private cupLife(dt: number): void {
     if (this.cupState === 'none') return;
     const k = this.cupScale.step(dt, 1);
-    this.cup.scale.set(clamp(k, 0.3, 1.25));
+    this.cup.scale.set(clamp(k, 0.3, 1.25) * this.cupK);
     this.steamT += dt;
     if (this.steamT > 0.2 && this.o.steam && this.alive) {
       this.steamT = 0;
@@ -1133,7 +1139,7 @@ export class Actor {
     void p.then((t) => {
       if (!this.alive) return;
       ic.texture = t;
-      ic.width = ic.height = 60;
+      ic.width = ic.height = 60 * (o.iconK ?? 1);
     });
   }
 

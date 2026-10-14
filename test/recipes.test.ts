@@ -12,16 +12,19 @@ describe('сборка шагов', () => {
     expect(buildTasks('americano', { cold: false, syrup: true })).toEqual(['syrup', 'grind', 'tamp', 'shot', 'water']);
     expect(buildTasks('icedamericano', { cold: true, syrup: false })).toEqual(['grind', 'tamp', 'shot', 'ice', 'water']);
     expect(buildTasks('icedlatte', { cold: true, syrup: false })).toEqual(['grind', 'tamp', 'shot', 'ice', 'milk']);
-    expect(buildTasks('vanillaraf', { cold: false, syrup: true })).toEqual(['syrup', 'grind', 'tamp', 'shot', 'milk', 'steam', 'pour']);
+    // раф: эспрессо в питчер, сливки, потом сироп, пар и заливка
+    expect(buildTasks('vanillaraf', { cold: false, syrup: true })).toEqual(['grind', 'tamp', 'shot', 'milk', 'syrup', 'steam', 'pour']);
+    expect(buildTasks('raf', { cold: false, syrup: false })).toEqual(['grind', 'tamp', 'shot', 'milk', 'steam', 'pour']);
+    expect(buildTasks('espresso2', { cold: false, syrup: false })).toEqual(['grind', 'tamp', 'shot', 'grind', 'tamp', 'shot']);
   });
   test('новые напитки по шагам меню', () => {
     expect(buildTasks('tea_sencha', { cold: false, syrup: false })).toEqual(['brew']);
     expect(buildTasks('tea_sencha', { cold: true, syrup: false })).toEqual(['brew', 'ice']);
     expect(buildTasks('matcha_latte', { cold: false, syrup: false })).toEqual(['whisk', 'milk', 'steam', 'pour']);
-    expect(buildTasks('orange_bumble', { cold: false, syrup: false })).toEqual(['ice', 'juice', 'grind', 'tamp', 'shot', 'layer']);
+    expect(buildTasks('orange_bumble', { cold: false, syrup: false })).toEqual(['ice', 'juice', 'grind', 'tamp', 'shot', 'grind', 'tamp', 'shot', 'layer']);
     expect(buildTasks('aerocano', { cold: false, syrup: false })).toEqual(['ice', 'grind', 'tamp', 'shot', 'water', 'whip', 'topping']);
     expect(buildTasks('latte_sakura', { cold: false, syrup: true })).toEqual(['syrup', 'grind', 'tamp', 'shot', 'milk', 'steam', 'pour', 'foam']);
-    expect(buildTasks('hot_bumble', { cold: false, syrup: false })).toEqual(['juice', 'grind', 'tamp', 'shot']);
+    expect(buildTasks('hot_bumble', { cold: false, syrup: false })).toEqual(['juice', 'grind', 'tamp', 'shot', 'grind', 'tamp', 'shot']);
   });
   test('каждый шаг любого напитка известен игре', () => {
     for (const d of DRINKS) {
@@ -49,11 +52,12 @@ describe('сборка шагов', () => {
   });
   test('панельные шаги имеют цель или станцию', () => {
     for (const t of PANEL_TASKS) expect(TASK_ZONE[t]).toBeTruthy();
-    expect(taskTarget('cocoa', 'powder')).toBe(25);
+    expect(taskTarget('cocoa', 'powder', '0.2')).toBe(20);
+    expect(taskTarget('cocoa', 'powder', '0.6')).toBe(60);
     expect(brewOf('tea_sencha')).toEqual({ temp: 80, minutes: 2 });
     expect(brewOf('boba_guava')).toEqual({ temp: 90, minutes: 3 });
-    expect(legacyRecipe('milkshake_vanilla')).toMatchObject({ milk: 200, cupMilk: true, ice: 100 });
-    expect(legacyRecipe('matcha_latte')).toMatchObject({ milk: 200, art: true });
+    expect(legacyRecipe('milkshake_vanilla', '0.4')).toMatchObject({ cupMilk: true, ice: 40 });
+    expect(legacyRecipe('matcha_latte', '0.2')).toMatchObject({ milk: 125, art: true });
   });
 });
 
@@ -132,6 +136,10 @@ test('помощник берёт только простые напитки и 
   expect(helperPick([g(1, 'americano', 5, { syrup: 'vanilla' }), g(2, 'espresso', 9, { food: true })], null)).toBeNull();
   expect(helperPick([g(1, 'americano', 5)], 1)).toBeNull();
   expect(helperPrepTime('espresso')).toBeLessThan(helperPrepTime('icedamericano'));
+  // двойной эспрессо — как два шота
+  expect(helperPrepTime('espresso2', 2)).toBe(32);
+  expect(helperPrepTime('americano', 2)).toBe(helperPrepTime('americano') + 16);
+  expect(helperPick([g(1, 'espresso2', 30)], null)?.id).toBe(1);
 });
 test('качество помощника: доли и рост с рангом', () => {
   let s = 1; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;

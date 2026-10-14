@@ -25,10 +25,13 @@ const id = process.argv[4]; const out = process.argv[3];
   let shotN = 0;
   for (const t of tasks) {
     if (!PANEL.includes(t)) {
-      await p.evaluate(t => { const B = window.__dbg.BR; const D = {};
-        if (t === 'shot') B.cup.es = 36; if (t === 'water') B.cup.water = B.RECIPE ? 0 : 114; if (t === 'ice') B.cup.ice = 100; if (t === 'syrup') { B.cup.pumps = 1; B.syrId = B.c.syrup; }
-        if (t === 'milk') { B.cup.milk = 150; B.pit.ml = 150; } if (t === 'steam') B.cup.foam = .3;
-        window.__dbg.complete(t, .9, ''); }, t);
+      /* состояния шагов задаются напрямую (быстрый проход); шоты идут циклами «помол, темпер, шот» по числу шотов заказа */
+      await p.evaluate(t => { const B = window.__dbg.BR, rc = B.rc, cp = window.__dbg.complete;
+        if (t === 'tamp' || t === 'shot') return;
+        if (t === 'grind') { for (let i = 0; i < B.shots; i++) { cp('grind', .9, ''); cp('tamp', .9, ''); B.shot.ml = B.tgtMl; B.cup.es = (i + 1) * 30; cp('shot', .9, ''); } return; }
+        if (t === 'water') B.cup.water = rc.water || 0; if (t === 'ice') B.cup.ice = rc.ice || 0; if (t === 'syrup') { B.cup.pumps = 1; B.syrId = B.c.syrup; }
+        if (t === 'milk') { B.cup.milk = rc.milk; B.pit.ml = rc.milk; } if (t === 'steam') B.cup.foam = rc.foam || .3;
+        cp(t, .9, ''); }, t);
       await p.waitForTimeout(120); continue;
     }
     const zone = await p.evaluate(t => window.__dbg.MENUAPI.TASK_ZONE[t], t);

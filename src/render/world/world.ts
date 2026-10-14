@@ -53,7 +53,8 @@ const css = (c: number[]) => `rgb(${c.join(',')})`;
 const num = (c: number[]) => ((c[0] as number) << 16) | ((c[1] as number) << 8) | (c[2] as number);
 
 export interface BaristaPose { arm: number; arm2: number; nod: number; bob: number }
-export interface HeldCup { top: string; art: 'heart' | 'leaf' | null; aq: number; star: boolean }
+/** k — масштаб модели чашки по объёму напитка (cupScale из src/game/volumes.ts) */
+export interface HeldCup { k?: number; top: string; art: 'heart' | 'leaf' | null; aq: number; star: boolean }
 export interface MenuRow { name: string; price: number | string }
 
 /** Мир зала на Pixi: небо, стена, лампы, барист, гости, частицы, свет и бумажная фактура поверх. */
@@ -129,6 +130,7 @@ export class World {
   private cupTop = new Graphics();
   private cupArt = new Graphics();
   private cupStar = new Graphics();
+  private cupG = new Container();
   private rowsKey = '';
   private headSprite!: Sprite;
   private readonly faces: Partial<Record<BaristaFace, Texture>> = {};
@@ -473,7 +475,7 @@ export class World {
     this.cupC.visible = false;
     const cup = new Graphics();
     cup.moveTo(786, 350).lineTo(808, 350).lineTo(804, 368).quadraticCurveTo(797, 372, 790, 368).closePath().fill('#FFF8EC').stroke({ width: 2.2, color: INK, join: 'round' });
-    const cupG = new Container();
+    const cupG = this.cupG;
     cupG.pivot.set(797, 362);
     cupG.position.set(797, 362);
     cupG.scale.set(1.5);
@@ -608,6 +610,7 @@ export class World {
     if (!this.ready) return;
     this.cupC.visible = !!h;
     if (!h) return;
+    this.cupG.scale.set(1.5 * (h.k ?? 1));
     this.cupTop.clear().ellipse(797, 350, 11, 3.5).fill(h.top).stroke({ width: 2, color: INK });
     this.cupArt.clear();
     if (h.art) {
@@ -713,7 +716,8 @@ export class World {
         steam: (x, y) => this.fx.add({ x, y: y - 9, vx: (Math.random() - 0.5) * 6, vy: -(16 + Math.random() * 8), r: 2.5, grow: 8, a: 0.5, life: 2.2 })
       });
       a.root.eventMode = 'none';
-      a.holdCup('#5A3A2A');
+      /* у каждого сидящего своя чашка: от эспрессо (0,77) до большой на 0,6 л (1,44) */
+      a.holdCup('#5A3A2A', [0.77, 0.84, 1, 1, 1.14, 1.26, 1.44][Math.floor(Math.random() * 7)] as number);
       this.sitC.addChild(a.root);
       this.sitter = a;
       this.sitX = -100;
@@ -765,7 +769,8 @@ export class World {
   private seatMasks(a: Actor | null): void {
     const on = !!a && a.laptopK > 0.5;
     const reach = on && !!a && a.reaching;
-    const key = `${on ? 1 : 0}${reach ? 1 : 0}${a ? 1 : 0}`;
+    const kc = a ? a.cupK : 1;
+    const key = `${on ? 1 : 0}${reach ? 1 : 0}${a ? 1 : 0}${kc}`;
     if (a && a.root.mask !== (on ? this.seatMaskA : null)) a.root.mask = on ? this.seatMaskA : null;
     if (key === this.seatMaskState) return;
     this.seatMaskState = key;
@@ -781,7 +786,8 @@ export class World {
       R(g, 0, 546, W, H - 546);
       R(g, 0, 490, 164, 56);
       R(g, x1, 490, W - x1, 56);
-      if (cup) R(g, 270, 524, 20, 22);
+      /* окно под чашку растёт вместе с чашкой от её центра (280, 535): целая, с ручкой справа */
+      if (cup) R(g, 280 - 10 * kc, 535 - 11 * kc, 26 * kc, 11 + 11 * kc);
       g.fill(0xffffff);
     };
     draw(this.seatMaskA, 284, false);

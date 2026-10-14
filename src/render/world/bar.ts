@@ -20,7 +20,10 @@ export interface BarFrame {
   /** доза в бункере 0..40 */
   dose: number;
   tamperUp: boolean;
-  espresso: boolean;
+  /** масштаб модели чашки по объёму напитка: 1 = 0,2 л (cupScale в src/game/volumes.ts) */
+  cupK: number;
+  /** раф: эспрессо льётся в питчер под группой, пока в него не налили сливки; level — доля налитого */
+  pitUnder: { level: number } | null;
   ice: number;
   rects: CupRect[];
   topY: number;
@@ -69,6 +72,9 @@ export class BarScene {
   private bell = new Container();
   private stream = new Graphics();
   private cupC = new Container();
+  private saucer = new Graphics();
+  private pitUnderG = new Container();
+  private pitCoffee = new Graphics();
   private inner = new Container();
   private layers = new Graphics();
   private ice = new Container();
@@ -175,7 +181,7 @@ export class BarScene {
 
     /* чашка */
     this.cupC.position.set(630, 478);
-    const saucer = new Graphics();
+    const saucer = this.saucer;
     saucer.ellipse(0, 7, 76, 10).fill(0xe9ddc7).stroke({ width: 3, color: INK });
     saucer.ellipse(0, 5, 52, 5).fill(0xd9cdb6);
     this.cupC.addChild(saucer, this.inner);
@@ -198,6 +204,15 @@ export class BarScene {
     this.inner.addChild(handle, this.top, this.art);
     this.inner.addChild(new Graphics().moveTo(-48, -62).quadraticCurveTo(-46, -30, -38, -14).stroke({ width: 4, color: 0xffffff, alpha: 0.55, cap: 'round' }));
     R.addChild(this.cupC);
+    /* питчер из нержавейки под группой (раф): корпус, уровень эспрессо, носик и ручка */
+    const pb = new Graphics();
+    pb.poly([-34, -72, 34, -72, 26, -4, -26, -4]).fill(0xd8d8d0).stroke({ width: 3, color: INK, join: 'round' });
+    pb.moveTo(34, -60).quadraticCurveTo(62, -58, 56, -30).quadraticCurveTo(52, -14, 28, -18).stroke({ width: 7, color: INK, cap: 'round' });
+    pb.moveTo(34, -60).quadraticCurveTo(62, -58, 56, -30).quadraticCurveTo(52, -14, 28, -18).stroke({ width: 3.5, color: 0xc9c8c0, cap: 'round' });
+    this.pitUnderG.addChild(pb, this.pitCoffee);
+    this.pitUnderG.position.set(630, 482);
+    this.pitUnderG.visible = false;
+    R.addChild(this.pitUnderG);
 
     this.steam = spr('steam');
     this.steam.alpha = 0;
@@ -268,7 +283,14 @@ export class BarScene {
     const bs = f.bell ? 1 + f.bell : 1;
     this.bell.scale.set(bs);
     /* чашка */
-    this.inner.scale.set(f.espresso ? 0.78 : 1);
+    this.inner.scale.set(f.cupK);
+    this.saucer.scale.set(Math.min(1.4, Math.max(0.85, 0.2 + 0.8 * f.cupK)));
+    this.cupC.visible = !f.pitUnder;
+    this.pitUnderG.visible = !!f.pitUnder;
+    if (f.pitUnder) {
+      const h = 6 + 54 * f.pitUnder.level;
+      this.pitCoffee.clear().poly([-26 - (h / 68) * 6 + 6, -4 - h, 26 + (h / 68) * 6 - 6, -4 - h, 26, -6, -26, -6]).fill(0x4a2e20);
+    }
     this.ice.alpha = Math.max(0, Math.min(1, f.ice));
     const key = JSON.stringify([f.rects, f.topY, f.topRx, f.topCol, f.topOn, f.art]);
     if (key !== this.lastKey) {

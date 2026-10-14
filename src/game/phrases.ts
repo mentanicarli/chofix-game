@@ -10,6 +10,8 @@ export interface SpokenOrder {
   syrupImplied?: boolean;
   altMilk?: { name: string } | null;
   food?: { name: string; heat: boolean } | null;
+  /** объём напитка, мл, если у напитка есть выбор размера (0.2 л — по умолчанию, не называется) */
+  sizeMl?: number;
 }
 
 const SYR_INSTR: Readonly<Record<string, string>> = {
@@ -32,6 +34,7 @@ const ALT_PREP: Readonly<Record<string, string>> = {
   'Безлактозное': 'безлактозном'
 };
 const NAME_ACC: Readonly<Record<string, string>> = {
+  espresso: 'эспрессо',
   espresso_double: 'двойной эспрессо',
   americano: 'американо',
   cappuccino: 'капучино',
@@ -66,7 +69,8 @@ export function say(order: SpokenOrder, type: CustomerType | string, rng: Rng = 
   let core = NAME_ACC[order.id] ?? order.name.toLowerCase();
   if (order.cold) core = 'холодный ' + core;
   const mods: string[] = [];
-  if (order.altMilk) mods.push('на ' + (ALT_PREP[order.altMilk.name] ?? order.altMilk.name.toLowerCase()) + ' молоке');
+  if (order.sizeMl && order.sizeMl > 200) mods.push('на ' + String(order.sizeMl / 1000).replace('.', ',') + ' литра');
+  if (order.altMilk && !/raf/.test(order.id)) mods.push('на ' + (ALT_PREP[order.altMilk.name] ?? order.altMilk.name.toLowerCase()) + ' молоке');
   if (order.syrup && !order.syrupImplied)
     mods.push('с ' + (SYR_INSTR[order.syrup.name] ?? order.syrup.name.toLowerCase()) + ' сиропом');
   if (order.strong) mods.push('покрепче');

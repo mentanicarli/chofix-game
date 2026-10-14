@@ -47,8 +47,9 @@ export function drawGrind(b: Brush, v: GrindView): void {
   const col = e <= 0.5 ? '#7BC46A' : e <= 1.5 ? '#E8B04A' : '#E0745A';
   b.rr(220, 252, 190, 54, 12).fill('#2F2A27');
   b.rr(220, 252, 190, 54, 12).stroke({ width: 3, color: INK });
-  b.text(f1(v.dose) + ' г', 396, 292, 32, col, 'right');
-  b.text('цель ' + v.target, 236, 290, 14, '#BFB5A5');
+  /* весы в условных единицах (2 на грамм): на экране граммы, 18 единиц = 9 г */
+  b.text(f1(v.dose / 2) + ' г', 396, 292, 32, col, 'right');
+  b.text('цель ' + String(v.target / 2).replace('.', ','), 236, 290, 14, '#BFB5A5');
   if (v.dose > v.target + 1.6 && !v.done) b.button('dump', 220, 312, 190, 30, 'Высыпать (−₽ 5)', { size: 14, col: '#F0B3A0' });
   b.button('grindHold', 30, 356, 250, 56, 'Молоть (держите)', { hold: true, col: '#C98B5A', down: v.hold });
   b.button('grindDone', 296, 356, 114, 56, 'Готово', { col: '#B9CAA9' });

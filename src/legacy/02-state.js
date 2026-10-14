@@ -18,8 +18,7 @@ function setTrack(id, kind) {
 /* меню на доске: до четырёх последних открытых напитков, цены из меню */
 function menuBoard() {
   const ids = MENUAPI.DRINKS.filter(d => MENUAPI.ENGINE[d.id] && d.rank <= G.rank && (G.milk || !MENUAPI.needsMilk(d)) && (MENUAPI.DRINK_NEEDS[d.id] || []).every(n => G['eq_' + n])).slice(-4);
-  const nm = { espresso_double: 'Эспрессо' };
-  WORLD.setMenu(ids.map(d => ({ name: nm[d.id] || d.name, price: MENUAPI.priceOf(d.id) })));
+  WORLD.setMenu(ids.map(d => ({ name: d.name, price: MENUAPI.priceOf(d.id) })));
 }
 function applyUpgrades() {
   menuBoard(); zonesSync();
@@ -50,7 +49,7 @@ function toast(msg, ms = 2400) {
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* Расход на ингредиенты (в песочнице может быть бесплатным) */
 function spend(n) { if (SBX.free) return; D.stats.costs += n; G.money -= n; }
-const drinkCost = d => MENUAPI.drinkCost(d, !!G.beans);
+const drinkCost = (d, o) => MENUAPI.drinkCost(d, !!G.beans, o ? { size: o.size, cold: o.cold } : {});
 /* Короткая подсказка поверх сцены */
 function hint(msg) { toast(msg, 2200); }
 function floatText(x, html, bad) {
@@ -66,6 +65,6 @@ function renderCup() {
   const c = D && D.cup;
   if (!c) { WORLD.setHeld(null); return; }
   const d = drinkOf(c), q = cupQ(c);
-  WORLD.setHeld({ top: MENUAPI.isMenuKey(d) ? MENUAPI.topColorOf(d) : d === 'cappuccino' ? '#F1DFC2' : d === 'americano' ? '#8A5B3A' : '#5A3A2A', art: c.art || null, aq: c.aq || 0, star: q === 2 });
+  WORLD.setHeld({ k: c.k || 1, top: MENUAPI.isMenuKey(d) ? MENUAPI.topColorOf(d) : d === 'cappuccino' ? '#F1DFC2' : d === 'americano' ? '#8A5B3A' : '#5A3A2A', art: c.art || null, aq: c.aq || 0, star: q === 2 });
 }
 

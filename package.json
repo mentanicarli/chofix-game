@@ -16,6 +16,7 @@
     "format": "prettier --write \"src/game/**/*.ts\" \"test/**/*.ts\"",
     "check": "npm run typecheck && npm run lint && npm test",
     "sim:table": "node scripts/make-typical-progress.mjs",
+    "audit:recipes": "node scripts/make-recipes-audit.mjs",
     "lint:legacy": "node scripts/lint-legacy.mjs",
     "prebuild:debug": "node scripts/make-music-manifest.mjs",
     "build:debug": "CHOFIX_DEBUG=1 vite build && node scripts/fragment.mjs"

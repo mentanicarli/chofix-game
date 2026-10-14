@@ -7,6 +7,8 @@ export interface ShotView {
   locked: boolean;
   target: number;
   lastShot: number | null;
+  /** «1/2» у двойного эспрессо и крупных размеров, иначе пусто */
+  idx?: string;
   now: number;
 }
 const f1 = (v: number): string => v.toFixed(1).replace('.', ',');
@@ -16,7 +18,7 @@ export function drawShot(b: Brush, v: ShotView): void {
   const gy = 96;
   const gw = 100;
   const gh = 220;
-  const my = (ml: number) => gy + gh - (ml / 64) * gh;
+  const my = (ml: number) => gy + gh - (ml / 54) * gh;
   const inset = (y: number) => (8 * (y - gy)) / gh;
   const band = (y1: number, y2: number, col: string) => b.g.poly([gx + inset(y1), y1, gx + gw - inset(y1), y1, gx + gw - inset(y2), y2, gx + inset(y2), y2]).fill(col);
   const glass = [gx, gy, gx + gw, gy, gx + gw - 8, gy + gh, gx + 8, gy + gh];
@@ -34,6 +36,7 @@ export function drawShot(b: Brush, v: ShotView): void {
   b.text(v.target + ' мл', gx - 22, ty + 5, 15, '#C4694A', 'right');
   b.text(f1(v.t) + ' с', 396, 128, 40, INK, 'right');
   b.text(Math.round(v.ml) + ' мл', 396, 160, 22, SOFT, 'right');
+  if (v.idx) b.text('Шот ' + v.idx, 396, 100, 18, SOFT, 'right');
   const bx0 = 250;
   const bw = 150;
   b.rr(bx0, 186, bw, 16, 8).fill('#E7D6BC');

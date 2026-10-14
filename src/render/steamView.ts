@@ -9,12 +9,16 @@ export interface SteamView {
   hold: boolean;
   my: number;
   thermo: boolean;
+  /** зона температуры напитка с учётом питчера с термометром */
+  zone: readonly [number, number];
+  /** вместимость питчера, мл */
+  cap: number;
   targetFoam: number;
   now: number;
 }
 
 export function drawSteam(b: Brush, v: SteamView): void {
-  const cap = 330;
+  const cap = v.cap;
   const vol = (v.ml * (1 + 0.6 * v.foam)) / cap;
   const surf = 330 - vol * 220;
   const mil = 330 - (v.ml / cap) * 220;
@@ -57,8 +61,8 @@ export function drawSteam(b: Brush, v: SteamView): void {
   const yT = (val: number) => ty0 + th - (val / 90) * th;
   b.rr(tx0 - 11, ty0, 22, th, 11).fill('#E7D6BC');
   b.rr(tx0 - 11, ty0, 22, th, 11).stroke({ width: 3, color: INK });
-  const hi = v.thermo ? 68 : 65;
-  const lo = v.thermo ? 53 : 55;
+  const lo = v.zone[0];
+  const hi = v.zone[1];
   b.rr(tx0 - 11, yT(hi), 22, yT(lo) - yT(hi), 5).fill('#93A684');
   b.rr(tx0 - 11, yT(hi), 22, yT(lo) - yT(hi), 5).stroke({ width: 3, color: INK });
   b.rr(tx0 - 7, yT(v.temp), 14, ty0 + th - yT(v.temp), 6).fill(v.temp > hi ? '#E0745A' : '#C4694A');
