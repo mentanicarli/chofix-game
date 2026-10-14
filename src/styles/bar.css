@@ -155,3 +155,6 @@ html.kbd .xp button:focus-visible { outline: 3px solid #E8B04A; outline-offset: 
 .sbxg { display: flex; flex-direction: column; gap: 3px; }
 .sbxc { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; cursor: pointer; }
 .sbxc input { width: 18px; height: 18px; accent-color: #93A684; }
+.sbxc.off { opacity: .45; cursor: not-allowed; }
+.sbxcustom { margin-top: 8px; padding-top: 6px; border-top: 2px dashed rgba(74,47,37,.25); }
+.sbxcustom summary { cursor: pointer; font-size: 15px; font-weight: 800; padding: 4px 0; }

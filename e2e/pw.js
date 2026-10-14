@@ -33,14 +33,15 @@ exports.dismissCard = async (p) => {
 };
 /**
  * Песочница вместо «новой игры с нуля»: открывает #dev-nopixi-lowfx и запускает день программно тем же кодом, что кнопка «Начать»
- * (window.__sandbox.start). url — адрес страницы без хеша; o: { day, rank, money, all (по умолчанию true), rating, served, pace, showTutorial }.
- * Возвращает после того, как экран закрылся и день идёт. Обучение по умолчанию выключено (showTutorial: true включит).
+ * (window.__sandbox.start). Состояние выводится из дня, как у обычного игрока (data/typical-progress.json).
+ * o: { day, profile: 'medium'|'confident' (по умолчанию medium), mode: 'all' (всё доступное, по умолчанию) | 'typical', pace, showTutorial,
+ *      custom: { rank, rating, served, money, items } — необязательное переопределение («Своё»), значения приводятся к допустимым для дня }.
+ * Обучение по умолчанию выключено (showTutorial: true включит). Возвращает, когда экран закрылся и день идёт.
  */
 exports.sandboxStart = async (p, url, o = {}) => {
-  const { all = true, ...cfg } = o;
   await p.goto('about:blank'); await p.goto(url + '#dev-nopixi-lowfx');
   await p.waitForSelector('[data-sandbox]', { timeout: 30000 });
   await p.waitForTimeout(400);
-  await p.evaluate(c => window.__sandbox.start(c), { all, ...cfg });
+  await p.evaluate(c => window.__sandbox.start(c), o);
   await p.waitForSelector('#screen', { state: 'hidden', timeout: 10000 });
 };

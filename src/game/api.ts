@@ -22,3 +22,4 @@ export * from './helper';
 export * from './shop';
 export * from './playlist';
 export * from './sandbox';
+export * from './playerModel';

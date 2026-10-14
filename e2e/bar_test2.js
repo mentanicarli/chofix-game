@@ -8,8 +8,8 @@ const drink = process.argv[4] || 'espresso';
   const p = await require('./pw').page(b);
   const errs = []; require('./pw').watch(p, errs);
   await p.addInitScript(() => { let a = 1234567; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; /* mulberry32: детерминированный прогон */ });
-  /* песочница: день 2, молоко и лёд куплены (раньше — startNew и ручная правка G) */
-  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: 2, rank: 1, all: false, items: ['milk', 'eq_ice'] }); await p.waitForTimeout(400);
+  /* песочница: день 6, «Средний», всё доступное: ранг 3 с молоком и льдогенератором (раньше — startNew и ручная правка G) */
+  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: 6, profile: 'medium' }); await p.waitForTimeout(400);
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   await p.evaluate(d => { window.__dbg.G.rank = 3; const c = window.__dbg.D.customers[0]; c.drink = d; c.strong = false; c.syrup = (d === 'cappuccino' || d === 'vanillaraf') ? 'vanilla' : null; c.pumps = 2; c.pat = c.max = 999; }, drink);
   const st = () => p.evaluate(() => { const B = window.__dbg.BR; return B ? { inset: B.inset, dose: +B.dose.toFixed(1), un: +B.uneven.toFixed(2), tp: B.tampPhase, P: +B.tampP.toFixed(1), shot: B.shot.st, ml: +B.shot.ml.toFixed(1), t: +B.shot.t.toFixed(1), done: Object.keys(B.done).join(','), ready: B.ready, res: JSON.stringify(B.res), pit: JSON.stringify(B.pit), lvl: B.pourLevel } : null; });

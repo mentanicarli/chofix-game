@@ -9,22 +9,23 @@ const dvq = sel => devPanelEl.querySelector(sel);
 
 /* --- экран настройки старта --- */
 function sbxRead() {
-  const q = k => scr.querySelector(`[data-f="${k}"]`);
-  return MENUAPI.normalizeSandboxConfig({ day: +q('day').value, rank: +q('rank').value, rating: +q('rating').value, served: +q('served').value, money: +q('money').value, pace: q('pace').value, showTutorial: q('showTutorial').checked, items: [...scr.querySelectorAll('[data-item]:checked')].map(e => e.dataset.item) });
+  const q = k => scr.querySelector(`[data-f="${k}"]`), det = scr.querySelector('[data-custom]');
+  const cfg = { day: +q('day').value, profile: q('profile').value, mode: q('mode').value, pace: q('pace').value, showTutorial: q('showTutorial').checked, custom: null };
+  if (det && det.open) cfg.custom = { rank: +q('rank').value, rating: +q('rating').value, served: +q('served').value, money: +q('money').value, items: [...scr.querySelectorAll('[data-item]:checked')].map(e => e.dataset.item) };
+  return MENUAPI.normalizeSandboxConfig(cfg);
 }
 function sbxShow(cfg, msg, focus) {
   const old = scr.querySelector('.sbody'), y = old ? old.scrollTop : 0;
   sbxCfg = cfg; menuFrom = 'title';
-  menuRender(sandboxScreenHTML({ cfg, items: SHOP.map(i => ({ id: i.id, name: i.name, cat: i.cat })), cats: SHOP_CATS, msg }), true);
+  menuRender(sandboxScreenHTML({ view: MENUAPI.resolveSandbox(cfg), items: SHOP.map(i => ({ id: i.id, name: i.name, cat: i.cat })), cats: SHOP_CATS, msg }), true);
   const b = scr.querySelector('.sbody'); if (b) b.scrollTop = y;
   if (focus) focusFirst('.big');
 }
 /* Старт: то же, что делает кнопка «Начать» (и e2e через window.__sandbox.start) */
 function sbxStart(raw) {
-  if (raw && raw.all) raw = { ...raw, items: MENUAPI.allShopIds() }; else if (raw && raw.all === false && !raw.items) raw = { ...raw, items: [] };
   const cfg = MENUAPI.normalizeSandboxConfig(raw || SBX_STORE.load()); SBX_STORE.save(cfg); sbxCfg = cfg;
   const st = MENUAPI.makeSandboxState(cfg);
-  Object.assign(SBX, { on: true, scale: 1, noPat: false, free: false, inf: false, rate: 1, type: null, next: null, clock: 0, log: [] });
+  Object.assign(SBX, { mode: cfg.mode, custom: !!cfg.custom, on: true, scale: 1, noPat: false, free: false, inf: false, rate: 1, type: null, next: null, clock: 0, log: [] });
   newGame(); Object.assign(G, st);
   applyUpgrades(); lastHud = ''; updateHud();
   if (devPanelEl) {
@@ -81,7 +82,7 @@ function sbxUi(dt) {
   if (devBtnEl.hidden === show) devBtnEl.hidden = !show;
   const po = show && dvOpen; if (devPanelEl.hidden === po) devPanelEl.hidden = !po;
   dvT -= dt; if (!po || dvT > 0) return; dvT = .5;
-  dvq('#dvInfo').textContent = 'день ' + G.day + ' · ранг ' + G.rank;
+  dvq('#dvInfo').textContent = 'День ' + G.day + ' · ранг ' + G.rank + ' · ' + (SBX.custom ? 'Своё' : SBX.mode === 'typical' ? 'Типичный игрок' : 'Всё доступное');
   dvq('#dvStats').textContent = sbxStatsText();
   dvq('#dvNext').textContent = sbxOrderText(SBX.next);
   devPanelEl.querySelectorAll('[data-dv="speed"]').forEach(b => b.classList.toggle('on', +b.dataset.v === SBX.scale));
@@ -94,11 +95,14 @@ function sbxEndDay() {
 }
 function sbxNextRank() {
   if (G.rank >= MENUAPI.MAX_RANK) { toast('Это высший ранг'); return; }
-  const was = shopState(), r = MENUAPI.rankInfo(G.rank + 1), nm = MENUAPI.unlockedAt(r.rank).drinks.map(d => d.name);
-  G.rank = r.rank; applyUpgrades();
+  const was = shopState(), r = MENUAPI.rankInfo(G.rank + 1), nm = MENUAPI.unlockedAt(r.rank).drinks.map(d => d.name), unreal = r.rank > MENUAPI.maxRankForDay(G.day);
+  G.rank = r.rank;
   const shopNew = MENUAPI.shopNewText(MENUAPI.newlyAvailable(SHOP, was, shopState()).map(i => i.name));
+  /* «Всё доступное»: как у обычной игры, ставшее доступным открыто сразу (цепочки зависимостей считаются до неподвижной точки) */
+  if (SBX.mode === 'all' && !SBX.custom) MENUAPI.extendAvailable(G.day, G.rank, SHOP.filter(i => G[i.id]).map(i => i.id)).forEach(id => { G[id] = true; });
+  applyUpgrades();
   D.stats.rankUp = r; D.stats.shopNew = shopNew;
-  toast('Новый ранг: ' + r.title + '. Новое: ' + (nm.length ? nm.slice(0, 3).join(', ') + (nm.length > 3 ? ' и ещё ' + (nm.length - 3) : '') : 'блюда и добавки') + '.' + (shopNew ? ' ' + shopNew : ''), 5200);
+  toast((unreal ? 'Для этого дня ранг нереалистичен. ' : '') + 'Новый ранг: ' + r.title + '. Новое: ' + (nm.length ? nm.slice(0, 3).join(', ') + (nm.length > 3 ? ' и ещё ' + (nm.length - 3) : '') : 'блюда и добавки') + '.' + (shopNew ? ' ' + shopNew : ''), 5200);
   lastHud = ''; updateHud();
 }
 function sbxCopy() {
@@ -148,11 +152,20 @@ if (DEV) {
   scr.addEventListener('click', e => {
     const t = e.target.closest('button'); if (!t) return; const d = t.dataset;
     if (d.sandbox) { sndTap(); sbxShow(SBX_STORE.load(), '', true); }
-    else if (d.sbx === 'all') { sndTap(); sbxShow({ ...sbxRead(), items: MENUAPI.allShopIds() }); }
-    else if (d.sbx === 'none') { sndTap(); sbxShow({ ...sbxRead(), items: [] }); }
     else if (d.sbx === 'tutreset') { sndTap(); sbxShow({ ...sbxRead(), showTutorial: true }, 'Обучение сброшено: в игре покажутся карточки новых напитков и подсказки станций.'); }
     else if (d.sbx === 'start') { sndTap(); sbxStart(sbxRead()); }
   });
-  scr.addEventListener('change', e => { if (e.target.dataset.f === 'rank' && menuView() === 'sandbox') sbxShow(MENUAPI.withRank(sbxRead(), +e.target.value)); });
+  /* пересчёт экрана: день, профиль, режим и темп сбрасывают ручные правки; ранг пересчитывает покупки; остальное просто приводится к допустимому */
+  scr.addEventListener('change', e => {
+    if (menuView() !== 'sandbox') return;
+    const f = e.target.dataset.f; if (e.target.dataset.item !== undefined) { sbxShow(sbxRead()); return; }
+    if (!f || f === 'showTutorial') return;
+    const cfg = sbxRead();
+    if (['day', 'profile', 'mode', 'pace'].includes(f)) sbxShow({ ...cfg, custom: cfg.custom ? {} : null });
+    else if (f === 'rank') sbxShow({ ...cfg, custom: { ...cfg.custom, items: undefined } });
+    else sbxShow(cfg);
+  });
+  /* «Своё» открыли или закрыли: пересчитать сводку (при закрытии ручные правки отбрасываются) */
+  scr.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('[data-custom]') && menuView() === 'sandbox' && sbxCfg && e.target.open !== (sbxCfg.custom !== null)) sbxShow(sbxRead()); }, true);
   window.__sandbox = { start: sbxStart, config: () => SBX_STORE.load(), state: SBX };
 }

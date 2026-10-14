@@ -1,71 +1,139 @@
-import { DRINKS, EQUIPMENT, EQ_IMPL, MAX_RANK, nextRank, rankInfo } from './menu';
-import { FOAM_KINDS, SEEN_MARK, drinkSeenKey, freshSeen } from './lessons';
+import typicalJson from '../../data/typical-progress.json';
+import { DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, MAX_RANK, needsMilk, rankInfo } from './menu';
+import { rentFor } from './economy';
+import { FOAM_KINDS, SEEN_MARK, drinkSeenKey, freshSeen, lessonKeysOfDrink } from './lessons';
+import { SHOP_BASE, SHOP_DEFS, isPurchasable } from './playerModel';
 import { TUTORIALS } from './tutorial';
 import type { PaceId } from './types';
 
 /**
  * Песочница разработчика (ссылка с #dev): чистая часть. Ничего про DOM и localStorage.
- * Состояние для старта собирается здесь, чтобы тесты могли проверить согласованность.
+ *
+ * Принцип: игрок выбирает день, всё остальное выводится из него. Ранг, рейтинг, «обслужено» и деньги берутся из таблицы
+ * типичного прогресса (`data/typical-progress.json`, её считает `npm run sim:table` по модели игрока), а покупки —
+ * либо всё, что к этому дню доступно по правилам магазина («Всё доступное»), либо покупки типичного игрока.
+ * Состояние всегда достижимо для обычного игрока: ранг не выше допустимого для дня, ничего из будущего не открыто.
  */
 
 /** Ключ localStorage: только последняя конфигурация экрана настройки. Настоящий сейв песочница не трогает. */
 export const SANDBOX_KEY = 'chofix.sandbox.v1';
 
 /** Позиции магазина, кроме оборудования (те же id, что в SHOP из src/legacy/00-core.js; сверяет test/sandbox.test.ts). */
-export const SHOP_BASE_IDS: readonly string[] = ['milk', 'beans', 'stencil', 'grinderPro', 'tamper', 'thermo', 'machine', 'cozy', 'wifi', 'cards', 'helper'];
+export const SHOP_BASE_IDS: readonly string[] = SHOP_BASE.map((i) => i.id);
 /** Все позиции магазина: базовые и оборудование, которое уже работает в баре. */
-export const allShopIds = (): string[] => [...SHOP_BASE_IDS, ...EQUIPMENT.filter((e) => EQ_IMPL.includes(e.id)).map((e) => 'eq_' + e.id)];
+export const allShopIds = (): string[] => SHOP_DEFS.map((i) => i.id);
 
 export const SANDBOX_MAX_DAY = 60;
 const PACES: readonly PaceId[] = ['cozy', 'normal', 'hard'];
 
-export interface SandboxConfig {
-  day: number;
-  rank: number;
-  served: number;
-  rating: number;
-  money: number;
-  pace: PaceId;
-  /** id купленных позиций магазина: `milk`, `eq_ice`… */
-  items: string[];
-  /** true — обучение как в новой игре, false — всё уже пройдено */
-  showTutorial: boolean;
-}
+export type ProfileId = 'medium' | 'confident';
+export const PROFILE_IDS: readonly ProfileId[] = ['medium', 'confident'];
+export const PROFILE_NAMES: Readonly<Record<ProfileId, string>> = { medium: 'Средний', confident: 'Уверенный' };
+export type ItemsMode = 'all' | 'typical';
+export const MODE_NAMES: Readonly<Record<ItemsMode, string>> = { all: 'Всё доступное', typical: 'Как у типичного игрока' };
 
-export const defaultSandboxConfig = (): SandboxConfig => ({ day: 1, rank: 1, served: 0, rating: 3, money: 500, pace: 'normal', items: allShopIds(), showTutorial: false });
+interface TableDay { day: number; rank: number; rating: number; served: number; servedMax: number; money: number }
+interface TableProfile { days: TableDay[]; purchases: Array<{ id: string; day: number }> }
+const TABLE = typicalJson as unknown as { profiles: Record<ProfileId, TableProfile> };
 
 const clampN = (v: unknown, lo: number, hi: number, fallback: number): number => {
   const n = typeof v === 'number' && Number.isFinite(v) ? v : fallback;
   return Math.min(hi, Math.max(lo, n));
 };
 
-/** Приводит любые значения к допустимым границам (день 1–60, ранг 1–9, рейтинг 1–5 с шагом 0,1). Согласование с рангом не делает. */
+/** Строка таблицы типичного прогресса на начало дня. */
+export function typicalRow(profile: ProfileId, day: number): TableDay {
+  const days = TABLE.profiles[profile].days;
+  return days[Math.min(days.length, Math.max(1, day)) - 1] as TableDay;
+}
+/** Сколько поданных напитков набирается к дню не больше, чем у лучшего из прогонов профиля «Уверенный» (правдоподобный потолок). */
+export const servedCap = (day: number): number => typicalRow('confident', day).servedMax;
+/** Максимальный ранг, который обычный игрок может иметь к началу этого дня: хватает дня (minDay) и поданных (minServed ≤ потолка). */
+export function maxRankForDay(day: number): number {
+  const cap = servedCap(day);
+  for (let r = MAX_RANK; r > 1; r--) {
+    const i = rankInfo(r);
+    if (i.minDay <= day && i.minServed <= cap) return r;
+  }
+  return 1;
+}
+
+/**
+ * Оставляет из списка только то, что обычный игрок мог купить к началу дня при этом ранге: правила магазина (isShopItemAvailable),
+ * «С дня N» / «Ранг N», цепочки зависимостей (молоко, потом то, что после молока, и т. д.; считается до неподвижной точки).
+ * Порядок результата — порядок покупки. В первый день ничего не куплено: магазин открывается вечером.
+ */
+export function sanitizeItems(day: number, rank: number, wanted: readonly string[]): string[] {
+  if (day < 2) return [];
+  const known = new Set(allShopIds());
+  const want = [...new Set(wanted)].filter((x) => known.has(x));
+  const owned: Record<string, boolean> = {};
+  const out: string[] = [];
+  for (let again = true; again; ) {
+    again = false;
+    for (const id of want) {
+      const def = SHOP_DEFS.find((x) => x.id === id);
+      if (!owned[id] && def && isPurchasable(def, day, rank, owned)) {
+        owned[id] = true;
+        out.push(id);
+        again = true;
+      }
+    }
+  }
+  return out;
+}
+/** Всё, что на этом дне и ранге уже можно было купить. */
+export const allAvailableItems = (day: number, rank: number): string[] => sanitizeItems(day, rank, allShopIds());
+/** Дополняет уже купленное тем, что стало доступно (после повышения ранга). */
+export const extendAvailable = (day: number, rank: number, owned: readonly string[]): string[] => [...new Set([...owned, ...allAvailableItems(day, rank)])];
+/** Покупки типичного игрока к началу дня (из таблицы), проверенные правилами. */
+export const typicalItems = (profile: ProfileId, day: number, rank: number): string[] =>
+  sanitizeItems(day, rank, TABLE.profiles[profile].purchases.filter((p) => p.day <= day).map((p) => p.id));
+
+/** Ручная правка («Своё»): что задано, то и берётся, но в допустимых для дня границах. */
+export interface SandboxOverride { rank?: number; rating?: number; served?: number; money?: number; items?: string[] }
+
+export interface SandboxConfig {
+  day: number;
+  profile: ProfileId;
+  mode: ItemsMode;
+  pace: PaceId;
+  /** true — обучение как у игрока на этом ранге, false — всё уже пройдено */
+  showTutorial: boolean;
+  /** null — блок «Своё» свёрнут, всё выводится из дня */
+  custom: SandboxOverride | null;
+}
+
+export const defaultSandboxConfig = (): SandboxConfig => ({ day: 1, profile: 'medium', mode: 'all', pace: 'normal', showTutorial: false, custom: null });
+
+function normalizeOverride(o: unknown): SandboxOverride | null {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const r = o as Record<string, unknown>;
+  const num = (k: string): number | undefined => (typeof r[k] === 'number' && Number.isFinite(r[k]) ? (r[k] as number) : undefined);
+  const out: SandboxOverride = {};
+  const rank = num('rank');
+  const rating = num('rating');
+  const served = num('served');
+  const money = num('money');
+  if (rank !== undefined) out.rank = Math.round(rank);
+  if (rating !== undefined) out.rating = rating;
+  if (served !== undefined) out.served = Math.round(served);
+  if (money !== undefined) out.money = Math.max(0, Math.round(money));
+  if (Array.isArray(r['items'])) out.items = r['items'].filter((x): x is string => typeof x === 'string');
+  return out;
+}
+
+/** Приводит любые значения к допустимым (день 1–60, известные профиль и режим). Допустимость остального проверяет resolveSandbox. */
 export function normalizeSandboxConfig(c: Partial<SandboxConfig>): SandboxConfig {
   const d = defaultSandboxConfig();
-  const known = new Set(allShopIds());
   return {
     day: Math.round(clampN(c.day, 1, SANDBOX_MAX_DAY, d.day)),
-    rank: Math.round(clampN(c.rank, 1, MAX_RANK, d.rank)),
-    served: Math.round(clampN(c.served, 0, 99999, d.served)),
-    rating: Math.round(clampN(c.rating, 1, 5, d.rating) * 10) / 10,
-    money: Math.round(clampN(c.money, 0, 99999999, d.money)),
+    profile: PROFILE_IDS.find((p) => p === c.profile) ?? d.profile,
+    mode: c.mode === 'typical' || c.mode === 'all' ? c.mode : d.mode,
     pace: PACES.find((p) => p === c.pace) ?? d.pace,
-    items: Array.isArray(c.items) ? [...new Set(c.items.filter((x): x is string => typeof x === 'string' && known.has(x)))] : d.items,
-    showTutorial: typeof c.showTutorial === 'boolean' ? c.showTutorial : d.showTutorial
+    showTutorial: typeof c.showTutorial === 'boolean' ? c.showTutorial : d.showTutorial,
+    custom: normalizeOverride(c.custom)
   };
-}
-
-/** Ранг, который следует из дня, рейтинга и числа поданных (по порогам из progression.json). */
-export function derivedRank(day: number, rating: number, served: number): number {
-  let rank = 1;
-  for (let n = nextRank(rank, { day, rating, served }); n; n = nextRank(rank, { day, rating, served })) rank = n.rank;
-  return rank;
-}
-
-/** Выбор ранга на экране: день, рейтинг и «обслужено» поднимаются до минимума этого ранга (выше оставляем как есть). */
-export function withRank(c: SandboxConfig, rank: number): SandboxConfig {
-  const r = rankInfo(Math.round(clampN(rank, 1, MAX_RANK, 1)));
-  return normalizeSandboxConfig({ ...c, rank: r.rank, day: Math.max(c.day, r.minDay), rating: Math.max(c.rating, r.minRating), served: Math.max(c.served, r.minServed) });
 }
 
 /** Разбор сохранённой конфигурации: битое и пустое даёт значения по умолчанию. */
@@ -80,6 +148,62 @@ export function parseSandboxConfig(raw: string | null): SandboxConfig {
   }
 }
 export const serializeSandboxConfig = (c: SandboxConfig): string => JSON.stringify(normalizeSandboxConfig(c));
+
+export interface Resolved {
+  config: SandboxConfig;
+  rank: number;
+  rating: number;
+  served: number;
+  money: number;
+  /** купленное, в порядке покупки */
+  items: string[];
+  /** выше этого ранга на этот день не бывает */
+  maxRank: number;
+  minRating: number;
+  minServed: number;
+  servedMax: number;
+  /** что ещё можно отметить (доступно при текущем наборе) */
+  avail: string[];
+}
+
+/** Из дня, профиля и режима выводит всё состояние; ручные правки применяет в границах допустимого. */
+export function resolveSandbox(config: Partial<SandboxConfig>): Resolved {
+  const c = normalizeSandboxConfig(config);
+  const row = typicalRow(c.profile, c.day);
+  const maxRank = maxRankForDay(c.day);
+  const cus = c.custom ?? {};
+  const rank = Math.round(clampN(cus.rank, 1, maxRank, Math.min(row.rank, maxRank)));
+  const info = rankInfo(rank);
+  const servedMax = Math.max(servedCap(c.day), info.minServed);
+  const rating = Math.round(clampN(cus.rating, info.minRating, 5, row.rating) * 10) / 10;
+  const served = Math.round(clampN(cus.served, info.minServed, servedMax, row.served));
+  const money = cus.money ?? Math.max(row.money, 2 * rentFor(c.pace, rank));
+  const items = cus.items ? sanitizeItems(c.day, rank, cus.items) : c.mode === 'all' ? allAvailableItems(c.day, rank) : typicalItems(c.profile, c.day, rank);
+  const owned = Object.fromEntries(items.map((i) => [i, true]));
+  const avail = c.day < 2 ? [] : SHOP_DEFS.filter((d) => !owned[d.id] && isPurchasable(d, c.day, rank, owned)).map((d) => d.id);
+  return { config: c, rank, rating: Math.max(info.minRating, rating), served, money, items, maxRank, minRating: info.minRating, minServed: info.minServed, servedMax, avail };
+}
+
+/**
+ * Что игрок «уже видел» к этому дню и рангу: напитки прошлых рангов (и первого со второго дня), их шаги и станции,
+ * которые куплены и не новые для ранга. Подсказки для ещё не открытого не заполняются.
+ */
+export function seenFor(day: number, rank: number, items: readonly string[]): string[] {
+  const owned = new Set(items);
+  const out = new Set<string>([SEEN_MARK]);
+  for (const d of DRINKS) {
+    if (!(d.id in ENGINE)) continue;
+    if (needsMilk(d) && !owned.has('milk')) continue;
+    if (!(DRINK_NEEDS[d.id] ?? []).every((n) => owned.has('eq_' + n))) continue;
+    if (d.rank < rank || (d.rank === 1 && day > 1)) {
+      out.add(drinkSeenKey(d.id));
+      lessonKeysOfDrink(d.id).forEach((k) => out.add(k));
+    }
+  }
+  if (day > 1) out.add('step:syrup');
+  for (const e of EQUIPMENT) if (e.id in TUTORIALS && owned.has('eq_' + e.id) && e.rank < rank) out.add(e.id);
+  return [...out];
+}
 
 /** Всё обучение уже пройдено: карточки новых напитков, шаги и подсказки станций не показываются. */
 export function fullSeen(): string[] {
@@ -101,23 +225,21 @@ export type SandboxState = {
 } & Record<string, boolean | number | string | string[]>;
 
 /**
- * Поля состояния игры (G) для старта в песочнице, как их создаёт newGame() плюс выбранные улучшения.
+ * Поля состояния игры (G) для старта в песочнице, как их создаёт newGame() плюс выведенные из дня.
  * Настройки игрока (подсказки, звук) сюда не входят: песочница их не меняет.
- * Согласованность: ранг не ниже того, что следует из дня, рейтинга и числа поданных (по порогам progression.json);
- * оборудование `eq_*` и улучшения включены ровно у выбранных позиций. День, рейтинг и поданные берутся как введены:
- * подтягивать их к минимуму ранга может экран настройки (`withRank`), но разработчик вправе поставить и иначе.
+ * Улучшения и оборудование `eq_*` включены ровно у купленных позиций.
  */
 export function makeSandboxState(config: Partial<SandboxConfig>): SandboxState {
-  const c = normalizeSandboxConfig(config);
-  c.rank = Math.max(c.rank, derivedRank(c.day, c.rating, c.served));
+  const r = resolveSandbox(config);
+  const c = r.config;
   const st: SandboxState = {
-    rank: c.rank, served: c.served, money: c.money, day: c.day, rating: c.rating, pace: c.pace,
+    rank: r.rank, served: r.served, money: r.money, day: c.day, rating: r.rating, pace: c.pace,
     grindSet: 3, idealGrind: 3, tutOff: false, fresh: [],
-    tutorialSeen: c.showTutorial ? freshSeen() : fullSeen(),
+    tutorialSeen: c.showTutorial ? (c.day > 1 || r.rank > 1 ? seenFor(c.day, r.rank, r.items) : freshSeen()) : fullSeen(),
     milk: false, machine: false, cozy: false, beans: false, syrups: false, stencil: false, grinderPro: false, tamper: false, thermo: false, wifi: false, cards: false, helper: false
   };
-  for (const e of EQUIPMENT) if (EQ_IMPL.includes(e.id)) st['eq_' + e.id] = false;
-  for (const id of c.items) st[id] = true;
+  for (const d of SHOP_DEFS) st[d.id] = false;
+  for (const id of r.items) st[id] = true;
   return st;
 }
 

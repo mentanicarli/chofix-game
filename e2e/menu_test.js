@@ -6,8 +6,8 @@ const id = process.argv[4]; const out = process.argv[3];
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const p = await require('./pw').page(b);
   const errs = []; require('./pw').watch(p, errs);
-  /* песочница: день 12, ранг 9, всё куплено (раньше — startNew и ручная правка G) */
-  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: 12, rank: 9, money: 5000 }); await p.waitForTimeout(300);
+  /* песочница: день 60, «Уверенный», всё доступное = ранг 9 и всё оборудование (тест перебирает любые напитки меню) */
+  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: 60, profile: 'confident' }); await p.waitForTimeout(300);
   await p.evaluate(() => { window.__dbg.G.hints = true; });
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 30000 });
   const info = await p.evaluate(id => {
