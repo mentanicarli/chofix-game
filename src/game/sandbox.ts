@@ -253,6 +253,8 @@ export interface ServeRecord {
   prep: number | null;
   /** число шагов заказа (задач бара вместе с едой); null — неизвестно */
   tasks: number | null;
+  /** оценка времени заказа estimatedPrepSeconds (с запасом на заказ); null — неизвестна */
+  est?: number | null;
   /** 0 плохо, 1 нормально, 2 идеально */
   q: 0 | 1 | 2;
   byPlayer: boolean;
@@ -260,7 +262,7 @@ export interface ServeRecord {
 export interface ShiftTotals { lost: number; revenue: number; tips: number; costs: number }
 export interface Stat { mean: number; median: number }
 export interface ShiftSummary {
-  /** Готовый профиль для PROFILES в scripts/shop-sim.test.ts: speed — множитель к (12 + 7·шагов) секунд, q — доли [плохо, нормально, идеально]. */
+  /** Готовый профиль для PROFILES в scripts/shop-sim.test.ts: speed — множитель к estimatedPrepSeconds (таблица секунд на шаг в src/game/patience.ts), q — доли [плохо, нормально, идеально]. */
   profile: { name: string; speed: number | null; q: [number, number, number] };
   served: number;
   servedByHelper: number;
@@ -282,13 +284,13 @@ export function stat(xs: readonly number[]): Stat | null {
   const median = s.length % 2 ? (s[mid] as number) : ((s[mid - 1] as number) + (s[mid] as number)) / 2;
   return { mean: r2(s.reduce((a, x) => a + x, 0) / s.length), median: r2(median) };
 }
-/** Модель из shop-sim: время приготовления = (12 + 7 · шагов) · speed. */
+/** Старая модель (12 + 7 · шагов) для записей без оценки est; текущая модель — estimatedPrepSeconds · speed. */
 export const modelPrepTime = (tasks: number): number => 12 + 7 * tasks;
 
 export function summarizeShift(records: readonly ServeRecord[], totals: ShiftTotals, name = 'dev-смена'): ShiftSummary {
   const mine = records.filter((r) => r.byPlayer);
   const prepOf = (rs: readonly ServeRecord[]): number[] => rs.flatMap((r) => (r.prep === null ? [] : [r.prep]));
-  const ratios = mine.flatMap((r) => (r.prep !== null && r.tasks ? [r.prep / modelPrepTime(r.tasks)] : []));
+  const ratios = mine.flatMap((r) => (r.prep !== null && r.tasks ? [r.prep / (r.est ?? modelPrepTime(r.tasks))] : []));
   const n = mine.length;
   const share = (q: number): number => (n ? mine.filter((r) => r.q === q).length / n : 0);
   const bad = r2(share(0));

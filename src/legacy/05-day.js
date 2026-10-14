@@ -31,7 +31,8 @@ function tickDay(dt) {
   }
   for (const c of D.customers.slice()) {
     if (!c.arrived) continue;
-    c.pat -= dt * (BR && BR.c === c && stage.classList.contains('inbar') && G.day === 1 && G.hints ? .3 : 1);
+    /* терпение тает по месту в очереди: первый 1, второй 0,5, третий и дальше 0,3; хинт дня 1 в баре замедляет ещё в 0,3 раза */
+    c.pat -= dt * MENUAPI.queueDecayRate(D.customers.indexOf(c)) * (BR && BR.c === c && stage.classList.contains('inbar') && G.day === 1 && G.hints ? .3 : 1);
     const f = Math.max(0, c.pat / c.max), w = Math.round(f * 520) / 10;
     if (w !== c.lastW) { c.lastW = w; c.act.setPatience(f); }
     const m = f < .12 ? 'angry' : f < .3 ? 'annoyed' : f < .6 ? 'wait' : 'neutral';

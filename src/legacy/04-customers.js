@@ -11,7 +11,8 @@ function spawn() {
   if (SBX.on) SBX.next = null;
   D.focus.forEach(f => { if (MENUAPI.orderUsesItem(f, order)) D.focusDone.add(f); });
   const drink = order.key;
-  const max = MENUAPI.patienceMax(type, { pace: G.pace, cozy: !!G.cozy, helper: !!G.helper });
+  /* терпение зависит от сложности заказа (estimatedPrepSeconds), дня игры и случайного множителя гостя; заказ уже известен */
+  const max = MENUAPI.patienceMax(type, { pace: G.pace, cozy: !!G.cozy, helper: !!G.helper, prep: MENUAPI.estimatedPrepSeconds(order), day: G.day, rng: Math.random });
   const c = { id: ++D.idc, type, drink, max, pat: max, leaving: false, lastW: -1, look: ART.look(type), wk: 0, ty: 0, mood: 'neutral', arrived: false, walkOn: false, order, strong: order.strong, syrup: order.syrup ? order.syrup.shelf : null, pumps: order.syrup ? order.syrup.pumps : 1, art: Math.random() < .5 ? 'heart' : 'leaf' };
   const tags = [];
   const multi = Object.keys(MENUAPI.drinkById[order.id].sizes).length > 1;
@@ -48,9 +49,17 @@ function lose(c) {
   floatText(c.x, 'Ушёл', true); c.act.setMood('angry'); exit(c); updateHud();
 }
 function shake(c) { c.act.shake(); }
+/* Строгая очередь: заказ берут только у первого гостя (пришёл раньше всех из ожидающих); подсказка не чаще раза в 2 с */
+let qHintT = 0;
+function notFirst(c) {
+  const f = MENUAPI.queueOrder(D.customers);
+  if (!f || f === c) return false;
+  const n = performance.now(); if (n - qHintT > 2200) { qHintT = n; hint('Сначала обслужите первого гостя'); }
+  return true;
+}
 function serve(c) {
   if (!G || G.phase !== 'day' || paused || c.leaving) return;
-  if (!D.cup) { if (BR) { if (BR.c === c) barShow(true); else { hint('Сначала закончите текущий напиток'); shake(c); } } else if (!c.arrived) hint('Клиент ещё подходит'); else barOpen(c); return; }
+  if (!D.cup) { if (BR) { if (BR.c === c) barShow(true); else { hint('Сначала закончите текущий напиток'); shake(c); } } else if (!c.arrived) hint('Клиент ещё подходит'); else if (!notFirst(c)) barOpen(c); return; }
   const d = drinkOf(D.cup);
   if (d !== c.drink) { hint('Клиент ждёт ' + NAME[c.drink].toLowerCase()); c.pat = Math.max(0, c.pat - c.max * .15); shake(c); sndBad(); return; }
   deliver(c, d, cupQ(D.cup), D.cup.s > .92, true);
@@ -60,7 +69,7 @@ function serve(c) {
 function deliver(c, d, q, flawless, byPlayer) {
   const st = MENUAPI.settle({ basePrice: c.order ? c.order.base : PRICE[d], beans: !!G.beans, paidSyrup: !!(c.order && c.order.syrup && !c.order.syrupImplied), quality: q, type: c.type, flawless, cards: !!G.cards, rating: G.rating, extra: c.order && c.order.food ? c.order.food.price : 0 });
   const price = st.price, tip = st.tip;
-  if (SBX.on) SBX.log.push({ serve: SBX.clock - c.t0, prep: byPlayer && c.tPrep !== undefined ? SBX.clock - c.tPrep : null, tasks: byPlayer && c.nTasks ? c.nTasks : null, q, byPlayer });
+  if (SBX.on) SBX.log.push({ serve: SBX.clock - c.t0, prep: byPlayer && c.tPrep !== undefined ? SBX.clock - c.tPrep : null, tasks: byPlayer && c.nTasks ? c.nTasks : null, est: c.order ? MENUAPI.estimatedPrepSeconds(c.order) : null, q, byPlayer });
   D.stats.revenue += price; D.stats.tips += tip; D.stats.served++; if (q === 2) D.stats.perfect++;
   G.money += st.total; G.rating = st.rating;
   floatText(c.x, `+${money(price + tip)}` + (tip ? `<small>чаевые ${money(tip)}</small>` : q === 0 ? '<small>испорчено</small>' : ''), q === 0);

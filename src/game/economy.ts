@@ -35,13 +35,6 @@ export const PACE: Readonly<Record<PaceId, Pace>> = {
   hard: { name: 'Жёсткий', pat: 0.75, rent: 190, text: 'Быстрые клиенты, минус на счёте означает конец' }
 };
 
-const BASE_PATIENCE: Readonly<Record<CustomerType, number>> = { regular: 120, student: 140, hurry: 75 };
-
-export interface PatienceOpts { pace: PaceId; cozy?: boolean; helper?: boolean }
-/** Максимальное терпение гостя, секунд. */
-export const patienceMax = (type: CustomerType, o: PatienceOpts): number =>
-  BASE_PATIENCE[type] * PACE[o.pace].pat * (o.cozy ? 1.15 : 1) * (o.helper ? 1.2 : 1);
-
 export interface SettleIn {
   /** Цена напитка из меню (без надбавок). */
   basePrice: number;

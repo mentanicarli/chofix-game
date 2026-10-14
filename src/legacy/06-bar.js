@@ -46,6 +46,7 @@ function blockMsg(t) {
 function barOpen(c) {
   if (!G || G.phase !== 'day' || paused || c.leaving) return;
   if (BR) { if (BR.c === c) barShow(true); else hint('Сначала закончите текущий напиток'); return; }
+  if (notFirst(c)) return;
   const rc = rcFor(c);
   const card = c.order && !tutOffNow() ? MENUAPI.newDrinkCard(c.order.id, G.tutorialSeen, rc.foam, c.order.size) : null;
   if (card) { showDrinkCard(card, () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); }); return; }

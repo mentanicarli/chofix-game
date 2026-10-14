@@ -3,6 +3,7 @@ export * from './menu';
 export * from './orders';
 export * from './phrases';
 export * from './economy';
+export * from './patience';
 export * from './shift';
 export * from './quality';
 export * from './save';

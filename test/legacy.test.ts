@@ -20,8 +20,9 @@ describe('экономика', () => {
   test('потеря гостя и терпение', () => {
     expect(ratingAfterLoss(1.1)).toBe(1);
     expect(ratingAfterLoss(3)).toBeCloseTo(2.85);
-    expect(patienceMax('student', { pace: 'hard', cozy: true, helper: true })).toBeCloseTo(140 * 0.75 * 1.15 * 1.2);
-    expect(patienceMax('hurry', { pace: 'cozy' })).toBe(112.5);
+    // без заказа, дня и случайности: только запас A, темп, зал и помощник
+    expect(patienceMax('student', { pace: 'hard', cozy: true, helper: true })).toBeCloseTo(70 * 0.75 * 1.15 * 1.2);
+    expect(patienceMax('hurry', { pace: 'cozy' })).toBe(35 * 1.5);
   });
   test('конец дня: аренда, уютный режим не уходит в минус, условия проигрыша', () => {
     expect(settleDay({ money: 50, pace: 'cozy' })).toEqual({ money: 0, over: false, rent: PACE.cozy.rent });
