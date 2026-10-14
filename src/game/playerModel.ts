@@ -70,15 +70,17 @@ export interface Run {
   rank: Map<number, number>;
   income: number[];
   over: boolean;
-  /** снимки на начало каждого сыгранного дня */
+  /** снимки на начало каждого сыгранного дня (и ещё один после последнего, если игрок не обанкротился) */
   snaps: DaySnap[];
+  /** по дням: после вечерних покупок не осталось ни одной доступной непокупленной позиции («нечего покупать») */
+  idle: boolean[];
 }
 
 export function simulate(seed: number, prof: Profile, days = 40): Run {
   const rng = seeded(seed);
   const owned: Record<string, boolean> = {};
   const order: string[] = [];
-  const run: Run = { avail: new Map(), afford: new Map(), bought: new Map(), rank: new Map([[1, 1]]), income: [], over: false, snaps: [] };
+  const run: Run = { avail: new Map(), afford: new Map(), bought: new Map(), rank: new Map([[1, 1]]), income: [], over: false, snaps: [], idle: [] };
   let money = 500, rank = 1, rating = 3, served = 0;
   const pace = 'normal' as const;
   const typeOf = (day: number): CustomerType => {
@@ -149,6 +151,8 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
         run.bought.set(it.id, day);
       } else if (it.progression) blocked = true; // копит на следующую ступень меню
     }
+    run.idle.push(!PRIORITY.some((it) => !owned[it.id] && isPurchasable(it, day + 1, rank, owned)));
   }
+  if (!run.over) run.snaps.push({ day: days + 1, rank, rating, served, money, owned: [...order] });
   return run;
 }
