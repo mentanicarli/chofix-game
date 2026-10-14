@@ -14,7 +14,7 @@ function coinBurst(x, amount) {
 }
 function tickFx(dt) {
   if (!RM) {
-    if (D && D.cup) { fxT.held += dt; if (fxT.held > .16) { fxT.held = 0; emit({ x: 806 + rnd(-3, 3), y: 362, vx: rnd(-4, 4), vy: -rnd(18, 28), r: 2.5, grow: 9, a: .5, life: 2 }); } }
+    if (D && D.cup) { fxT.held += dt; if (fxT.held > .16) { fxT.held = 0; emit({ x: 788 + rnd(-3, 3), y: 351, vx: rnd(-4, 4), vy: -rnd(18, 28), r: 2.5, grow: 9, a: .5, life: 2 }); } }
     const milk = !!(BR && BR.inset === 'steam' && BR.hold);
     fxT.wand += dt;
     if (fxT.wand > (milk ? .05 : .5)) { fxT.wand = 0; emit({ x: 1114 + rnd(-2, 2), y: 392, vx: rnd(-6, 6), vy: -rnd(24, 40), r: 2.5, grow: milk ? 12 : 8, a: milk ? .6 : .22, life: milk ? 1.3 : 2, col: milk ? '255,255,255' : '235,225,205' }); }

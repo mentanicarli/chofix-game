@@ -24,6 +24,9 @@ function spawn() {
   D.customers.push(c);
   reindex();
 }
+/* точки на госте: рост гостя растёт от пола (y 600), поэтому координаты «руки» и «лица» пересчитываем */
+function gx(c, dx) { return c.x + dx * WORLD.guestK; }
+function gy(y) { return 600 - WORLD.guestK * (600 - y); }
 function showSay(c) {
   if (!c.order || c.sayEl) return;
   const d = document.createElement('div'); d.className = 'say'; d.textContent = c.order.line; d.style.left = Math.round(c.tx) + 'px';
@@ -63,11 +66,11 @@ function deliver(c, d, q, flawless, byPlayer) {
   c.act.hideBubbleNow(); hideSay(c);
   (q === 2 ? sndPerfect : sndCoin)(); if (q === 2) setTimeout(sndCoin, 220);
   const topCol = MENUAPI.isMenuKey(d) ? MENUAPI.topColorOf(d) : d === 'cappuccino' ? '#F1DFC2' : d === 'americano' ? '#8A5B3A' : '#5A3A2A';
-  cupFly(byPlayer ? 808 : 700, byPlayer ? 396 : 420, c.x + 40, 508, topCol); c.hold = 1.5; c.hopT = 0; c.act.reach(true);
+  cupFly(byPlayer ? 791 : 700, byPlayer ? 396 : 420, gx(c, 40), gy(508), topCol); c.hold = 1.5; c.hopT = 0; c.act.reach(true);
   setTimeout(() => {
     if (!c.act.alive) return;
     c.got = true; c.hopT = .6; c.act.takeCup(topCol);
-    if (q === 2) { loveBurst(c.x, 425, 3); sparkBurst(c.x + 40, 500, 7); } else if (q === 1) { loveBurst(c.x, 425, 1); if (tip) sparkBurst(c.x + 40, 500, 3); } else puffBurst(c.x, 440);
+    if (q === 2) { loveBurst(c.x, gy(425), 3); sparkBurst(gx(c, 40), gy(500), 7); } else if (q === 1) { loveBurst(c.x, gy(425), 1); if (tip) sparkBurst(gx(c, 40), gy(500), 3); } else puffBurst(c.x, gy(440));
   }, 400);
   exit(c);
 }

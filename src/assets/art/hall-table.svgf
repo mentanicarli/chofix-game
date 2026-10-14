@@ -1,0 +1,7 @@
+<g filter="url(#wobble)" stroke="#4A2F25" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<path d="M134 548V562Q230 596 326 562V548Z" fill="url(#gWoodFront)"/>
+<rect x="222" y="574" width="16" height="74" rx="4" fill="url(#gWoodFront)"/>
+<ellipse cx="230" cy="652" rx="56" ry="13" fill="#A9693E"/>
+<ellipse cx="230" cy="548" rx="96" ry="24" fill="url(#gWoodTop)"/>
+<path d="M170 540Q200 530 240 532" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="3" fill="none"/>
+</g>

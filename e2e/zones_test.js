@@ -29,10 +29,11 @@ const HOOK = 'window.__dbg = { get G() { return G; }, get D() { return D; }, get
   for (const [x, y] of [[100, 600], [300, 680], [850, 650], [1200, 650], [60, 690]]) { const s = await p.evaluate(() => { const r = document.querySelector('#barSvg').getBoundingClientRect(); return { x: r.x, y: r.y, k: r.width / 1280 }; }); await p.mouse.click(s.x + x * s.k, s.y + y * s.k); }
   await p.waitForTimeout(300);
   ok((await msgs()).length === 0, 'клики по пустому столу: подсказок нет ' + JSON.stringify(await msgs()));
-  /* всегда активные зоны нарисованы на ранге 1 (скриншот с контурами сверен глазами): холодильник — часть статичного арта, G.milk трогает только кувшин в зале */
-  ok(await p.evaluate(() => !window.__dbg.G.milk && ['grind', 'tamp', 'shot', 'water', 'steam', 'syr1', 'syr2', 'syr3', 'pour', 'bell', 'stop', 'milk'].every(k => getComputedStyle(document.querySelector('#bZones [data-z="' + k + '"]')).pointerEvents !== 'none')), 'без молока: зоны статичного арта (в т. ч. холодильник) активны');
+  /* всегда активные зоны нарисованы на ранге 1; холодильник с молоком появляется только после покупки (G.milk) */
+  ok(await p.evaluate(() => !window.__dbg.G.milk && ['grind', 'tamp', 'shot', 'water', 'steam', 'syr1', 'syr2', 'syr3', 'pour', 'bell', 'stop'].every(k => getComputedStyle(document.querySelector('#bZones [data-z="' + k + '"]')).pointerEvents !== 'none')), 'без молока: зоны статичного арта активны');
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('#bZones [data-z="milk"]')).pointerEvents === 'none'), 'без молока: зона холодильника не принимает клики');
   const m0 = await center('milk'); await p.mouse.click(m0.x, m0.y); await p.waitForTimeout(300);
-  ok((await msgs()).includes('Молоко в этом напитке не нужно'), 'холодильник нарисован: до покупки молока клик по нему «Молоко … не нужно» ' + JSON.stringify(await msgs()));
+  ok((await msgs()).length === 0, 'до покупки молока клик по месту холодильника ничего не делает ' + JSON.stringify(await msgs()));
   /* зона нужного оборудования живая: помол открывает инсет */
   const g = await center('grind'); await p.mouse.click(g.x, g.y); await p.waitForTimeout(400);
   ok(await p.evaluate(() => window.__dbg.BR.inset === 'grind'), 'клик по кофемолке открывает помол');

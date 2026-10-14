@@ -37,6 +37,8 @@ export interface BarFrame {
 }
 
 export interface BarUpgrades {
+  /** холодильник с молоком (покупка «Молоко и капучино») */
+  milk: boolean;
   ice: boolean;
   eq: Record<string, boolean>;
   snacks: boolean;
@@ -74,6 +76,7 @@ export class BarScene {
   private art = new Graphics();
   private steam!: Sprite;
   private ring = new Container();
+  private fridge = new Container();
   private iceMaker = new Container();
   private showcase = new Container();
   private subs = new Map<string, Container>();
@@ -111,6 +114,10 @@ export class BarScene {
 
     spr('static');
     txt('static', R);
+    /* холодильник с молоком: рисуется под кофемолкой и сиропами, как раньше в статике */
+    spr('milk', this.fridge);
+    txt('milk', this.fridge);
+    R.addChild(this.fridge);
 
     /* кофемолка: стекло, зерно (движется), корпус, ручка помола */
     spr('grinderBack');
@@ -226,11 +233,12 @@ export class BarScene {
       R.addChild(c);
       this.eq.set(k.slice(3), c);
     });
-    this.setUpgrades({ ice: false, eq: {}, snacks: false, pastry: false, dessert: false, deli: false, micro: false });
+    this.setUpgrades({ milk: false, ice: false, eq: {}, snacks: false, pastry: false, dessert: false, deli: false, micro: false });
     this.root.visible = false;
   }
 
   setUpgrades(u: BarUpgrades): void {
+    this.fridge.visible = u.milk;
     this.iceMaker.visible = u.ice;
     this.showcase.visible = u.snacks || u.pastry || u.dessert || u.deli;
     this.subs.get('scSnacks')!.visible = u.snacks;

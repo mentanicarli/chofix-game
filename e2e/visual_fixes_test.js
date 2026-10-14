@@ -8,7 +8,7 @@ const out = process.argv[3] || 'out/vf';
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { WORLD, lookFor, get G() { return G; }, get D() { return D; } };');
   const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
-  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const errs = [];
   const ok = (name, v, info) => { console.log((v ? 'OK   ' : 'FAIL ') + name + (info ? '  ' + info : '')); if (!v) errs.push('FAIL ' + name + (info ? ' ' + info : '')); };
 
@@ -73,7 +73,7 @@ const out = process.argv[3] || 'out/vf';
       const X0 = Math.round(x0 * px.k), Y0 = Math.round(y0 * px.k), W = Math.max(1, Math.round((x1 - x0) * px.k)), H = Math.max(1, Math.round((y1 - y0) * px.k));
       const d = px.g.getImageData(X0, Y0, W, H).data; const hist = {}; const px4 = [];
       for (let yy = 0; yy < H; yy++) for (let xx = 0; xx < W; xx++) {
-        const sx = x0 + xx / px.k, sy = y0 + yy / px.k; if (Math.hypot(sx - 230, sy - 514) < 11) continue;
+        const sx = x0 + xx / px.k, sy = y0 + yy / px.k; if (Math.hypot(sx - 230, sy - (652 + (514 - 652) * 1.6)) < 11 * 1.6) continue;
         const i = (yy * W + xx) * 4; const key = (d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4) + ',' + (d[i + 3] > 200 ? 1 : 0);
         hist[key] = (hist[key] || 0) + 1; px4.push(key);
       }
@@ -89,14 +89,16 @@ const out = process.argv[3] || 'out/vf';
     await p.evaluate(setup); await p.evaluate(() => window.__step(40));
     const res = await p.evaluate(() => {
       const { WORLD } = window.__dbg, a = WORLD.sitter;
-      const keep = ['sitC', 'sitFront', 'lid', 'deskBase', 'saucer'].map(k => WORLD[k]);
+      const keep = ['sitC', 'deskC'].map(k => WORLD[k]);
       const was = WORLD.hall.children.map(c => c.visible);
       WORLD.hall.children.forEach(c => { c.visible = keep.includes(c); });
       const chairV = WORLD.chair.visible; WORLD.chair.visible = false;
       WORLD.app.render();
       const px = window.__px();
-      const side = [window.__holes(px, 166, 496, 194, 541), window.__holes(px, 266, 496, 282, 518)];
-      const lid = window.__offLid(px, 204, 496, 258, 534); const cc = window.__canvas(), kk = cc.width / 1280, o = document.createElement('canvas'); o.width = 720; o.height = 560; const og = o.getContext('2d'); og.fillStyle = '#7a7'; og.fillRect(0, 0, 720, 560); og.imageSmoothingEnabled = false; og.drawImage(cc, 100 * kk, 380 * kk, 240 * kk, 187 * kk, 0, 0, 720, 560); const url = o.toDataURL('image/png');
+      /* столик с гостем растёт от точки на полу (230, 652) в 1,6 раза: окна проверки переводим так же */
+      const K = 1.6, mx = x => 230 + (x - 230) * K, my = y => 652 + (y - 652) * K;
+      const side = [window.__holes(px, mx(166), my(496), mx(194), my(541)), window.__holes(px, mx(266), my(496), mx(282), my(518))];
+      const lid = window.__offLid(px, mx(204), my(496), mx(258), my(534)); const cc = window.__canvas(), kk = cc.width / 1280, o = document.createElement('canvas'); o.width = 720; o.height = 560; const og = o.getContext('2d'); og.fillStyle = '#7a7'; og.fillRect(0, 0, 720, 560); og.imageSmoothingEnabled = false; og.drawImage(cc, mx(100) * kk, my(380) * kk, 240 * K * kk, 187 * K * kk, 0, 0, 720, 560); const url = o.toDataURL('image/png');
       WORLD.hall.children.forEach((c, i) => { c.visible = was[i]; }); WORLD.chair.visible = chairV;
       return { url, side, lid, masked: !!a.root.mask && !!WORLD.sitFront.mask, reach: a.reaching, open: a.laptopK };
     });
@@ -146,7 +148,7 @@ const out = process.argv[3] || 'out/vf';
     ['student', 'regular', 'hurry'].forEach(t => { for (let i = 0; i < 4; i++) looks.push(lookFor(t)); });
     looks.forEach((look, i) => {
       const x = 70 + (i % 9) * 135, y = -300 + Math.floor(i / 9) * 160;
-      const a = WORLD.addActor({ look, icon: '', iconKey: '', title: '', tags: [], x, onTap() {}, steam() {} }); a.__x = x; a.__y = y; a.__look = look; window.__acts.push(a);
+      const a = WORLD.addActor({ look, icon: '', iconKey: '', title: '', tags: [], x, onTap() {}, steam() {} }); a.__x = x; a.__y = 0; a.__row = Math.floor(i / 9); a.__look = look; window.__acts.push(a);
     });
   });
   await p.waitForTimeout(8000);
@@ -156,13 +158,17 @@ const out = process.argv[3] || 'out/vf';
     return await p.evaluate(({ res, walking }) => {
       const { WORLD } = window.__dbg; WORLD.software = null; WORLD.setResolution(res);
       let bad = []; let total = 0;
-      for (let f = 0; f < 90; f++) window.__acts.forEach((a, i) => a.update(1 / 30, a.__x + (walking ? Math.sin(f / 5 + i) * 0 + f * 1.2 : 0), a.__y));
-      WORLD.app.render(); const px = window.__px();
-      window.__acts.forEach((a, i) => {
-        const cx = a.__x + (walking ? 89 * 1.2 : 0), y0 = 600 + a.__y;
-        const h = window.__holes(px, cx - 20, y0 - 125, cx + 20, y0 - 32);
-        total++; if (h > 0.004) bad.push(`${a.__look.outfit}/${a.__look.build}/${a.__look.cloth} ${(h * 100).toFixed(1)}%`);
-      });
+      const K = WORLD.guestK;
+      /* гости выросли в 1,6 раза и закрывали бы друг друга: каждый ряд снимаем отдельно, остальные уводим за экран */
+      for (const row of [0, 1, 2]) {
+        for (let f = 0; f < 90; f++) window.__acts.forEach((a, i) => a.update(1 / 30, a.__x + (walking ? Math.sin(f / 5 + i) * 0 + f * 1.2 : 0), a.__row === row ? 0 : -3000));
+        WORLD.app.render(); const px = window.__px();
+        window.__acts.filter(a => a.__row === row).forEach(a => {
+          const cx = a.__x + (walking ? 89 * 1.2 : 0), y0 = 600;
+          const h = window.__holes(px, cx - 20, y0 - 125 * K, cx + 20, y0 - 32 * K);
+          total++; if (h > 0.004) bad.push(`${a.__look.outfit}/${a.__look.build}/${a.__look.cloth} ${(h * 100).toFixed(1)}%`);
+        });
+      }
       return { bad, total };
     }, { res, walking });
   };

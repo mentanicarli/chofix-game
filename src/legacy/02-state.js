@@ -24,7 +24,7 @@ function menuBoard() {
 function applyUpgrades() {
   menuBoard(); zonesSync();
   WORLD.setUpgrades({ milk: !!G.milk, machine: !!G.machine, cozy: !!G.cozy });
-  WORLD.setBarUpgrades({ ice: !!G.eq_ice, eq: Object.fromEntries(['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].map(k => [k, !!G['eq_' + k]])), snacks: !!G.eq_case_snacks, pastry: !!G.eq_case_pastry, dessert: !!G.eq_case_dessert, deli: !!G.eq_fridge_deli, micro: !!G.eq_microwave });
+  WORLD.setBarUpgrades({ milk: !!G.milk, ice: !!G.eq_ice, eq: Object.fromEntries(['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].map(k => [k, !!G['eq_' + k]])), snacks: !!G.eq_case_snacks, pastry: !!G.eq_case_pastry, dessert: !!G.eq_case_dessert, deli: !!G.eq_fridge_deli, micro: !!G.eq_microwave });
 }
 /* ---------- HUD ---------- */
 function starSVG(fill) { return `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15,9 22,9.5 16.5,14.5 18.5,22 12,18 5.5,22 7.5,14.5 2,9.5 9,9" fill="${fill}" stroke="#4A2F25" stroke-width="2" stroke-linejoin="round"/></svg>`; }
@@ -55,7 +55,7 @@ const drinkCost = d => MENUAPI.drinkCost(d, !!G.beans);
 function hint(msg) { toast(msg, 2200); }
 function floatText(x, html, bad) {
   const f = document.createElement('div'); f.className = 'float' + (bad ? ' bad' : ''); f.innerHTML = html;
-  f.style.left = x + 'px'; f.style.top = '330px'; stage.appendChild(f); setTimeout(() => f.remove(), 1400);
+  f.style.left = x + 'px'; f.style.top = '230px'; stage.appendChild(f); setTimeout(() => f.remove(), 1400);
 }
 
 /* ---------- чашка ---------- */

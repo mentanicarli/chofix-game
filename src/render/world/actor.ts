@@ -31,6 +31,8 @@ export interface ActorOpts {
   res: number;
   shadow: Texture;
   onTap: () => void;
+  /** Рост относительно базового, от точки на полу (ноги остаются на месте). Для сидящего масштабирует сцена целиком. */
+  scale?: number;
   /** Гость за столиком: ноги анфас, слой для рук поверх стола, пар над чашкой. */
   seat?: { front: Container; tableCup: Pt };
   /** Пар над чашкой: мировые координаты. */
@@ -150,6 +152,8 @@ export class Actor {
   private readonly hairRot = new Spring(0, 8, 0.25);
   private readonly sway = new Spring(0, 7, 0.6);
   private hopY = 0;
+  /** Множитель роста: скорости и прыжки считаются в «базовых» пикселях, на экране умножаются обратно. */
+  private readonly k: number;
   private hopV = 0;
   private hopQ = 0;
   private hopMul = 1;
@@ -206,8 +210,10 @@ export class Actor {
     this.back.root.addChild(this.legsC, this.back.up);
     this.inner.addChild(this.back.root, this.front.root, this.cupHolder, this.bubble);
     this.root.addChild(sh, this.inner);
+    this.k = o.scale ?? 1;
     this.root.pivot.set(0, 600);
     this.root.position.set(o.x, 600);
+    this.root.scale.set(this.k);
     this.root.visible = false;
     this.root.eventMode = 'static';
     this.root.cursor = 'pointer';
@@ -221,10 +227,10 @@ export class Actor {
 
   private async load(): Promise<void> {
     const p = this.parts;
-    const sc = Math.ceil(clamp(this.o.res, 1, 2));
+    const sc = Math.ceil(clamp(this.o.res * this.k, 1, 3));
     const cells = [...p.cells, ...p.seatCells];
     const atlas = await rasterAtlas(cells, sc, wrapCell);
-    const h = await raster(wrapPart(p.head('neutral', false, GAZES.c), HEAD_BOX), HEAD_BOX, this.o.res);
+    const h = await raster(wrapPart(p.head('neutral', false, GAZES.c), HEAD_BOX), HEAD_BOX, this.o.res * this.k);
     if (!this.alive) {
       atlas.tex.destroy(true);
       h.destroy(true);
@@ -300,7 +306,7 @@ export class Actor {
     const key = `${m}${blink ? '*' : ''}|${g}`;
     if (this.heads.has(key) || this.pending.has(key) || !this.alive) return;
     this.pending.add(key);
-    const t = await raster(wrapPart(this.parts.head(m, blink, GAZES[g]), HEAD_BOX), HEAD_BOX, this.o.res);
+    const t = await raster(wrapPart(this.parts.head(m, blink, GAZES[g]), HEAD_BOX), HEAD_BOX, this.o.res * this.k);
     this.pending.delete(key);
     if (!this.alive) {
       t.destroy(true);
@@ -688,7 +694,7 @@ export class Actor {
     }
     const seated = this.phase === 'seated' || this.phase === 'sit' || (this.phase === 'rise' && this.seatK > 0.05);
     /* скорость, ускорение */
-    const raw = dt > 1e-5 ? (x - this.lastX) / dt : 0;
+    const raw = dt > 1e-5 ? (x - this.lastX) / dt / this.k : 0;
     this.lastX = x;
     this.vx = damp(this.vx, raw, 16, Math.max(dt, 1e-4));
     this.ax = damp(this.ax, dt > 1e-5 ? (this.vx - this.lastVx) / dt : 0, 10, Math.max(dt, 1e-4));
@@ -751,7 +757,7 @@ export class Actor {
     /* корень: положение, сжатие, наклон */
     const bob = this.seatK > 0.5 ? 0 : ground;
     const jump = hopY;
-    this.root.position.set(x + this.sway.x, 600 + y + jump + bob);
+    this.root.position.set(x + this.sway.x * this.k, 600 + y + (jump + bob) * this.k);
     this.root.rotation = 0;
     const sq = this.sq.step(dt, 0);
     const sy = 1 - sq;
@@ -1079,7 +1085,7 @@ export class Actor {
     if (this.bubble.visible) {
       const u = this.bubbleK;
       const s = tgt ? 0.2 + 0.8 * u + Math.sin(u * Math.PI) * 0.12 : u;
-      this.bubble.scale.set(s);
+      this.bubble.scale.set(s / this.k);
       this.bubble.alpha = Math.min(1, u * 3);
     }
   }

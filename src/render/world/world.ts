@@ -5,6 +5,7 @@ import CLOCK from '../../assets/art/clock-face.svgf?raw';
 import BG from '../../assets/art/hall-bg.svgf?raw';
 import ITEMS from '../../assets/art/hall-items.svgf?raw';
 import FG from '../../assets/art/hall-fg.svgf?raw';
+import TABLE from '../../assets/art/hall-table.svgf?raw';
 import HILLS from '../../assets/art/sky-hills.svgf?raw';
 import LAMP0 from '../../assets/art/lamp-0.svgf?raw';
 import LAMP1 from '../../assets/art/lamp-1.svgf?raw';
@@ -12,7 +13,7 @@ import LAMP2 from '../../assets/art/lamp-2.svgf?raw';
 import { Actor, Limb, type ActorOpts } from './actor';
 import { Ribbon, frameSprite } from './ribbon';
 import { BarScene, type BarFrame, type BarUpgrades } from './bar';
-import { BARISTA_ARM_LEN, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
+import { BARISTA_ARM_LEN, BARISTA_K, BARISTA_PIVOT, GUEST_K, SEAT_PIVOT, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
 import { Spring, Spring2, damp, ik2 } from './anim';
 import { Fx } from './fx';
 import { bakePaper, canvasTexture, raster, rasterAtlas } from './svg';
@@ -32,6 +33,8 @@ const W = 1280;
 const H = 720;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const box = (x: number, y: number, w: number, h: number): Box => ({ x, y, w, h });
+/** Столик без растения: рисуется отдельно, чтобы расти вместе с сидящим гостем. */
+const TABLE_BOX = box(118, 514, 224, 160);
 
 const SKY: [number, string, string, string][] = [
   [0, '#F3C9A6', '#FBE3B8', '#FFD79A'],
@@ -64,11 +67,15 @@ export class World {
   low = false;
   /** доски пола поверх фона, но под людьми */
   floorGrain!: Sprite;
+  /** Рост гостей (для эффектов в legacy: точки на госте считаются от пола, y 600). */
+  readonly guestK = GUEST_K;
   private texRes = 1;
   private readonly actors = new Set<Actor>();
   private readonly cust = new Container();
   private readonly sitC = new Container();
   private readonly sitFront = new Container();
+  /** ноутбук, блюдце, руки и чашка сидящего: над столиком (слой 11) */
+  private readonly deskC = new Container();
   private readonly lid = new Sprite();
   private readonly deskBase = new Sprite();
   private readonly saucer = new Sprite();
@@ -183,7 +190,7 @@ export class World {
 
     const full = box(0, 0, W, H);
     const lampBox = (x: number) => box(x - 60, -30, 120, 180);
-    const [bg, items, hills, clock, l0, l1, l2, fg, paperT, woodT] = await Promise.all([
+    const [bg, items, hills, clock, l0, l1, l2, fg, tableT, paperT, woodT] = await Promise.all([
       raster(BG, full, r),
       raster(ITEMS, box(690, 280, 610, 140), r),
       raster(HILLS, box(80, 230, 240, 140), r),
@@ -192,6 +199,7 @@ export class World {
       raster(LAMP1, lampBox(870), r),
       raster(LAMP2, lampBox(1060), r),
       raster(FG, full, r),
+      raster(TABLE, TABLE_BOX, r * GUEST_K),
       bakePaper(PAPER, full),
       bakePaper(WOOD, full),
       fonts
@@ -251,9 +259,9 @@ export class World {
     /* мягкая тень под столиком, блик на стекле витрины */
     const tsh = new Sprite(this.shadow);
     tsh.anchor.set(0.5);
-    tsh.position.set(230, 658);
-    tsh.width = 190;
-    tsh.height = 34;
+    tsh.position.set(SEAT_PIVOT.x, SEAT_PIVOT.y + 6 * GUEST_K);
+    tsh.width = 190 * GUEST_K;
+    tsh.height = 34 * GUEST_K;
     tsh.tint = 0x3b2418;
     tsh.alpha = 0.3;
     S.addChild(tsh);
@@ -303,8 +311,20 @@ export class World {
     /* порядок: гость (ноги, торс, голова) → стол → руки и чашка → ноутбук; стул — за гостем */
     this.sitC.addChild(this.chair);
     S.addChild(this.cust, this.sitC);
-    S.addChild(place(fg, 0, 0, W, H));
-    S.addChild(this.saucer, this.sitFront, this.deskBase, this.lid);
+    /* столик, ноутбук, чашка и гость — одна группа: растёт вместе с гостем от точки на полу (маски считаются так же) */
+    const seatScale = (c: Container) => {
+      c.pivot.set(SEAT_PIVOT.x, SEAT_PIVOT.y);
+      c.position.set(SEAT_PIVOT.x, SEAT_PIVOT.y);
+      c.scale.set(GUEST_K);
+    };
+    seatScale(this.sitC);
+    const tableC = new Container();
+    tableC.addChild(place(tableT, TABLE_BOX.x, TABLE_BOX.y, TABLE_BOX.w, TABLE_BOX.h));
+    seatScale(tableC);
+    S.addChild(tableC, place(fg, 0, 0, W, H));
+    this.deskC.addChild(this.saucer, this.sitFront, this.deskBase, this.lid);
+    seatScale(this.deskC);
+    S.addChild(this.deskC);
     this.buildDesk();
 
     /* свет: ореолы ламп, световые пятна на прилавке, пылинки в луче */
@@ -414,6 +434,13 @@ export class World {
     });
   }
 
+  /** Бариста (и его рука перед предметами) растёт от линии края стойки; маска внутри переводится вместе с ним. */
+  private baristaScale(c: Container): void {
+    c.pivot.set(BARISTA_PIVOT.x, BARISTA_PIVOT.y);
+    c.position.set(BARISTA_PIVOT.x, BARISTA_PIVOT.y);
+    c.scale.set(BARISTA_K);
+  }
+
   private async buildBarista(): Promise<void> {
     const B: Box = { x: 780, y: 270, w: 190, h: 150 };
     const p = baristaParts();
@@ -424,7 +451,7 @@ export class World {
       const s = new Sprite();
       s.position.set(B.x, B.y);
       c.addChild(s);
-      void raster(wrapPart(inner, B), B, this.texRes).then((t) => {
+      void raster(wrapPart(inner, B), B, this.texRes * BARISTA_K).then((t) => {
         s.texture = t;
         s.width = B.w;
         s.height = B.h;
@@ -437,7 +464,7 @@ export class World {
     this.headC = mk(p.head('smile'), 865, 350);
     this.headSprite = this.headC.children[0] as Sprite;
     (['blink', 'joy', 'focus', 'smile', 'tired'] as BaristaFace[]).forEach((f) => {
-      void raster(wrapPart(p.head(f), B), B, this.texRes).then((t) => {
+      void raster(wrapPart(p.head(f), B), B, this.texRes * BARISTA_K).then((t) => {
         this.faces[f] = t;
       });
     });
@@ -453,7 +480,7 @@ export class World {
     cupG.addChild(cup, this.cupTop, this.cupArt);
     this.cupC.addChild(cupG, this.cupStar);
     /* руки: ленты из атласа с суставами; чашка едет за левой кистью */
-    const atlas = await rasterAtlas(baristaCells(), Math.ceil(this.texRes), wrapCell);
+    const atlas = await rasterAtlas(baristaCells(), Math.ceil(this.texRes * BARISTA_K), wrapCell);
     const us = [0.5, 9, 21, 30, 33, 36, 45, 57].map((x) => x / BARISTA_ARM_LEN);
     for (let i = 0; i < 2; i++) {
       const rope = new Ribbon(atlas, 'bArm', us, 12);
@@ -468,6 +495,7 @@ export class World {
     const mask = new Graphics().rect(760, 250, 220, 149).fill(0xffffff);
     wrapper.addChild(mask);
     wrapper.mask = mask;
+    this.baristaScale(wrapper);
     this.app.stage.addChild(wrapper);
     this.baristaF.position.set(0, 8);
     this.baristaF.addChild(this.bodyF);
@@ -475,6 +503,7 @@ export class World {
     const maskF = new Graphics().rect(760, 250, 220, 149).fill(0xffffff);
     this.frontWrap.addChild(maskF);
     this.frontWrap.mask = maskF;
+    this.baristaScale(this.frontWrap);
     this.frontWrap.visible = false;
   }
 
@@ -590,7 +619,7 @@ export class World {
   }
 
   addActor(o: Omit<ActorOpts, 'res' | 'shadow'>): Actor {
-    const a = new Actor({ ...o, res: this.texRes, shadow: this.shadow });
+    const a = new Actor({ ...o, res: this.texRes, shadow: this.shadow, scale: GUEST_K });
     this.cust.addChild(a.root);
     this.actors.add(a);
     return a;
@@ -645,7 +674,7 @@ export class World {
       sp.anchor.set(ax, ay);
       sp.position.set(x, y);
       sp.visible = false;
-      void raster(`<g ${WRAP}>${inner}</g>`, box, this.texRes).then((t) => {
+      void raster(`<g ${WRAP}>${inner}</g>`, box, this.texRes * GUEST_K).then((t) => {
         sp.texture = t;
         sp.width = box.w;
         sp.height = box.h;
@@ -677,11 +706,11 @@ export class World {
         title: '',
         tags: [],
         x: -100,
-        res: this.texRes,
+        res: this.texRes * GUEST_K,
         shadow: this.shadow,
         onTap: () => undefined,
         seat: { front: this.sitFront, tableCup: { x: 52, y: 538 } },
-        steam: (x, y) => this.fx.add({ x, y, vx: (Math.random() - 0.5) * 6, vy: -(16 + Math.random() * 8), r: 2.5, grow: 8, a: 0.5, life: 2.2 })
+        steam: (x, y) => this.fx.add({ x, y: y - 9, vx: (Math.random() - 0.5) * 6, vy: -(16 + Math.random() * 8), r: 2.5, grow: 8, a: 0.5, life: 2.2 })
       });
       a.root.eventMode = 'none';
       a.holdCup('#5A3A2A');
@@ -740,9 +769,23 @@ export class World {
     if (a && a.root.mask !== (on ? this.seatMaskA : null)) a.root.mask = on ? this.seatMaskA : null;
     if (key === this.seatMaskState) return;
     this.seatMaskState = key;
-    const draw = (g: Graphics, x1: number) => g.clear().rect(0, 0, W, 490).rect(0, 546, W, H - 546).rect(0, 490, 164, 56).rect(x1, 490, W - x1, 56).fill(0xffffff);
-    draw(this.seatMaskA, 284);
-    draw(this.seatMaskB, reach ? 262 : 284);
+    /* маски заданы в «исходных» координатах столика (крышка y 490–546); на экране группа растёт от точки на полу, маски переводим так же */
+    const P = SEAT_PIVOT;
+    const mx = (x: number) => P.x + (x - P.x) * GUEST_K;
+    const my = (y: number) => P.y + (y - P.y) * GUEST_K;
+    const R = (g: Graphics, x: number, y: number, w: number, h: number) => g.rect(mx(x), my(y), w * GUEST_K, h * GUEST_K);
+    /* x1 — правая кромка скрытого; чашка на блюдце (x от 270, y от 524) остаётся видимой целиком */
+    const draw = (g: Graphics, x1: number, cup: boolean) => {
+      g.clear();
+      R(g, 0, 0, W, 490);
+      R(g, 0, 546, W, H - 546);
+      R(g, 0, 490, 164, 56);
+      R(g, x1, 490, W - x1, 56);
+      if (cup) R(g, 270, 524, 20, 22);
+      g.fill(0xffffff);
+    };
+    draw(this.seatMaskA, 284, false);
+    draw(this.seatMaskB, reach ? 262 : 284, true);
     this.sitFront.mask = on ? this.seatMaskB : null;
   }
 
