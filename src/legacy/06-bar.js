@@ -127,8 +127,19 @@ function closeInset() {
   if (!BR) return;
   BR.inset = null; BR.hold = false; UI.close.hidden = true; coachKey = '';
 }
+/* Зона активна, только если то, что в ней, нарисовано на баре (те же условия, что у WORLD.setBarUpgrades). Остальное — пустое место стола. */
+function zoneShown(z) {
+  if (z === 'ice') return !!G.eq_ice;
+  if (z === 'food') return !!(G.eq_case_snacks || G.eq_case_pastry || G.eq_case_dessert || G.eq_fridge_deli);
+  if (['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].includes(z)) return !!G['eq_' + z];
+  return true;
+}
+function zonesSync() {
+  document.querySelectorAll('#bZones [data-z]').forEach(r => { r.style.pointerEvents = zoneShown(r.dataset.z) ? '' : 'none'; });
+}
 function zoneClick(z) {
   if (!BR) return;
+  if (!zoneShown(z)) return;
   const d = BR.done;
   if (z === 'stop') { if (BR.shot.st === 'run') stopShot(); return; }
   if (z === 'bell') { barBell(); return; }
