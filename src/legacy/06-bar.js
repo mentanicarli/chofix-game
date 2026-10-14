@@ -72,7 +72,7 @@ function closeDrinkCard() {
 dcEl.addEventListener('click', e => { if (e.target.closest('[data-cardok]')) closeDrinkCard(); });
 function barShow(on) {
   stage.classList.toggle('inbar', on);
-  if (on) { UI.close.hidden = !BR || !BR.inset; coachKey = ''; tkKey = ''; }
+  if (on) { zonesSync(); UI.close.hidden = !BR || !BR.inset; coachKey = ''; tkKey = ''; }
   frontHintUpd();
 }
 function frontHintUpd() {

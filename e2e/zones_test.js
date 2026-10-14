@@ -29,6 +29,10 @@ const HOOK = 'window.__dbg = { get G() { return G; }, get D() { return D; }, get
   for (const [x, y] of [[100, 600], [300, 680], [850, 650], [1200, 650], [60, 690]]) { const s = await p.evaluate(() => { const r = document.querySelector('#barSvg').getBoundingClientRect(); return { x: r.x, y: r.y, k: r.width / 1280 }; }); await p.mouse.click(s.x + x * s.k, s.y + y * s.k); }
   await p.waitForTimeout(300);
   ok((await msgs()).length === 0, 'клики по пустому столу: подсказок нет ' + JSON.stringify(await msgs()));
+  /* всегда активные зоны нарисованы на ранге 1 (скриншот с контурами сверен глазами): холодильник — часть статичного арта, G.milk трогает только кувшин в зале */
+  ok(await p.evaluate(() => !window.__dbg.G.milk && ['grind', 'tamp', 'shot', 'water', 'steam', 'syr1', 'syr2', 'syr3', 'pour', 'bell', 'stop', 'milk'].every(k => getComputedStyle(document.querySelector('#bZones [data-z="' + k + '"]')).pointerEvents !== 'none')), 'без молока: зоны статичного арта (в т. ч. холодильник) активны');
+  const m0 = await center('milk'); await p.mouse.click(m0.x, m0.y); await p.waitForTimeout(300);
+  ok((await msgs()).includes('Молоко в этом напитке не нужно'), 'холодильник нарисован: до покупки молока клик по нему «Молоко … не нужно» ' + JSON.stringify(await msgs()));
   /* зона нужного оборудования живая: помол открывает инсет */
   const g = await center('grind'); await p.mouse.click(g.x, g.y); await p.waitForTimeout(400);
   ok(await p.evaluate(() => window.__dbg.BR.inset === 'grind'), 'клик по кофемолке открывает помол');
@@ -37,7 +41,7 @@ const HOOK = 'window.__dbg = { get G() { return G; }, get D() { return D; }, get
   /* 2. песочница, поздний ранг: оборудование есть → «Сифон не нужен», но то, чего нет, молчит */
   await pw.sandboxStart(p, url, { day: 30, mode: 'all' });
   await p.click('#devBtn'); await p.waitForSelector('#devPanel:not([hidden])'); await p.waitForTimeout(500);
-  await p.selectOption('[data-o="drink"]', 'espresso_double'); await p.click('[data-dv="setorder"]'); await p.click('[data-dv="nopat"]'); await p.click('[data-dv="call"]');
+  await p.selectOption('[data-o="drink"]', 'latte'); await p.selectOption('[data-o="cold"]', '0'); await p.selectOption('[data-o="syrup"]', '-'); await p.selectOption('[data-o="food"]', '-'); await p.click('[data-dv="setorder"]'); await p.click('[data-dv="nopat"]'); await p.click('[data-dv="call"]');
   await openBar();
   await p.click('#devBtn'); await p.waitForTimeout(300);
   const own = await p.evaluate(z => Object.fromEntries(z.map(k => [k, !!window.__dbg.G['eq_' + k]])), ['whipper', 'ice', 'blender']);
@@ -45,6 +49,11 @@ const HOOK = 'window.__dbg = { get G() { return G; }, get D() { return D; }, get
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('#bZones [data-z="whipper"]')).pointerEvents !== 'none'), 'зона сифона активна');
   const w = await center('whipper'); await p.mouse.click(w.x, w.y); await p.waitForTimeout(300);
   ok((await msgs()).includes('Сифон не нужен'), 'ненужный сифон: «Сифон не нужен» ' + JSON.stringify(await msgs()));
+  /* после покупки молока и заказа латте зона молока обрабатывается */
+  ok(await p.evaluate(() => window.__dbg.G.milk), 'на дне 30 молоко куплено');
+  await p.evaluate(() => { const d = window.__dbg.BR.done; d.grind = d.tamp = d.shot = true; });
+  const m1 = await center('milk'); await p.mouse.click(m1.x, m1.y); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => window.__dbg.BR.inset === 'milk'), 'клик по холодильнику при заказе латте открывает молоко ' + JSON.stringify(await msgs()) + ' ' + await p.evaluate(() => JSON.stringify({ i: window.__dbg.BR.inset, t: window.__dbg.BR.tasks, d: window.__dbg.BR.done })));
   await p.screenshot({ path: out + '_late.png' });
 
   ok(errs.length === 0, errs.length ? 'ошибки: ' + errs.slice(0, 5).join(' | ') : 'NO_ERRORS');
