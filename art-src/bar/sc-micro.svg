@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="728 545 62 62" data-part="scMicro" data-scale="1">
+<!--
+  Микроволновка на столешнице справа от витрины (этап 12.3(1)): корпус с верхней гранью, дверца с окном и ручкой, справа панель (дисплей и три кнопки), ножки, тень.
+  Внутри окна тарелка с блюдом (виден разогрев). Зона клика food общая с витриной и не меняется. Отдельный предмет: рисуется независимо от витрины.
+-->
+<g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="759" cy="604" rx="30" ry="3" fill="{{SHADOW}}" fill-opacity=".3" stroke="none"/>
+<rect x="736" y="598" width="8" height="4" rx="1.5" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
+<rect x="776" y="598" width="8" height="4" rx="1.5" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
+<rect x="732" y="553" width="54" height="46" rx="6" fill="{{STEEL}}" stroke-width="{{L}}"/>
+<path d="M773 554H780Q785 554 785 559V593Q785 598 780 598H773Z" fill="{{STEEL_SH}}" stroke="none"/>
+<path d="M734 553L738 548H781L785 553Z" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
+<rect x="737" y="558" width="32" height="36" rx="4" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
+<rect x="741" y="562" width="24" height="27" rx="3" fill="{{DARK}}" stroke-width="{{D}}"/>
+<ellipse cx="753" cy="582" rx="9" ry="2.6" fill="{{PAPER}}" stroke="none"/>
+<path d="M747 581Q747 574 753 574Q759 574 759 581Z" fill="{{BAKE}}" stroke="none"/>
+<path d="M744 563H754L746 588H742Z" fill="{{HILITE}}" fill-opacity=".28" stroke="none"/>
+<path d="M766 568V584" fill="none" stroke-width="{{M}}"/>
+<rect x="772" y="558" width="10" height="7" rx="1.5" fill="{{DARK}}" stroke-width="{{D}}"/>
+<path d="M774 562H780" fill="none" stroke="{{MUSTARD}}" stroke-width="{{D}}"/>
+<circle cx="777" cy="572" r="2.4" fill="{{PAPER}}" stroke-width="{{D}}"/>
+<circle cx="777" cy="580" r="2.4" fill="{{PAPER}}" stroke-width="{{D}}"/>
+<circle cx="777" cy="588" r="2.4" fill="{{MUSTARD}}" stroke-width="{{D}}"/>
+</g>
+</svg>

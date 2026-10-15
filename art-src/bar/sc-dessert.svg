@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="534 566 92 28" data-part="scDessert" data-scale="1">
+<!-- Десерты на нижней полке витрины (этап 12.3(1)): кусок слоёного торта с вишней и эклер с глазурью. Основание на дне витрины y 592. -->
+<g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="554" cy="592" rx="17" ry="2.6" fill="{{PAPER}}"/>
+<path d="M542 591V575H566V591Z" fill="{{PINK}}"/>
+<path d="M542 584H566V591H542Z" fill="{{CHOC}}"/>
+<path d="M542 575Q548 572 554 575Q560 572 566 575V578H542Z" fill="{{PAPER}}"/>
+<circle cx="554" cy="571" r="3.2" fill="{{TERRA}}"/>
+<ellipse cx="594" cy="592" rx="22" ry="2.6" fill="{{PAPER}}"/>
+<rect x="577" y="581" width="34" height="10" rx="5" fill="{{BAKE}}"/>
+<path d="M578 585Q578 580 584 580H604Q610 580 610 585Z" fill="{{CHOC}}"/>
+<path d="M582 588H606" fill="none" stroke="{{PAPER}}"/>
+</g>
+</svg>

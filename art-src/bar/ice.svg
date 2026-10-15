@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="325 505 135 105" data-part="ice" data-scale="1">
+<!--
+  Ледогенератор (этап 12.3(1)): компактный аппарат на столешнице, а не ведёрко. Корпус-короб с верхней крышкой (ручка), окно, за которым виден лёд,
+  индикатор питания, лоток выдачи со льдом, совок на боковом крючке, ножки, тень. Привязка и зона ice (330,516,124,90) не меняются; подписи «лёд» нет.
+  Свет сверху слева (тень справа), «крупные» 3,5 px у корпуса, «средние» 3 у крышки и лотка, «мелкие» 2 у льда и ручек.
+-->
+<g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="398" cy="604" rx="68" ry="6" fill="{{SHADOW}}" fill-opacity=".3" stroke="none"/>
+<rect x="354" y="594" width="14" height="7" rx="2" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
+<rect x="426" y="594" width="14" height="7" rx="2" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
+<rect x="346" y="527" width="96" height="68" rx="7" fill="{{STEEL}}" stroke-width="{{L}}"/>
+<path d="M423 528H435Q441 528 441 534V588Q441 594 435 594H423Z" fill="{{STEEL_SH}}" stroke="none"/>
+<rect x="342" y="517" width="104" height="12" rx="5" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
+<rect x="382" y="520" width="24" height="4" rx="2" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
+<circle cx="436" cy="550" r="3" fill="{{DUSTY}}" stroke-width="{{D}}"/>
+<rect x="355" y="535" width="76" height="34" rx="5" fill="{{GLASS_DP}}" stroke-width="{{M}}"/>
+<g stroke-width="{{D}}">
+<rect x="360" y="553" width="16" height="14" rx="3" fill="{{PAPER}}" transform="rotate(-8 368 560)"/>
+<rect x="376" y="548" width="17" height="15" rx="3" fill="{{GLASS}}" transform="rotate(6 384 556)"/>
+<rect x="393" y="553" width="16" height="14" rx="3" fill="{{PAPER}}" transform="rotate(-5 401 560)"/>
+<rect x="409" y="549" width="15" height="15" rx="3" fill="{{GLASS}}" transform="rotate(9 416 556)"/>
+<rect x="369" y="540" width="14" height="13" rx="3" fill="{{GLASS}}" transform="rotate(10 376 546)"/>
+<rect x="396" y="539" width="15" height="13" rx="3" fill="{{PAPER}}" transform="rotate(-7 403 546)"/>
+</g>
+<path d="M360 538H370L362 566H358Z" fill="{{HILITE}}" fill-opacity=".35" stroke="none"/>
+<rect x="361" y="574" width="64" height="12" rx="3" fill="{{DARK}}" stroke-width="{{D}}"/>
+<path d="M356 590H430L426 598H360Z" fill="{{STEEL_SH}}" stroke-width="{{M}}"/>
+<g stroke-width="{{D}}">
+<rect x="380" y="582" width="12" height="9" rx="2.5" fill="{{PAPER}}" transform="rotate(-8 386 586)"/>
+<rect x="396" y="583" width="11" height="8" rx="2.5" fill="{{GLASS}}" transform="rotate(7 401 587)"/>
+</g>
+<rect x="443" y="536" width="6" height="30" rx="3" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
+<path d="M440 566H452Q454 576 446 580Q438 576 440 566Z" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
+</g>
+</svg>

@@ -287,13 +287,19 @@ export class BarScene {
     R.addChild(this.iceMaker);
     spr('showcase', this.showcase);
     txt('showcase', this.showcase);
-    ['scSnacks', 'scPastry', 'scDessert', 'scDeli', 'scMicro'].forEach((k) => {
+    /* еда четырёх наборов стоит внутри корпуса, переднее стекло (showcaseGlass) поверх неё; микроволновка — отдельный предмет справа от витрины (этап 12.3(1)) */
+    ['scSnacks', 'scPastry', 'scDessert', 'scDeli'].forEach((k) => {
       const c = new Container();
       spr(k, c);
       this.showcase.addChild(c);
       this.subs.set(k, c);
     });
+    spr('showcaseGlass', this.showcase);
     R.addChild(this.showcase);
+    const micro = new Container();
+    spr('scMicro', micro);
+    this.subs.set('scMicro', micro);
+    R.addChild(micro);
     ids.filter((k) => k.startsWith('eq_')).forEach((k) => {
       const c = new Container();
       spr(k, c);

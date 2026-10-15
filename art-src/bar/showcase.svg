@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="520 525 216 88" data-part="showcase" data-scale="1">
+<!--
+  Кондитерская витрина на столешнице, корпус и задняя стенка (этап 12.3(1)). Переднее стекло — отдельная часть showcase-glass.svg ПОВЕРХ еды; еда четырёх наборов — sc-*.svg между ними.
+  Зона клика food (520,540,270,72) и ZONE_POS не меняются. Свет сверху слева: тень справа и снизу. Класс «крупные» 3,5 px у корпуса, «мелкие» 2 px у полок и ножек.
+  Конструкция: корпус-короб с видимой верхней гранью (камера чуть сверху), рамка, задняя стенка, полка посередине, цоколь, тень на столешнице.
+-->
+<g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="627" cy="607" rx="108" ry="6" fill="{{SHADOW}}" fill-opacity=".3" stroke="none"/>
+<rect x="526" y="535" width="202" height="65" rx="8" fill="{{STEEL}}" stroke-width="{{L}}"/>
+<path d="M710 536H720Q727 536 727 543V592Q727 599 720 599H710Z" fill="{{STEEL_SH}}" stroke="none"/>
+<rect x="532" y="541" width="190" height="53" rx="4" fill="{{PAPER}}" stroke-width="{{D}}"/>
+<path d="M533 542H660L548 593H533Z" fill="{{KRAFT}}" fill-opacity=".55" stroke="none"/>
+<rect x="532" y="565" width="190" height="5" fill="{{STEEL_HI}}" stroke-width="{{D}}"/>
+<path d="M526 535L534 527H720L728 535Z" fill="{{STEEL_HI}}" stroke-width="{{L}}"/>
+<path d="M538 531H640" fill="none" stroke="{{PAPER}}" stroke-opacity=".8" stroke-width="{{D}}"/>
+<rect x="529" y="596" width="196" height="7" rx="3" fill="{{STEEL_SH}}" stroke-width="{{M}}"/>
+</g>
+</svg>

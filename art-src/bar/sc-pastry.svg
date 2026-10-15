@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="626 539 94 28" data-part="scPastry" data-scale="1">
+<!-- Выпечка на верхней полке витрины (этап 12.3(1)): два круассана (полумесяцы с насечками) и маффин. Основание на полке y 565. -->
+<g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M631 565Q630 549 646 547Q660 547 664 565Q656 558 646 558Q637 558 631 565Z" fill="{{BAKE}}"/>
+<path d="M639 549L641 558M647 548V558M655 549L653 558" fill="none" stroke="{{BAKE_SH}}"/>
+<path d="M663 565Q664 551 678 549Q689 549 692 565Q685 559 677 559Q669 559 663 565Z" fill="{{BAKE}}"/>
+<path d="M670 551L671 559M678 550V559M685 551L684 559" fill="none" stroke="{{BAKE_SH}}"/>
+<path d="M700 557Q700 545 709 545Q718 545 718 557Z" fill="{{BAKE}}"/>
+<path d="M702 551Q709 548 716 551" fill="none" stroke="{{BAKE_SH}}"/>
+<path d="M701 557H717L714.5 565H703.5Z" fill="{{PAPER}}"/>
+<path d="M706 558L706.5 564M711 558L710.5 564" fill="none" stroke="{{BAKE_SH}}"/>
+</g>
+</svg>

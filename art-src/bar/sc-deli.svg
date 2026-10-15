@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="626 566 94 28" data-part="scDeli" data-scale="1">
+<!-- Сэндвич и салат на нижней полке витрины (этап 12.3(1)): сэндвич (булка, салат, ветчина) и контейнер с салатом. Основание на дне витрины y 592. -->
+<g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="652" cy="592" rx="22" ry="2.6" fill="{{PAPER}}"/>
+<path d="M636 579Q636 571 652 571Q668 571 668 579Z" fill="{{BAKE}}"/>
+<path d="M635 579Q640 582 645 579Q650 582 655 579Q660 582 665 579Q668 581 669 579V582H635Z" fill="{{SAGE_LT}}"/>
+<rect x="636" y="582" width="32" height="4" fill="{{PINK}}"/>
+<path d="M636 586H668V588Q668 591 664 591H640Q636 591 636 588Z" fill="{{BAKE}}"/>
+<path d="M680 580H714L711 591H683Z" fill="{{PAPER}}"/>
+<path d="M681 580Q684 574 690 576Q694 571 700 575Q706 572 710 577Q713 576 713 580Z" fill="{{SAGE}}"/>
+<circle cx="694" cy="577" r="2.4" fill="{{TERRA}}"/>
+<circle cx="705" cy="578" r="2" fill="{{MUSTARD}}"/>
+</g>
+</svg>
