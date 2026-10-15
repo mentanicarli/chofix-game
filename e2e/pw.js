@@ -25,11 +25,15 @@ exports.startNew = async (p) => {
     await p.click('[data-go]', { timeout: 3000 });
   } catch (e) { /* см. выше */ }
 };
-/** Карточка «Новый напиток» (если показана) → «Понятно». Возвращает true, если карточка была. */
+/** Окна поверх бара («Зачем это нужно», карточка «Новый напиток») → «Понятно», пока они есть. Возвращает, сколько окон закрыто. */
 exports.dismissCard = async (p) => {
-  const on = await p.evaluate(() => { const e = document.querySelector('#drinkCard'); return !!e && !e.hidden; });
-  if (on) { await p.click('[data-cardok]'); await p.waitForTimeout(500); }
-  return on;
+  let n = 0;
+  for (let i = 0; i < 6; i++) {
+    const on = await p.evaluate(() => { const e = document.querySelector('#drinkCard'); return !!e && !e.hidden; });
+    if (!on) break;
+    await p.click('[data-cardok]'); await p.waitForTimeout(450); n++;
+  }
+  return n;
 };
 /**
  * Песочница вместо «новой игры с нуля»: открывает #dev-nopixi-lowfx и запускает день программно тем же кодом, что кнопка «Начать»

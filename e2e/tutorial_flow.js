@@ -41,7 +41,7 @@ const out = process.argv[3] || 'out/tut';
   await p.evaluate(() => { const B = window.__dbg.BR; for (const t of B.tasks) { if (t === 'whisk') break; B.done[t] = true; B.res[t] = 1; } });
   t1 = await waitCoach(/Новая станция/);
   ok('коуч называет станцию и где она', t1.includes('Новая станция') && /матч/i.test(t1));
-  await p.click('[data-z=matcha]', { force: true }); await p.waitForTimeout(700);
+  await p.click('[data-z=matcha]', { force: true }); await p.waitForTimeout(700); await require('./pw').dismissCard(p); /* «Зачем это нужно» при первом открытии станции */
   ok('сразу после открытия станции коуч ещё держит прежнюю реплику (минимум показа ≥ 4 с)', (await coach()).includes('Новая станция'));
   const t2 = await waitCoach(/Взбивать/); /* потом сменяется */
   ok('«Повторить» вернёт предыдущую реплику', await (async () => { await p.click('[data-coachrep]'); await p.waitForTimeout(400); const r = await coach(); return /повтор/.test(r) && r.includes('Новая станция'); })());
@@ -59,7 +59,7 @@ const out = process.argv[3] || 'out/tut';
   console.log('заказ 2:', JSON.stringify(await order()));
   await p.keyboard.press('Space'); await p.waitForTimeout(900); await require('./pw').dismissCard(p);
   await p.evaluate(() => { const B = window.__dbg.BR; for (const t of B.tasks) { if (t === 'whisk') break; B.done[t] = true; B.res[t] = 1; } });
-  await p.click('[data-z=matcha]', { force: true }); await p.waitForTimeout(700);
+  await p.click('[data-z=matcha]', { force: true }); await p.waitForTimeout(700); await require('./pw').dismissCard(p); /* «Зачем это нужно» при первом открытии станции */
   const t3 = await coach(); console.log('коуч при повторе:', JSON.stringify(t3));
   ok('повторный заказ: коуч есть (подсказки включены), но без «Новая станция»', t3.length > 0 && !t3.includes('Новая станция') && !t3.includes('1. '));
   await p.screenshot({ path: out + '_4repeat.png' });

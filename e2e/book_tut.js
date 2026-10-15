@@ -18,12 +18,15 @@ const { chromium } = require('playwright'); const path = require('path'); const 
   await p.screenshot({ path: process.argv[3] + '_book.png' });
   await p.click('.bkHint'); await p.waitForTimeout(300);
   ok('повторное нажатие скрывает', !(await p.$('.bkCoach')));
-  /* разворот с молочным напитком и разворот с холодным: таблица «размер → шоты → состав → пена → цена» и шаги варианта */
+  /* один рецепт на напиток: человеческие шаги, переключатель размера; цифры только в «Точных цифрах» */
   await p.click('[data-bookfam=milk]'); await p.waitForTimeout(400);
-  ok('молочные: в карточке есть таблица размеров и шаги «Шот»', await p.evaluate(() => !!document.querySelector('.bkTbl') && /Шот/.test(document.querySelector('.bkVar').textContent)));
+  ok('молочные: по умолчанию таблицы нет, есть человеческие шаги и выбор размера', await p.evaluate(() => !document.querySelector('.bkTbl') && !!document.querySelector('.bkHuman') && !!document.querySelector('[data-booksize]')));
+  await p.click('.bkExactBtn'); await p.waitForTimeout(400);
+  ok('«Точные цифры» раскрылись: таблица и шаги «Шот»', await p.evaluate(() => !!document.querySelector('.bkTbl') && /Шот/.test(document.querySelector('.bkExact').textContent)));
   await p.screenshot({ path: process.argv[3] + '_book_milk.png' });
   await p.click('[data-bookfam=tonic]'); await p.waitForTimeout(400);
-  ok('холодные: в карточке тоника лёд и слои', await p.evaluate(() => /Лёд/.test(document.querySelector('.bkTbl').textContent) && /Слои/.test(document.querySelector('.bkVar').textContent)));
+  await p.click('.bkExactBtn'); await p.waitForTimeout(400);
+  ok('холодные: в «Точных цифрах» тоника лёд и слои', await p.evaluate(() => /Лёд/.test(document.querySelector('.bkTbl').textContent) && /Слои/.test(document.querySelector('.bkExact').textContent)));
   await p.screenshot({ path: process.argv[3] + '_book_cold.png' });
   console.log(errs.length ? errs.join('\n') : 'NO_ERRORS'); await b.close();
 })().catch(e => { console.error(e); process.exit(1); });
