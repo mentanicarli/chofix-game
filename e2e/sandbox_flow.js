@@ -1,5 +1,5 @@
 /* Песочница (#dev): без #dev её нет; с #dev — экран настройки, панель, подмена заказа, конец дня; настоящий сейв и настройки не меняются.
-   node e2e/sandbox_flow.js dist/artifact.html out/sbx   (собрать: CHOFIX_DEBUG=1 npx vite build && CHOFIX_DEBUG=1 node scripts/fragment.mjs) */
+   node e2e/sandbox_flow.js dist/artifact.html out/sbx   (собрать: CUPPABLE_DEBUG=1 npx vite build && CUPPABLE_DEBUG=1 node scripts/fragment.mjs) */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 const pw = require('./pw');
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };

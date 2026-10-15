@@ -193,7 +193,7 @@ const SEED = Array.from({ length: 46 }, (_, i) => ({ a: (i * 2.399) % 6.283, r: 
 /* Станции, уже перенесённые на Pixi (src/render). Остальные пока рисуются на canvas 2D. Отключить: #nopixi в адресе. */
 const PX = new InsetRenderer(), bp = $('#bp'); let pxOn = false;
 const PX_MODES = { ice: 1, syrup: 1, water: 1, milk: 1, grind: 1, tamp: 1, shot: 1, steam: 1, pour: 1 };
-if (!location.hash.includes('nopixi')) PX.init(bp, location.hash.includes('pixi') && !location.hash.includes('nopixi')).catch(e => { console.warn('chofix: Pixi недоступен, рисуем на canvas', e); });
+if (!location.hash.includes('nopixi')) PX.init(bp, location.hash.includes('pixi') && !location.hash.includes('nopixi')).catch(e => { console.warn('cuppable: Pixi недоступен, рисуем на canvas', e); });
 function pxScene(B, m, title) {
   if (m === 'syrup') {
     const c = B.c, need = c.syrup ? SYR[c.syrup] : null;

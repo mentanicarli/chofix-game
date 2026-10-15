@@ -1,7 +1,7 @@
 import json
 m = json.load(open('menu.json', encoding='utf8')); p = json.load(open('progression.json', encoding='utf8'))
 R = {r['rank']: r for r in p['ranks']}
-out = ['# Chofix: меню и лестница открытий (черновик для согласования)\n',
+out = ['# Cuppable: меню и лестница открытий (черновик для согласования)\n',
  'Источник: ваш `chofix_menu.md`. Всего **%d позиций**: напитки %d, бутылки %d, еда %d, сиропы %d, альтернативное молоко %d, добавки %d.\n' % (
   len(m['drinks'])+len(m['bottles'])+len(m['food'])+len(m['syrups'])+len(m['altMilk'])+len(m['addons']), len(m['drinks']), len(m['bottles']), len(m['food']), len(m['syrups']), len(m['altMilk']), len(m['addons'])),
  open('summary_table.md', encoding='utf8').read(), '\n']

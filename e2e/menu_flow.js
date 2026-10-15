@@ -1,6 +1,6 @@
 /* Сценарий меню: титул → как играть → настройки → новая игра → пауза → настройки → музыка выкл → назад в игру → в главное меню → продолжить.
    Запуск: BASE=http://localhost:4173/ node e2e/menu_flow.js <префикс-скриншотов> [gfx]
-   BASE — адрес папки, где лежит index.html (можно с подпапкой, например http://localhost:4174/chofix-game/). */
+   BASE — адрес папки, где лежит index.html (можно с подпапкой, например http://localhost:4174/cuppable/). */
 const { chromium } = require('playwright');
 const out = process.argv[2] || 'out/menu';
 const BASE = process.env.BASE || 'http://localhost:4173/';

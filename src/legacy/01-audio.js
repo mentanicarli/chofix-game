@@ -19,7 +19,7 @@ function sfxPrefetch() {
   if (location.protocol === 'file:') return (sfxFetch = Promise.resolve()); // из файла звуки не загрузить (CORS): нужен http
   sfxFetch = fetch('sfx/manifest.json').then(r => r.json()).then(man => Promise.all(Object.keys(man).map(id =>
     fetch(man[id]).then(r => r.arrayBuffer()).then(ab => { RAW[id] = ab; if (sfxReady) sfxDecode(id); }).catch(() => { /* этого звука не будет */ })
-  ))).catch(() => { console.warn('chofix: звуки недоступны'); });
+  ))).catch(() => { console.warn('cuppable: звуки недоступны'); });
   return sfxFetch;
 }
 function sfxDecode(id) {

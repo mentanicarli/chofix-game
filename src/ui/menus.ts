@@ -17,12 +17,15 @@ export interface TitleOpts {
   /** только по ссылке с #dev: кнопка «Песочница» */
   dev?: boolean;
 }
+/* Вордмарк «на тёмном» (вывеска тёмная): буквы нарисованы линиями, текст для читалок лежит в скрытом span внутри h1 */
+const WORDMARK = '<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="50 40 626 150" aria-hidden="true"><g transform="translate(60 50)"><g fill="none" stroke="#FFF8EC" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M53,50.7 A30,30 0 1 0 53,89.3"/><path d="M84,44 V70 A30,30 0 0 0 144,70 V44" stroke="#F0BC55"/><path d="M144,60 H152 A10,10 0 0 1 152,80 H143" stroke="#F0BC55" stroke-width="9"/><path d="M72,116 H156" stroke="#F0BC55" stroke-width="7"/><g stroke="#F0BC55" stroke-width="9"><path d="M94,30 C83,21 105,12 94,0"/><path d="M114,30 C103,21 125,12 114,0"/><path d="M134,30 C123,21 145,12 134,0"/></g><path d="M196,40 V130"/><circle cx="226" cy="70" r="30"/><path d="M278,40 V130"/><circle cx="308" cy="70" r="30"/><circle cx="390" cy="70" r="30"/><path d="M420,40 V100"/><path d="M442,0 V100"/><circle cx="472" cy="70" r="30"/><path d="M524,0 V100"/><path d="M546,70 H606 A30,30 0 1 0 599,89.3"/></g></g></svg>';
+
 export function titleHTML(o: TitleOpts): string {
   const cont = o.cont
     ? `<button type="button" class="mbtn main" data-continue="1"><b>Продолжить</b><span>День ${o.cont.day} · ${esc(o.cont.rank)}</span></button>`
     : '';
   return `<div class="title" data-menu="title">
-<div class="sign"><i class="chain l"></i><i class="chain r"></i>${o.logo}<div><h1>Chofix</h1><p>кофе между парами</p></div></div>
+<div class="sign"><i class="chain l"></i><i class="chain r"></i>${o.logo}<div><h1><span class="vh">Cuppable</span>${WORDMARK}</h1><p>кофе между парами</p></div></div>
 <div class="paper menucard">
 <div class="mbtns">${cont}<button type="button" class="mbtn${o.cont ? '' : ' main'}" data-start="1"><b>Новая игра</b></button>${o.dev ? '<button type="button" class="mbtn" data-sandbox="1"><b>Песочница</b></button>' : ''}<button type="button" class="mbtn" data-settings="title"><b>Настройки</b></button><button type="button" class="mbtn" data-howto="1"><b>Как играть</b></button></div>
 ${o.notice ? `<p class="mnote" role="status">${esc(o.notice)}</p>` : ''}
@@ -33,7 +36,7 @@ ${nowPlayingHTML(o.np)}
 
 export function paceScreenHTML(logo: string, paces: string): string {
   return `<div class="title" data-menu="pace">
-<div class="sign"><i class="chain l"></i><i class="chain r"></i>${logo}<div><h1>Chofix</h1><p>кофе между парами</p></div></div>
+<div class="sign"><i class="chain l"></i><i class="chain r"></i>${logo}<div><h1><span class="vh">Cuppable</span>${WORDMARK}</h1><p>кофе между парами</p></div></div>
 <div class="paper"><div class="lbl">Вы бариста в университетской кофейне. Как будем играть?</div><div class="paces">${paces}</div>
 <div class="foot"><button type="button" class="ghost" data-menuback="1">Назад</button><button type="button" class="big" data-go="1">Открыть кофейню</button></div></div></div>`;
 }

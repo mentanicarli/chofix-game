@@ -108,14 +108,14 @@ function leaveToTitle(notice) {
 function exportSave() {
   const r = SAVE_STORE.load();
   if (r.kind !== 'ok') { setSettingsMsg('Сохранения пока нет. Сначала начните игру.'); return; }
-  const name = 'chofix-save-day' + r.data.day + '.json';
+  const name = 'cuppable-save-day' + r.data.day + '.json';
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([MENUAPI.serializeSave(r.data)], { type: 'application/json' })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   setSettingsMsg('Файл ' + name + ' скачан.');
 }
 function importText(text) {
   const r = MENUAPI.readSave(text);
-  if (r.kind !== 'ok') { setSettingsMsg(r.kind === 'broken' && r.reason === 'newer' ? 'Этот файл сделан в более новой версии игры.' : 'Этот файл не похож на сохранение Chofix.'); return; }
+  if (r.kind !== 'ok') { setSettingsMsg(r.kind === 'broken' && r.reason === 'newer' ? 'Этот файл сделан в более новой версии игры.' : 'Этот файл не похож на сохранение игры Cuppable.'); return; }
   const apply = () => {
     SAVE_STORE.save(r.data);
     if (menuFrom === 'pause') leaveToTitle('Сохранение загружено. Нажмите «Продолжить».');

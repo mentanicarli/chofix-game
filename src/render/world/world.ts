@@ -167,7 +167,7 @@ export class World {
     }
     const r = this.texRes;
     const S = app.stage;
-    const fonts = Promise.race([Promise.all([document.fonts.load('700 30px Caveat', 'Chofix'), document.fonts.load('700 20px Caveat', 'Эспрессо Американо 0123456789'), document.fonts.load('800 12px Nunito', 'Американо крепкий ×')]).catch(() => null), new Promise((ok) => setTimeout(ok, 1800))]);
+    const fonts = Promise.race([Promise.all([document.fonts.load('700 30px Caveat', 'Cuppable'), document.fonts.load('700 20px Caveat', 'Эспрессо Американо 0123456789'), document.fonts.load('800 12px Nunito', 'Американо крепкий ×')]).catch(() => null), new Promise((ok) => setTimeout(ok, 1800))]);
 
     this.soft = canvasTexture(128, 128, (g) => {
       const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -374,7 +374,7 @@ export class World {
   private sunC!: Container;
 
   private buildText(): void {
-    const sign = new Text({ text: 'Chofix', style: { fontFamily: 'Caveat, Nunito, cursive', fontSize: 30, fontWeight: '700', fill: '#F6EBDC', padding: 6 }, resolution: this.res });
+    const sign = new Text({ text: 'Cuppable', style: { fontFamily: 'Caveat, Nunito, cursive', fontSize: 30, fontWeight: '700', fill: '#F6EBDC', padding: 6 }, resolution: this.res });
     sign.alpha = 0.96;
     sign.anchor.set(0, 1);
     sign.position.set(466, 139);

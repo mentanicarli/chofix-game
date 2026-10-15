@@ -1,5 +1,5 @@
 /* Плеер музыки на коротких тестовых треках (по ~6 с): очередь по кругу, кроссфейд, подгрузка следующего, названия.
-   Запуск: BASE=http://localhost:4174/chofix-game/ node e2e/music_test.js   (треки: scratch gen.mjs + MUSIC_DIR) */
+   Запуск: BASE=http://localhost:4174/cuppable/ node e2e/music_test.js   (треки: scratch gen.mjs + MUSIC_DIR) */
 const { chromium } = require('playwright');
 const BASE = process.env.BASE || 'http://localhost:4173/';
 (async () => {

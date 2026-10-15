@@ -16,6 +16,7 @@ import type { PaceId } from './types';
  */
 
 /** Ключ localStorage: только последняя конфигурация экрана настройки. Настоящий сейв песочница не трогает. */
+/* историческое имя, не переименовывать без миграции */
 export const SANDBOX_KEY = 'chofix.sandbox.v1';
 
 /** Позиции магазина, кроме оборудования (те же id, что в SHOP из src/legacy/00-core.js; сверяет test/sandbox.test.ts). */

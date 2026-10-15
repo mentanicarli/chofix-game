@@ -1,5 +1,5 @@
 {
-  "name": "chofix",
+  "name": "cuppable",
   "private": true,
   "version": "0.11.0",
   "type": "module",
@@ -19,7 +19,7 @@
     "audit:recipes": "node scripts/make-recipes-audit.mjs",
     "lint:legacy": "node scripts/lint-legacy.mjs",
     "prebuild:debug": "node scripts/make-music-manifest.mjs",
-    "build:debug": "CHOFIX_DEBUG=1 vite build && node scripts/fragment.mjs"
+    "build:debug": "CUPPABLE_DEBUG=1 vite build && node scripts/fragment.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

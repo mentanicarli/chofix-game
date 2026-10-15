@@ -1,6 +1,7 @@
 import { nextRank } from './menu';
 import type { PaceId } from './types';
 
+/* историческое имя, не переименовывать без миграции */
 export const SAVE_KEY = 'coffee-sim-save-v1';
 /** Версия формата: 1 — без поля v (старые сохранения), 2 — с полем v. Читаются обе. */
 export const SAVE_VERSION = 2;

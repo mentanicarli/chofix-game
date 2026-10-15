@@ -135,7 +135,7 @@ WORLD.init($('#world'), worldRes()).then(() => {
   const bt = $('#boot'); bt.classList.add('done'); setTimeout(() => bt.remove(), 600);
 }).catch(e => {
   const bt = $('#boot'); if (bt) bt.remove();
-  console.error('chofix: мир не запустился', e);
+  console.error('cuppable: мир не запустился', e);
   const m = document.createElement('div'); m.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;font:700 22px Nunito,sans-serif;color:#4A2F25;background:#F6EAD6;z-index:20';
   m.textContent = 'Не удалось запустить графику (нужен WebGL). Обновите браузер или включите аппаратное ускорение.'; stage.appendChild(m);
 });

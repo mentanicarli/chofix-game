@@ -1,6 +1,6 @@
 /* Возврат расходов, если гость ушёл посреди заказа: деньги и D.stats.costs возвращаются к значениям до открытия бара.
    Контроль: осознанная трата (сброс дозы, spend(5)) не возвращается.
-   node e2e/abandon_refund.js dist/artifact.html   (собрать: CHOFIX_DEBUG=1 npx vite build && CHOFIX_DEBUG=1 node scripts/fragment.mjs) */
+   node e2e/abandon_refund.js dist/artifact.html   (собрать: CUPPABLE_DEBUG=1 npx vite build && CUPPABLE_DEBUG=1 node scripts/fragment.mjs) */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
 (async () => {

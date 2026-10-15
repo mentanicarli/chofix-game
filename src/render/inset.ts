@@ -52,7 +52,7 @@ export class InsetRenderer {
     try {
       return this.render(this.app, scene);
     } catch (e) {
-      if (!this.failed) console.warn('chofix: кадр Pixi не нарисован, откат на canvas', e);
+      if (!this.failed) console.warn('cuppable: кадр Pixi не нарисован, откат на canvas', e);
       this.failed = true;
       return null;
     }
