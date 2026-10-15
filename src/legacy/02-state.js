@@ -49,6 +49,8 @@ function toast(msg, ms = 2400) {
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 /* Расход на ингредиенты (в песочнице может быть бесплатным) */
 function spend(n) { if (SBX.free) return; D.stats.costs += n; G.money -= n; }
+/* Возврат расходов за заказ, который не выдан не по вине игрока (гость ушёл, день закрылся) */
+function refund(n) { if (SBX.free || !n) return; D.stats.costs -= n; G.money += n; }
 const drinkCost = (d, o) => MENUAPI.drinkCost(d, !!G.beans, o ? { size: o.size, cold: o.cold } : {});
 /* Короткая подсказка поверх сцены */
 function hint(msg) { toast(msg, 2200); }

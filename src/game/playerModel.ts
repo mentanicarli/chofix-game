@@ -96,12 +96,12 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
        терпение каждого гостя тает со скоростью по его месту (queueDecayRate); заказ, который готовится, оплачивается расходами сразу, как в игре */
     interface Guest { type: CustomerType; pat: number; order: Order; leaving?: boolean }
     const queue: Guest[] = [];
-    let nextArr = 4, prep: Guest | null = null, prepLeft = 0;
+    let nextArr = 4, prep: Guest | null = null, prepLeft = 0, prepCost = 0;
     const lastCall = DAY_LEN - LAST_CALL_BEFORE;
     const lose = (g: Guest): void => {
       rating = ratingAfterLoss(rating);
       queue.splice(queue.indexOf(g), 1);
-      if (g === prep) prep = null;
+      if (g === prep) { prep = null; costs -= prepCost; }
     };
     for (let t = 0; t < DAY_LEN + FORCE_LOSE_AFTER; t += STEP) {
       if (t >= lastCall && !queue.length) break;
@@ -127,7 +127,8 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
         if (first) {
           prep = first;
           prepLeft = estimatedPrepSeconds(first.order) * prof.speed;
-          costs += drinkCost(first.order.key, !!owned['beans'], { size: first.order.size, cold: first.order.cold }) + (first.order.food ? Math.round(first.order.food.price * FOOD_COST_SHARE) : 0);
+          prepCost = drinkCost(first.order.key, !!owned['beans'], { size: first.order.size, cold: first.order.cold }) + (first.order.food ? Math.round(first.order.food.price * FOOD_COST_SHARE) : 0);
+          costs += prepCost;
         }
       } else {
         prepLeft -= STEP;

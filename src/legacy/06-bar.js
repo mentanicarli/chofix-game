@@ -56,7 +56,7 @@ function barOpen(c) {
   const cost = drinkCost(d, c.order) + (c.order && c.order.food ? Math.round(c.order.food.price * MENUAPI.FOOD_COST_SHARE) : 0); spend(cost); updateHud(true);
   if (SBX.on) { c.tPrep = SBX.clock; c.nTasks = tasks.length; }
   /* шоты: tgtDose в условных единицах весов (2 на грамм: 18 = 9 г), цель шота 30 мл; крепкий: 10 г и 25 мл. Шоты идут циклами «помол, темпер, шот», shotIdx — номер текущего. */
-  BR = { c, drink: d, rc, exp, tasks, done: {}, res: {}, shots: rc.shots || 1, shotIdx: 1, cyc: [], esPrev: 0, pitCap: pitCapOf(rc), tgtDose: c.strong ? 20 : 18, tgtMl: c.strong ? 25 : 30, dose: 0, uneven: 1, tampPhase: 'level', tampP: 0, tampHold: 0, sweep: 0,
+  BR = { c, paid: cost, drink: d, rc, exp, tasks, done: {}, res: {}, shots: rc.shots || 1, shotIdx: 1, cyc: [], esPrev: 0, pitCap: pitCapOf(rc), tgtDose: c.strong ? 20 : 18, tgtMl: c.strong ? 25 : 30, dose: 0, uneven: 1, tampPhase: 'level', tampP: 0, tampHold: 0, sweep: 0,
     pf: 'grinder', shot: { st: 'idle', t: 0, ml: 0, locked: false }, cup: { es: 0, water: 0, ice: 0, milk: 0, foam: 0, pumps: 0, syr: null, art: null, level: 0 },
     pit: { ml: 0, es: 0, T: 8, foam: 0, coarse: .2, steamed: false, burnt: false }, fill: 0, pumps: 0, pumpT: 0, inset: null, hold: false, mx: 220, my: 200,
     food: null, foodChoices: [], foodPicked: null, xs: {}, xv: {},
