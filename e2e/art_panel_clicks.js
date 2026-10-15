@@ -14,10 +14,17 @@ const rnd = (a, b) => a + Math.random() * (b - a);
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, spawn, barOpen, zoneClick, applyUpgrades, resetBar() { try { barShow(false); } catch (e) { /* нет бара */ } BR = null; } };');
   if (!src.includes('window.__dbg')) { console.error('нужна отладочная сборка'); process.exit(2); }
   const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
-  const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
+  const b = await chromium.launch({ args: (process.env.CHROMIUM_ARGS || '').split(' ').filter(Boolean), ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const rows = []; let fail = 0;
   for (const [w, h] of SIZES) {
     const p = await PW.page(b, { width: w, height: h });
+    /* диагностика падений (PROBE=1): где упала страница, ошибки, память JS по шагам */
+    let step = 'старт';
+    p.on('crash', () => console.log('CRASH страница упала на шаге:', step));
+    p.on('pageerror', e => console.log('PAGEERROR', step, e.message));
+    p.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') console.log('CONSOLE', m.type(), step, m.text().slice(0, 160)); });
+    const cdp = await p.context().newCDPSession(p); await cdp.send('Performance.enable');
+    const mem = async () => { try { const { metrics } = await cdp.send('Performance.getMetrics'); const g = n => (metrics.find(x => x.name === n) || {}).value || 0; return 'heap=' + (g('JSHeapUsedSize') / 1e6).toFixed(0) + 'MB nodes=' + g('Nodes') + ' listeners=' + g('JSEventListeners'); } catch (e) { return 'mem?'; } };
     await p.goto('about:blank'); await p.goto(PW.url(tmp) + '#dev'); await p.waitForSelector('[data-sandbox]', { timeout: 60000 }); await p.waitForTimeout(400);
     await p.evaluate(() => window.__sandbox.start({ day: 10, profile: 'medium' })); await p.waitForSelector('#screen', { state: 'hidden', timeout: 20000 });
     await p.evaluate(() => { const d = __dbg; ['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].forEach(k => { d.G['eq_' + k] = true; }); d.G.ice = true; d.G.eq_ice = true; d.G.milk = true; d.G.tutOff = true; d.applyUpgrades(); d.D.nextArr = 1e9; d.spawn(); d.D.customers.forEach(c => { c.pat = c.max = 1e9; }); });
@@ -29,6 +36,8 @@ const rnd = (a, b) => a + Math.random() * (b - a);
       document.addEventListener('click', e => { const k = key(e); if (k) (__cnt[k] = __cnt[k] || { down: 0, click: 0 }).click++; }, true);
     });
     const open = async (id, task) => {
+      /* прогон идёт десятки минут: не даём игровому дню закончиться (иначе бар закрывается и BR становится null) */
+      await p.evaluate(() => { if (__dbg.D) __dbg.D.t = Math.min(__dbg.D.t, 60); });
       await p.evaluate(() => __dbg.resetBar()); await p.waitForTimeout(150);
       await p.evaluate(({ id }) => { const M = window.__MENUAPI, c = __dbg.D.customers[0], dk = M.drinkById[id]; c.drink = id; c.order.key = id; c.order.id = id; c.order.name = dk.name; c.order.size = '0.6'; c.order.cold = /bumble|tonic|shake|boba|frappe|aero|protein/.test(id); c.order.food = null; c.syrup = null; c.pumps = 0; c.strong = false; c.pat = c.max = 1e9; __dbg.barOpen(c); }, { id }); /* без сиропа: иначе шаг «Сироп» блокирует открытие станции */
       await p.waitForTimeout(450); await PW.dismissCard(p);
@@ -40,6 +49,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
       if (!r) return null; await p.mouse.move(r.x, r.y); await p.mouse.down(); await p.waitForTimeout(holdMs); await p.mouse.up(); await p.waitForTimeout(60); return r;
     };
     for (const [id, task] of PANELS.filter(x => !process.env.ONLY || process.env.ONLY.split(',').includes(x[0]))) {
+      step = id + '/open'; if (process.env.PROBE) console.log('->', id, await mem());
       await open(id, task);
       const btns = await p.evaluate(() => [...document.querySelectorAll('#xPanel button')].map(b => ({ cls: b.className, txt: b.textContent.trim(), key: Object.keys(b.dataset).find(k => k.startsWith('x')) + (b.dataset.xtemp ? ':' + b.dataset.xtemp : '') })));
       const fit = await p.evaluate(() => { const x = document.querySelector('#xPanel .xp'), pn = document.querySelector('#xPanel'); const clipped = [...document.querySelectorAll('#xPanel button')].filter(b => b.getBoundingClientRect().bottom > pn.getBoundingClientRect().bottom + 1).length; return { overflow: x ? x.scrollHeight - x.clientHeight : null, clippedButtons: clipped }; });
@@ -50,7 +60,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
         const oneShot = bt.key === 'xstart' || bt.key === 'xdone';
         const n = oneShot ? Math.min(N, +(process.env.N_ONESHOT || N)) : N;
         for (let i = 0; i < n; i++) {
-          tries++;
+          tries++; step = id + '/' + bt.key + '/' + i; if (process.env.PROBE && i % 5 === 0) console.log('   ', step, await mem());
           if (oneShot) {
             await open(id, task);
             if (task === 'brew') { await press('[data-xtemp="80"]', 80); }
