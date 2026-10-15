@@ -11,7 +11,7 @@ const ZONE_POS = { grind: [160, 330], tamp: [330, 496], shot: [630, 380], water:
 const WEIGHT = MENUAPI.WEIGHT;
 const bi = $('#bi'), bx = bi.getContext('2d'); bx.scale(2, 2);
 const IW = 440, IH = 450;
-let BR = null, HIT = [], coachKey = '', tkKey = '', barT = 0;
+let BR = null, HIT = [], coachKey = '', tkKey = '', barT = 0, tkOpen = false;
 const LP = {};
 const f1 = v => v.toFixed(1).replace('.', ',');
 const lerp = (a, b, u) => a + (b - a) * u;
@@ -56,7 +56,7 @@ function barOpen(c) {
   const cost = drinkCost(d, c.order) + (c.order && c.order.food ? Math.round(c.order.food.price * MENUAPI.FOOD_COST_SHARE) : 0); spend(cost); updateHud(true);
   if (SBX.on) { c.tPrep = SBX.clock; c.nTasks = tasks.length; }
   /* шоты: tgtDose в условных единицах весов (2 на грамм: 18 = 9 г), цель шота 30 мл; крепкий: 10 г и 25 мл. Шоты идут циклами «помол, темпер, шот», shotIdx — номер текущего. */
-  BR = { c, paid: cost, drink: d, rc, exp, tasks, done: {}, res: {}, shots: rc.shots || 1, shotIdx: 1, cyc: [], esPrev: 0, pitCap: pitCapOf(rc), tgtDose: c.strong ? 20 : 18, tgtMl: c.strong ? 25 : 30, dose: 0, uneven: 1, tampPhase: 'level', tampP: 0, tampHold: 0, sweep: 0,
+  tkOpen = false; BR = { c, paid: cost, drink: d, rc, exp, tasks, done: {}, res: {}, shots: rc.shots || 1, shotIdx: 1, cyc: [], esPrev: 0, pitCap: pitCapOf(rc), tgtDose: c.strong ? 20 : 18, tgtMl: c.strong ? 25 : 30, dose: 0, uneven: 1, tampPhase: 'level', tampP: 0, tampHold: 0, sweep: 0,
     pf: 'grinder', shot: { st: 'idle', t: 0, ml: 0, locked: false }, cup: { es: 0, water: 0, ice: 0, milk: 0, foam: 0, pumps: 0, syr: null, art: null, level: 0 },
     pit: { ml: 0, es: 0, T: 8, foam: 0, coarse: .2, steamed: false, burnt: false }, fill: 0, pumps: 0, pumpT: 0, inset: null, hold: false, mx: 220, my: 200,
     food: null, foodChoices: [], foodPicked: null, xs: {}, xv: {},
@@ -98,9 +98,9 @@ function barAbort(msg) {
 }
 function stopLoops() { Object.keys(LP).forEach(k => { LP[k].stop(); delete LP[k]; }); }
 function barMsg(txt, bad) {
-  const d = document.createElement('div'); d.className = 'bmsg' + (bad ? ' bad' : ''); d.textContent = txt; UI.flt.appendChild(d);
+  const d = document.createElement('div'); d.className = 'bmsg' + (bad ? ' bad' : ''); d.textContent = txt; const life = Math.max(4200, txt.length / 15 * 1000); d.style.animationDuration = life + 'ms'; UI.flt.appendChild(d);
   while (UI.flt.children.length > 2) UI.flt.firstChild.remove();
-  setTimeout(() => d.remove(), 4200);
+  setTimeout(() => d.remove(), life);
 }
 function complete(t, score, msg, bad) {
   BR.done[t] = true; BR.res[t] = clamp(score, 0, 1);
@@ -298,9 +298,9 @@ bi.addEventListener('pointermove', e => {
 const bUp = () => { if (!BR || paused) return; if (BR.inset === 'tamp' && BR.tampPhase === 'press' && BR.hold) tampRelease(); BR.hold = false; };
 bi.addEventListener('pointerup', bUp); bi.addEventListener('pointercancel', bUp);
 UI.close.addEventListener('click', () => { if (!paused) closeInset(); });
-UI.coach.addEventListener('click', e => { const b = e.target.closest('[data-tutskip]'); if (b && !paused) { markSeen(b.dataset.tutskip); coachKey = ''; } });
+UI.coach.addEventListener('click', e => { const b = e.target.closest('[data-tutskip]'); if (b && !paused) { markSeen(b.dataset.tutskip); coachKey = ''; COACH.text = ''; } const r = e.target.closest('[data-coachrep]'); if (r && !paused) { const h = COACH.prev || COACH.text; if (h) COACH.rep = { html: h, until: COACH.clk + coachMin(h) }; } });
 $('#bZones').addEventListener('click', e => { if (paused) return; const r = e.target.closest('[data-z]'); if (r) zoneClick(r.dataset.z); });
-UI.tk.addEventListener('click', e => { if (paused) return; const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; G.tutOff = !G.hints; coachKey = ''; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
+UI.tk.addEventListener('click', e => { if (paused) return; const b = e.target.closest('[data-t]'); if (b && BR) zoneClick(b.dataset.t === 'syrup' ? SYR[BR.c.syrup].z : b.dataset.t); const h = e.target.closest('[data-hint]'); if (h) { G.hints = !G.hints; G.tutOff = !G.hints; coachKey = ''; tkKey = ''; } const m = e.target.closest('[data-tkmore]'); if (m) { tkOpen = !tkOpen; tkKey = ''; } const q = e.target.closest('[data-back]'); if (q) barShow(false); });
 function barKey(c) {
   if (!BR) return false;
   if (!stage.classList.contains('inbar')) { if (c === 'Space') { barShow(true); return true; } return false; }

@@ -53,7 +53,8 @@ function animActors(dt) {
     /* реплика живёт 5 секунд именно в зале: в баре или на паузе время не идёт, ушёл в бар — покажется снова */
     if (c.arrived && !c.leaving && !c.sayDone && !paused) {
       if (stage.classList.contains('inbar')) hideSay(c);
-      else { c.sayVis = (c.sayVis || 0) + dt; if (c.sayVis >= 5) { hideSay(c); c.sayDone = true; } else if (!c.sayEl) showSay(c); }
+      else if (c.sayEl) { c.sayVis += dt; if (c.sayVis >= c.sayDur) { hideSay(c); c.sayDone = true; } else placeSay(c); }
+      else if (D.customers.every(o => o === c || !o.sayEl)) showSay(c);
     }
     if (c.leaving && c.px < -100) { WORLD.removeActor(c.act); ACT.delete(c); }
   });

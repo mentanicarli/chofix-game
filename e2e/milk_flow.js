@@ -12,6 +12,9 @@ const out = process.argv[3] || 'out/milk';
   const errs = []; pw.watch(p, errs);
   const ok = (name, v) => { console.log((v ? 'OK   ' : 'FAIL ') + name); if (!v) errs.push('FAIL ' + name); };
   const coach = () => p.evaluate(() => { const e = document.querySelector('#bCoach'); return e.hidden ? '' : e.textContent; });
+  const goal = () => p.evaluate(() => { const e = document.querySelector('#bGoal'); return e.hidden ? '' : e.textContent; });
+  /* реплика коуча живёт не короче max(4 с; длина / 12) и сменяется через 1,5 с после выполнения шага (этап 12.2): ждём нужный текст */
+  const waitCoach = async (re, ms = 40000) => { const t0 = Date.now(); for (;;) { const t = await coach(); if (re.test(t) || Date.now() - t0 > ms) return t; await p.waitForTimeout(150); } };
   const glow = () => p.evaluate(() => { const e = document.querySelector('#tutHl'); return e.hidden ? '' : e.style.left + '/' + e.style.top; });
   const shopNames = () => p.evaluate(() => [...document.querySelectorAll('.evening .item b')].map(e => e.textContent));
   const allShop = async () => { const all = []; for (const t of ['menu', 'gear', 'hall']) { await p.click(`[data-tab=${t}]`); await p.waitForTimeout(250); all.push(...await shopNames()); } return all; };
@@ -79,30 +82,33 @@ const out = process.argv[3] || 'out/milk';
   ok('после «Понятно» бар открылся', await p.evaluate(() => !!window.__dbg.BR && document.querySelector('#drinkCard').hidden));
   await p.evaluate(() => { const B = window.__dbg.BR; for (const t of B.tasks) { if (t === 'milk') break; B.done[t] = true; B.res[t] = 1; } B.pf = 'group'; });
   await p.waitForTimeout(400);
-  let t = await coach(); console.log('коуч до молока:', JSON.stringify(t));
+  let t = await waitCoach(/Молоко/, 40000); console.log('коуч до молока:', JSON.stringify(t));
   ok('коуч называет шаг и где он', /Новый шаг/.test(t) && /Молоко/.test(t) && /холодильник/.test(t));
   await p.screenshot({ path: out + '_5milk_zone.png' });
   const bi = async () => { const sel = await p.evaluate(() => (document.querySelector('#bi').style.display === 'block' ? '#bi' : '#bp')); return p.locator(sel).boundingBox(); };
   const at = async (x, y) => { const r = await bi(); return { x: r.x + x * r.width / 440, y: r.y + y * r.height / 450 }; };
   await p.click('[data-z=milk]', { force: true }); await p.waitForTimeout(700);
-  t = await coach(); console.log('коуч в молоке:', JSON.stringify(t));
+  t = await waitCoach(/Шаг 1 из 2/, 40000); console.log('коуч в молоке:', JSON.stringify(t));
   ok('молоко, шаг 1: «Лить молоко» и линия 142 мл (латте 0,2 л)', /Шаг 1 из 2/.test(t) && /Лить молоко/.test(t) && /142 мл/.test(t));
+  ok('цель над окном: молоко до линии 142 мл', (await goal()) === 'Цель: Молоко до линии: 142 мл');
   ok('молоко, шаг 1: подсвечена кнопка «Лить»', (await glow()) === '49px/561px');
   await p.screenshot({ path: out + '_6milk_inset.png' });
   let pt = await at(150, 384); await p.mouse.move(pt.x, pt.y); await p.mouse.down();
   await p.waitForFunction(() => window.__dbg.BR.fill >= 135, null, { timeout: 20000, polling: 25 }); await p.mouse.up(); await p.waitForTimeout(300);
-  t = await coach(); ok('молоко, шаг 2: «Готово»', /Шаг 2 из 2/.test(t) && (await glow()) === '315px/561px');
+  ok('цель сменилась сразу и «Готово» подсвечена, а коуч держит шаг 1 (минимум показа)', (await goal()) === 'Цель: Лишнее вылить, затем «Готово»' && (await glow()) === '315px/561px' && /Шаг 1 из 2/.test(await coach()));
+  t = await waitCoach(/Шаг 2 из 2/, 40000); ok('молоко, шаг 2: «Готово» (после паузы)', /Шаг 2 из 2/.test(t));
   await p.screenshot({ path: out + '_7milk_done.png' });
   pt = await at(353, 384); await p.mouse.click(pt.x, pt.y); await p.waitForTimeout(500);
   ok('молоко принято', await p.evaluate(() => window.__dbg.BR.done.milk === true));
   ok('шаг молока отмечен как пройденный', await p.evaluate(() => window.__dbg.G.tutorialSeen.includes('step:milk')));
 
   /* пар */
-  await p.waitForTimeout(500); t = await coach(); console.log('коуч до пара:', JSON.stringify(t));
+  t = await waitCoach(/Пар и пена/, 40000); console.log('коуч до пара:', JSON.stringify(t));
   ok('пар: коуч ведёт к паровой трубке', /Пар и пена/.test(t) && /паровую трубку/.test(t));
   await p.click('[data-z=steam]', { force: true }); await p.waitForTimeout(700);
-  t = await coach(); console.log('коуч в паре:', JSON.stringify(t));
-  ok('пар, шаг 1: воздух, лёгкая пена латте (около 22 %, около 1 с)', /Шаг 1 из 3/.test(t) && /Воздух/.test(t) && /лёгкая пена/.test(t) && /22%/.test(t) && /около 1 с/.test(t));
+  t = await waitCoach(/Шаг 1 из 3/, 40000); console.log('коуч в паре:', JSON.stringify(t));
+  ok('пар, шаг 1: воздух', /Шаг 1 из 3/.test(t) && /Воздух/.test(t));
+  ok('цель над окном: пена около 22 %, у поверхности около 1 с', (await goal()) === 'Цель: Пена около 22%: у поверхности около 1 с');
   await p.screenshot({ path: out + '_8steam_1.png' });
   pt = await at(150, 200); await p.mouse.move(pt.x, pt.y); await p.mouse.down();
   const surf = () => p.evaluate(() => { const p = window.__dbg.BR.pit; return 330 - ((p.ml + p.es) * (1 + .6 * p.foam)) / window.__dbg.BR.pitCap * 220; });
@@ -112,7 +118,11 @@ const out = process.argv[3] || 'out/milk';
     if (await p.evaluate(() => { const B = window.__dbg.BR; return B.pit.foam >= B.rc.foam - .04 || B.pit.T >= 44; })) break;
     await p.waitForTimeout(30);
   }
-  t = await coach(); console.log('коуч, пена набрана:', JSON.stringify(t));
+  await p.mouse.up(); /* стоим на шаге 2, пока коуч дочитают: нагрев остановлен */
+  ok('цель сменилась сразу: опустите трубку глубже', (await goal()) === 'Цель: Опустите трубку глубже');
+  t = await waitCoach(/Шаг 2 из 3/, 40000); console.log('коуч, пена набрана:', JSON.stringify(t));
+  await p.click('[data-coachrep]'); await p.waitForTimeout(400); { const rep = await coach(); ok('«Повторить» показывает предыдущую подсказку (шаг 1)', /повтор/.test(rep) && /Воздух/.test(rep)); }
+  pt = await at(150, (await surf()) + 8); await p.mouse.move(pt.x, pt.y); await p.mouse.down();
   ok('пар, шаг 2: «Закрутите»', /Шаг 2 из 3/.test(t) && /Закрутите/.test(t));
   await p.screenshot({ path: out + '_9steam_2.png' });
   tries = 0;
@@ -123,6 +133,7 @@ const out = process.argv[3] || 'out/milk';
   }
   await p.mouse.up();
   t = await coach(); console.log('коуч, молоко нагрето:', JSON.stringify(t), 'T=', await p.evaluate(() => window.__dbg.BR.pit.T));
+  ok('цель над окном: стоп в зоне 55–62°', (await goal()) === 'Цель: Стоп на 55–62°, не выше 76°');
   ok('пар, шаг 3: «Остановите», зона латте 55–62°', /Шаг 3 из 3/.test(t) && /55–62°/.test(t));
   ok('пар, шаг 3: подсвечена кнопка «Готово»', (await glow()) === '315px/589px');
   await p.screenshot({ path: out + '_10steam_3.png' });
@@ -131,14 +142,14 @@ const out = process.argv[3] || 'out/milk';
   ok('шаг пара отмечен как пройденный', await p.evaluate(() => window.__dbg.G.tutorialSeen.includes('step:steam:thin')));
 
   /* заливка */
-  await p.waitForTimeout(500); t = await coach(); console.log('коуч до заливки:', JSON.stringify(t));
+  t = await waitCoach(/Заливка и рисунок/, 40000); console.log('коуч до заливки:', JSON.stringify(t));
   ok('заливка: коуч ведёт к чашке', /Заливка и рисунок/.test(t) && /чашку/.test(t));
   await p.click('[data-z=pour]', { force: true }); await p.waitForTimeout(700);
-  t = await coach(); ok('заливка, шаг 1: ведите по контуру', /Шаг 1 из 2/.test(t) && /контуру/.test(t));
+  t = await waitCoach(/Шаг 1 из 2/, 40000); ok('заливка, шаг 1: ведите по контуру', /Шаг 1 из 2/.test(t) && /контуру/.test(t) && (await goal()) === 'Цель: Ведите мышью по контуру рисунка');
   pt = await at(220, 205); await p.mouse.move(pt.x, pt.y); await p.mouse.down();
   for (let i = 0; i < 400 && !(await p.evaluate(() => window.__dbg.BR.done.pour)); i++) {
     const a = i / 6, q = await at(220 + 40 * Math.cos(a), 205 + 40 * Math.sin(a)); await p.mouse.move(q.x, q.y); await p.waitForTimeout(40);
-    if (i === 8) { t = await coach(); ok('заливка, шаг 2: «Готово» подсвечена', /Шаг 2 из 2/.test(t)); }
+    if (i === 8) { ok('заливка, шаг 2: цель «Питчер пуст» сразу, «Готово» подсвечена', (await goal()) === 'Цель: Питчер пуст: напиток готов'); }
   }
   await p.mouse.up();
   ok('заливка принята', await p.evaluate(() => window.__dbg.BR.done.pour === true));

@@ -41,6 +41,9 @@ export interface ActorOpts {
   steam?: (x: number, y: number) => void;
 }
 
+/** верх головы по причёскам (см. art.ts hair): у пучка выше, у шапки и кудрей чуть ниже обычного */
+const HEAD_TOP: Readonly<Record<string, number>> = { bun: 379, curly: 384, beanie: 390, grey: 402 };
+
 export type SeatPhase = 'walk' | 'sit' | 'seated' | 'rise';
 
 const iconCache = new Map<string, Promise<Texture>>();
@@ -158,6 +161,8 @@ export class Actor {
   private hopY = 0;
   /** Множитель роста: скорости и прыжки считаются в «базовых» пикселях, на экране умножаются обратно. */
   private readonly k: number;
+  /** верх макушки в координатах гостя (причёска выше или ниже): от неё считается хвостик пузыря и реплики */
+  private readonly headTop: number;
   private hopV = 0;
   private hopQ = 0;
   private hopMul = 1;
@@ -215,6 +220,7 @@ export class Actor {
     this.inner.addChild(this.back.root, this.front.root, this.cupHolder, this.bubble);
     this.root.addChild(sh, this.inner);
     this.k = o.scale ?? 1;
+    this.headTop = HEAD_TOP[o.look.hair] ?? 397;
     this.root.pivot.set(0, 600);
     this.root.position.set(o.x, 600);
     this.root.scale.set(this.k);
@@ -336,6 +342,11 @@ export class Actor {
   }
 
   /** Заказ в пузыре: прячет/показывает с «пружинкой». Первое появление — гость машет рукой. */
+  /** Y кончика хвостика пузыря на сцене (под него встаёт реплика), с учётом роста гостя */
+  get bubbleTipY(): number {
+    return 600 - this.k * (600 - (this.headTop - 4));
+  }
+
   showBubble(on: boolean): void {
     this.bubbleOn = on;
     if (on && !this.arrivedOnce) {
@@ -1100,7 +1111,7 @@ export class Actor {
     const o = this.o;
     const b = this.bubble;
     b.pivot.set(0, 387);
-    b.position.set(0, 387);
+    b.position.set(0, this.headTop - 4); /* хвостик на 4 px выше макушки у всех причёсок */
     b.visible = false;
     /* теги: «крепкий», сироп */
     const ws = o.tags.map((t) => t.text.length * 7 + 16);

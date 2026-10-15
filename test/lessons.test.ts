@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-  DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, recipeCard, drinkSeenKey, foamLine, freshSeen, lesson, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
+  DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, recipeCard, drinkSeenKey, foamLine, freshSeen, lesson, lessonGoal, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
   newDrinkCard, nextTutorial, purchaseToast, recipeLines, steamKind, steamSeconds, stepKeysOf, tutorialKeys
 } from '../src/game/api';
 
@@ -49,16 +49,32 @@ describe('вид пены', () => {
       const foam = legacyRecipe(d.id).foam;
       if (foam === undefined) continue;
       // подсказка книги и бара получает цель пены из рецепта (у рафа 33% при виде «лёгкая»)
-      expect(lesson(`step:steam:${steamKind(d.id)}`, { drinkId: d.id, foam })?.steps[0], d.id).toContain(`${Math.round(foam * 100)}%`);
+      expect(lesson(`step:steam:${steamKind(d.id)}`, { drinkId: d.id, foam })?.goals?.[0], d.id).toContain(`${Math.round(foam * 100)}%`);
     }
   });
 });
 
 describe('шаги подсказок', () => {
+  test('каждая реплика обучения ≤ 120 символов, у пошаговых есть цель на каждый шаг (этап 12.2)', () => {
+    const ctx = { drinkId: 'latte', ml: 150, foam: 0.22, steam: true, pumps: 2, syrupName: 'Ваниль', cream: false, shots: 2, drinkName: 'Латте' };
+    const keys = ['step:milk', 'step:steam:thick', 'step:steam:thin', 'step:steam:micro', 'step:shots', 'step:pitcher', 'step:pour', 'step:syrup'];
+    for (const k of keys) for (const cream of [false, true]) {
+      const l = lesson(k, { ...ctx, cream });
+      expect(l, k).not.toBeNull();
+      l?.steps.forEach((t, i) => expect(t.length, k + ' шаг ' + i).toBeLessThanOrEqual(120));
+      expect(l?.goals?.length, k).toBe(l?.steps.length);
+      l?.goals?.forEach((g) => expect(g.length, g).toBeLessThanOrEqual(45));
+    }
+  });
+  test('lessonGoal берёт цель по номеру шага и не выходит за список', () => {
+    expect(lessonGoal('step:milk', { drinkId: 'latte', ml: 150 }, 0)).toBe('Молоко до линии: 150 мл');
+    expect(lessonGoal('step:milk', { drinkId: 'latte', ml: 150 }, 9)).toContain('Лишнее');
+    expect(lessonGoal('step:nothing', { drinkId: 'latte' }, 0)).toBeNull();
+  });
   test('пар: три шага и числа из станции', () => {
     const l = lesson('step:steam:thick', { drinkId: 'cappuccino', drinkName: 'Капучино', foam: 0.55 });
     expect(l?.steps).toHaveLength(3);
-    expect(l?.steps[0]).toContain('Капучино: густая пена');
+    expect(l?.goals?.[0]).toContain('Пена около 55%');
     expect(l?.steps[0]).toContain(`${STEAM.airUntil}°`);
     expect(l?.steps[2]).toContain('60–65°');
     expect(l?.steps[2]).toContain(`${STEAM.burnAt}°`);

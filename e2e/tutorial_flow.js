@@ -10,6 +10,8 @@ const out = process.argv[3] || 'out/tut';
   const errs = []; require('./pw').watch(p, errs);
   const ok = (name, v) => { console.log((v ? 'OK   ' : 'FAIL ') + name); if (!v) errs.push('FAIL ' + name); };
   const coach = () => p.evaluate(() => { const e = document.querySelector('#bCoach'); return e.hidden ? '' : e.textContent; });
+  /* реплика Макса живёт не короче max(4 с; длина / 12) и сменяется через 1,5 с после смены состояния (этап 12.2) */
+  const waitCoach = async (re, ms = 40000) => { const t0 = Date.now(); for (;;) { const t = await coach(); if (re.test(t) || Date.now() - t0 > ms) return t; await p.waitForTimeout(150); } };
   await p.goto(require('./pw').url(tmp) + (process.env.HASH || '#nopixi-lowfx')); await p.waitForTimeout(600);
   await require('./pw').startNew(p); await p.waitForTimeout(500);
   await p.evaluate(() => { const G = window.__dbg.G; G.rank = 4; G.day = 7; G.money = 5000; G.milk = true; G.hints = true; });
@@ -37,11 +39,13 @@ const out = process.argv[3] || 'out/tut';
   await p.screenshot({ path: out + '_2coach_closed.png' });
   /* шаги до матчи (если есть) выполняем быстро: отмечаем готовыми */
   await p.evaluate(() => { const B = window.__dbg.BR; for (const t of B.tasks) { if (t === 'whisk') break; B.done[t] = true; B.res[t] = 1; } });
-  await p.waitForTimeout(400);
-  t1 = await coach();
+  t1 = await waitCoach(/Новая станция/);
   ok('коуч называет станцию и где она', t1.includes('Новая станция') && /матч/i.test(t1));
   await p.click('[data-z=matcha]', { force: true }); await p.waitForTimeout(700);
-  const t2 = await coach(); console.log('коуч в станции:', JSON.stringify(t2));
+  ok('сразу после открытия станции коуч ещё держит прежнюю реплику (минимум показа ≥ 4 с)', (await coach()).includes('Новая станция'));
+  const t2 = await waitCoach(/Взбивать/); /* потом сменяется */
+  ok('«Повторить» вернёт предыдущую реплику', await (async () => { await p.click('[data-coachrep]'); await p.waitForTimeout(400); const r = await coach(); return /повтор/.test(r) && r.includes('Новая станция'); })());
+  await p.waitForTimeout(100); console.log('коуч в станции:', JSON.stringify(t2));
   ok('в станции коуч ведёт по шагам (1. и 2.)', t2.includes('1.') && t2.includes('2.') && t2.includes('Взбивать'));
   await p.screenshot({ path: out + '_3coach_open.png' });
   const box = await p.locator('[data-xhold]').boundingBox();

@@ -33,9 +33,18 @@ function gx(c, dx) { return c.x + dx * WORLD.guestK; }
 function gy(y) { return 600 - WORLD.guestK * (600 - y); }
 function showSay(c) {
   if (!c.order || c.sayEl) return;
-  const d = document.createElement('div'); d.className = 'say'; d.textContent = c.order.line; d.style.left = Math.round(c.tx) + 'px';
-  stage.appendChild(d); c.sayEl = d; requestAnimationFrame(() => d.classList.add('show'));
+  const d = document.createElement('div'); d.className = 'say'; d.textContent = c.order.line;
+  stage.appendChild(d); c.sayEl = d; c.sayVis = c.sayVis || 0; c.sayDur = sayDuration(c.order.line); placeSay(c); requestAnimationFrame(() => d.classList.add('show'));
 }
+/* Реплика над пузырём заказа, на оси головы гостя (хвостик пузыря на макушке: actor.bubbleTipY), не выходит за края сцены; говорит один гость за раз, чтобы реплики не накладывались */
+const SAY_STACK = 91 + 22; /* высота карточки пузыря с тегами и хвостик реплики */
+function placeSay(c) {
+  const d = c.sayEl; if (!d) return;
+  const half = Math.min(170, d.offsetWidth / 2 || 120), x = clamp(c.px, half + 16, 1280 - half - 16);
+  d.style.left = Math.round(x) + 'px'; d.style.bottom = Math.round(720 - (c.act.bubbleTipY - SAY_STACK)) + 'px'; d.style.setProperty('--tail', Math.round(c.px - x) + 'px');
+}
+/* время показа растёт с длиной (≈ 12 символов в секунду, от 5 до 10 с); терпение и очередь от него не зависят */
+const sayDuration = line => clamp(line.length / 12, 5, 10);
 function hideSay(c) { if (!c.sayEl) return; const d = c.sayEl; c.sayEl = null; d.classList.remove('show'); setTimeout(() => d.remove(), 300); }
 function exit(c) {
   hideSay(c);

@@ -123,9 +123,10 @@ html.kbd button:focus-visible, html.kbd input:focus-visible { outline: 3px solid
 }
 
 /* реплика гостя над головой */
-.say { position: absolute; top: 24px; z-index: 3; width: max-content; max-width: 230px; padding: 8px 12px; border: 3px solid var(--ink); border-radius: 14px; background: #FFF8EC; color: var(--ink); font: 700 14px/1.25 Nunito, system-ui, sans-serif; box-shadow: 0 4px 0 rgba(74, 47, 37, .35); pointer-events: none; opacity: 0; transform: translate(-50%, 8px) scale(.92); transition: opacity .25s ease, transform .3s cubic-bezier(.3, 1.5, .5, 1); }
+/* реплика привязана к макушке гостя: bottom и left ставит placeSay (04-customers.js), над рядом пузырей заказа */
+.say { position: absolute; z-index: 3; width: max-content; max-width: 330px; padding: 6px 11px; border: 3px solid var(--ink); border-radius: 14px; background: #FFF8EC; color: var(--ink); font: 700 13px/1.25 Nunito, system-ui, sans-serif; box-shadow: 0 4px 0 rgba(74, 47, 37, .35); pointer-events: none; opacity: 0; transform: translate(-50%, 8px) scale(.92); transition: opacity .25s ease, transform .3s cubic-bezier(.3, 1.5, .5, 1); }
 .say.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
-.say::after { content: ''; position: absolute; left: 50%; bottom: -11px; width: 14px; height: 14px; background: #FFF8EC; border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); transform: translateX(-50%) rotate(45deg); }
+.say::after { content: ''; position: absolute; left: calc(50% + var(--tail, 0px)); bottom: -11px; width: 14px; height: 14px; background: #FFF8EC; border-right: 3px solid var(--ink); border-bottom: 3px solid var(--ink); transform: translateX(-50%) rotate(45deg); }
 #stage.inbar .say { display: none; }
 @media (prefers-reduced-motion: reduce) { .say { transition: opacity .2s; transform: translate(-50%, 0); } }
 

@@ -103,16 +103,22 @@ const sizeTxt = o => String(o.size).replace('.', ',') + ' л';
 function drawTicket() {
   const B = BR; if (!B) { UI.tk.innerHTML = ''; return; }
   const c = B.c, f = Math.max(0, c.pat / c.max), cs = ticketChips();
-  const key = [cs.map(x => (x.done ? 1 : 0)).join(''), B.shotIdx, B.inset, B.shot.st, B.ready, Math.round(f * 20), G.hints, B.pumps].join('|');
+  const key = [cs.map(x => (x.done ? 1 : 0)).join(''), tkOpen, B.shotIdx, B.inset, B.shot.st, B.ready, Math.round(f * 20), G.hints, B.pumps].join('|');
   if (key === tkKey) return; tkKey = key;
   const next = cs.find(x => x.cur && !x.done && !blockMsg(x.t));
   const o = c.order, multi = MENUAPI.drinkById[o.id] && Object.keys(MENUAPI.drinkById[o.id].sizes).length > 1;
   const tags = (multi && o.size !== '0.2' ? `<i style="background:#8FA58A">${sizeTxt(o)}</i>` : '') + (B.shots > 1 ? `<i style="background:#7A5A4A">${B.shots === 2 ? '2 шота' : B.shots + ' шотов'}</i>` : '') + (c.strong ? '<i style="background:#C4694A">крепкий</i>' : '') + (c.order && c.order.food ? `<i style="background:#C98B5A">${c.order.food.heat ? 'разогреть' : 'еда'}</i>` : '') + (c.syrup ? `<i style="background:${SYR[c.syrup].col};color:#4A2F25">${SYR[c.syrup].name.toLowerCase()} ×${c.pumps}</i>` : '');
   const chips = cs.map(x => `<button type="button" data-t="${x.t}" class="${x.done ? 'done' : x === next ? 'next' : !x.cur || blockMsg(x.t) ? 'lock' : ''}">${x.done ? '✓ ' : ''}${x.label}</button>`).join('<b>›</b>');
   const bar = f > .5 ? '#93A684' : f > .25 ? '#E8B04A' : '#C4694A';
+  /* компактный билет (контракт раскладки, стайлгайд разд. 14): одна строка (гость, напиток, размер, текущий шаг); все шаги и реплика гостя раскрываются кнопкой и сворачиваются при открытии станции */
+  if (B.inset) tkOpen = false;
+  const cur = next || cs.find(x => x.cur && !x.done), nDone = cs.filter(x => x.done).length;
+  const now = cur ? `<button type="button" data-t="${cur.t}" class="tkStep ${cur === next ? 'next' : 'lock'}">Шаг ${nDone + 1} из ${cs.length}: ${cur.label}</button>` : '<span class="tkStep ready">Готово: позвоните в звонок</span>';
+  const ik = Math.round(44 * Math.min(1.15, B.rc.cupK || 1));
   UI.tk.innerHTML = `<div class="tkWho"><span>${WHO[c.type] || 'Гость'} · №${c.id}</span><div class="tkBar"><u style="width:${(f * 100).toFixed(0)}%;background:${bar}"></u></div></div>
-<div class="tkMain"><svg class="tkIcon" viewBox="-30 -30 60 60" width="${Math.round(44 * (B.rc.cupK || 1))}" height="${Math.round(44 * (B.rc.cupK || 1))}" aria-hidden="true"><g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${iconOf(B.drink)}</g></svg><b class="tkName">${NAME[B.drink]}</b>${tags}</div><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps${cs.length > 7 ? ' many' : ''}">${chips}</div>
-<div class="tkBtns"><button type="button" data-hint="1" class="${G.hints ? 'on' : ''}" title="Подсказки">?</button><button type="button" data-back="1" title="К залу (Tab)">К залу</button></div>`;
+<div class="tkMain"><svg class="tkIcon" viewBox="-30 -30 60 60" width="${ik}" height="${ik}" aria-hidden="true"><g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${iconOf(B.drink)}</g></svg><b class="tkName">${NAME[B.drink]}</b>${tags}</div>
+<div class="tkNow">${now}<button type="button" class="tkMore" data-tkmore="1" aria-expanded="${tkOpen}" title="Все шаги и реплика гостя">${tkOpen ? '▴' : '▾'}</button></div>
+<div class="tkBtns"><button type="button" data-hint="1" class="${G.hints ? 'on' : ''}" title="Подсказки">?</button><button type="button" data-back="1" title="К залу (Tab)">К залу</button></div>${tkOpen ? `<div class="tkDrop"><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps${cs.length > 7 ? ' many' : ''}">${chips}</div></div>` : ''}`;
 }
 /* Подсказки новых станций и шагов (молоко, пар, заливка, сироп): пока не пройдены и пока игрок не выключил подсказки (настройкой или кнопкой «?») */
 const tutOffNow = () => (SET.hintsSet && !SET.hints) || G.tutOff;
@@ -171,10 +177,35 @@ function coachText() {
   const t = B.tasks.find(x => !B.done[x] && !blockMsg(x));
   return { syrup: `Клиент просил сироп: ${B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() : ''} ×${B.c.pumps}. Нажмите на полку с сиропами и выберите бутылку: одно нажатие это одна порция.`, grind: 'Начнём с помола. Нажмите на кофемолку слева.', tamp: 'Молотый кофе нужно уплотнить. Нажмите на темпер.', shot: 'Теперь на кофемашину: вставить портафильтр и запустить шот.', water: 'Долейте воду (' + (B.rc.water || 0) + ' мл): нажмите на носик слева на машине.', milk: B.rc.pitcherShot ? 'Теперь холодные сливки: нажмите на холодильник.' : 'Пока кофе настаивается, займитесь молоком: нажмите на холодильник.', steam: 'Вспеньте молоко: нажмите на паровую трубку справа.', pour: 'Заливайте молоко в чашку: нажмите на чашку.' }[t] || '';
 }
-function drawCoach() {
-  const el = UI.coach, tk = BR && tutKey(); if (!BR || (!G.hints && !tk)) { el.hidden = true; return; }
-  const t = coachText() + '|' + (tk || ''); if (t === coachKey) return; coachKey = t;
-  el.hidden = false; el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста</b><p>${coachText()}</p></div>${tk ? `<button type="button" class="tutSkip" data-tutskip="${tk}">Пропустить</button>` : ''}`;
+/* Коуч (Макс): реплика остаётся не короче max(4 с; длина / 12 симв./с) и меняется на новую, только когда прошла пауза ≥ 1,5 с после смены состояния (шаг выполнен); при нескольких сменах показывается последняя актуальная. Исключение: последний шаг пара («Остановите») показывается сразу, иначе подсказка придёт, когда молоко уже пригорит (зона 7°, нагрев 7°/с). «Повторить» показывает предыдущую реплику. */
+const COACH = { br: null, clk: 0, text: '', key: '', shownAt: 0, wantKey: '', wantSince: 0, prev: '', rep: null, html: '' };
+const COACH_PAUSE = 1.5, coachMin = html => Math.max(4, html.split('<br>').pop().replace(/<[^>]+>/g, '').length / 12); /* считаем сам текст шага, без постоянной шапки «Новый шаг · Название» */
+const goalEl = $('#bGoal');
+function drawCoach(dt) {
+  const el = UI.coach, tk = BR && tutKey();
+  if (!BR || (!G.hints && !tk)) { el.hidden = true; COACH.text = ''; COACH.html = ''; COACH.br = null; goalEl.hidden = true; return; }
+  if (COACH.br !== BR) Object.assign(COACH, { br: BR, text: '', key: '', prev: '', rep: null, html: '', wantKey: '' });
+  COACH.clk += dt || 0;
+  const want = coachText(), wantKey = want + '|' + (tk || '');
+  if (wantKey !== COACH.wantKey) { COACH.wantKey = wantKey; COACH.wantSince = COACH.clk; }
+  const urgent = !!tk && tk.startsWith('step:steam:') && COACH.key.endsWith('|' + tk) && tutLive(tk).step >= 2;
+  if (COACH.rep && (COACH.clk >= COACH.rep.until || urgent)) COACH.rep = null;
+  if (!COACH.text) { COACH.text = want; COACH.key = wantKey; COACH.shownAt = COACH.clk; }
+  else if (wantKey !== COACH.key) {
+    const aged = COACH.clk - COACH.shownAt >= coachMin(COACH.text), calm = COACH.clk - COACH.wantSince >= COACH_PAUSE;
+    if ((aged && calm) || urgent) { COACH.prev = COACH.text; COACH.text = want; COACH.key = wantKey; COACH.shownAt = COACH.clk; }
+  }
+  el.classList.toggle('compact', !!BR.inset);
+  const shown = COACH.rep ? COACH.rep.html : COACH.text, skipKey = COACH.key.split('|')[1];
+  const html = shown + '|' + (COACH.rep ? 'r' : '') + '|' + (COACH.prev ? 'p' : '') + '|' + (skipKey || '');
+  if (html !== COACH.html) {
+    COACH.html = html; el.hidden = false;
+    el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста${COACH.rep ? ' · повтор' : ''}</b><p>${shown}</p></div><div class="coachBtns"><button type="button" class="coachRep" data-coachrep="1" title="Показать предыдущую подсказку">Повторить</button>${skipKey ? `<button type="button" class="tutSkip" data-tutskip="${skipKey}">Пропустить</button>` : ''}</div>`;
+  }
+  /* цель текущего шага одной строкой над окном станции (стайлгайд, разд. 16): игрок не отводит взгляд от питчера и трубки */
+  let goal = '';
+  if (BR.inset && tk) { const L = MENUAPI.lesson(tk, tutCtx()); if (L && L.paced) goal = MENUAPI.lessonGoal(tk, tutCtx(), tutLive(tk).step) || ''; }
+  if (goal) { if (goalEl.textContent !== 'Цель: ' + goal) goalEl.textContent = 'Цель: ' + goal; goalEl.hidden = false; } else goalEl.hidden = true;
 }
 
 /* ---------- прорисовка инсета ---------- */

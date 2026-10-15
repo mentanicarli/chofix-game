@@ -45,6 +45,8 @@ function updateHud(bump) {
   $('#chServed span').textContent = D ? D.stats.served : 0;
 }
 function toast(msg, ms = 2400) {
+  /* показ не короче max(2,5 с; длина / 15 симв./с) */
+  ms = Math.max(ms, 2500, msg.length / 15 * 1000);
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }

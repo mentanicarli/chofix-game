@@ -59,7 +59,7 @@ const hexNum = (c: string): number => {
 
 /** Бар: статичный арт одним спрайтом, подвижные детали — отдельными узлами. */
 /** потолок масштаба чашки по высоте: обод остаётся ниже носика группы (y ≈ 372) */
-const CUP_MAX_KY = 1.25;
+const CUP_MAX_KY = 1.15;
 
 export class BarScene {
   readonly root = new Container();
