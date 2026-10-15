@@ -7,7 +7,7 @@ const pitCapOf = rc => rc.milk && !rc.cupMilk ? Math.max(330, Math.ceil((rc.milk
 const MILKY = new Set(['cappuccino', 'latte', 'flatwhite', 'raf', 'vanillaraf', 'rafhalva']);
 const TASK_NAME = MENUAPI.TASK_NAME;
 const SYR = Object.fromEntries(MENUAPI.SYRUPS.filter(s => MENUAPI.SYRUP_META[s.name]).map(s => { const m = MENUAPI.SYRUP_META[s.name]; return [m.key, { name: s.name, short: m.short, col: m.col, z: 'syrup', rank: s.rank, recipe: MENUAPI.RECIPE_SYRUPS.has(s.name) }]; }));
-const ZONE_POS = { grind: [160, 330], tamp: [330, 496], shot: [630, 380], water: [500, 336], ice: [390, 572], food: [650, 578], milk: [1160, 380], steam: [836, 420], pour: [630, 430], bell: [1032, 500], syrup: [968, 250], syr1: [902, 250], syr2: [968, 250], syr3: [1034, 250], tea: [75, 590], matcha: [175, 590], powders: [275, 590], juice: [858, 590], whipper: [972, 590], foamer: [1086, 590], blender: [1200, 590], boba: [75, 668], shaker: [175, 668] };
+const ZONE_POS = { grind: [160, 330], tamp: [330, 496], shot: [630, 380], water: [500, 336], ice: [680, 676], food: [405, 676], micro: [932, 676], milk: [1160, 380], steam: [836, 420], pour: [630, 430], bell: [1032, 500], syrup: [968, 250], syr1: [902, 250], syr2: [968, 250], syr3: [1034, 250], tea: [75, 590], matcha: [175, 590], powders: [275, 590], juice: [858, 590], whipper: [972, 590], foamer: [1086, 590], blender: [1200, 590], boba: [75, 668], shaker: [175, 668] };
 const WEIGHT = MENUAPI.WEIGHT;
 const bi = $('#bi'), bx = bi.getContext('2d'); bx.scale(2, 2);
 const IW = 440, IH = 450;
@@ -157,6 +157,7 @@ function closeInset() {
 function zoneShown(z) {
   if (z === 'milk') return !!G.milk || !!G.eq_cream; /* кувшин сливок для рафа стоит у холодильника */
   if (z === 'ice') return !!G.eq_ice;
+  if (z === 'micro') return !!G.eq_microwave; /* микроволновка стоит в нише справа от холодильной витрины; клик ведёт на ту же станцию «Еда» */
   if (z === 'food') return !!(G.eq_case_snacks || G.eq_case_pastry || G.eq_case_dessert || G.eq_fridge_deli);
   if (['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].includes(z)) return !!G['eq_' + z];
   return true;
@@ -166,6 +167,7 @@ function zonesSync() {
 }
 function zoneClick(z) {
   if (!BR) return;
+  if (z === 'micro' && zoneShown('micro')) z = 'food';
   if (!zoneShown(z)) return;
   const d = BR.done;
   if (z === 'stop') { if (BR.shot.st === 'run') stopShot(); return; }

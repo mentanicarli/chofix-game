@@ -22,7 +22,7 @@ const out = path.resolve(process.argv[3] || 'out/s3/shot'); fs.mkdirSync(out, { 
     const clip = (x, y, w, h) => ({ x: 16 + x, y: 16 + y, width: w, height: h });
     const set = async (flags) => { await p.evaluate((f) => { const G = __dbg.G; ['case_snacks', 'case_pastry', 'case_dessert', 'fridge_deli', 'microwave', 'ice'].forEach(k => { G['eq_' + k] = !!f[k]; }); __dbg.applyUpgrades(); }, flags); await p.waitForTimeout(500); };
     const shot = async (name, c) => p.screenshot({ path: `${out}/${name}_${dsf}x.png`, timeout: 120000, ...(c ? { clip: c } : {}) });
-    const region = clip(315, 495, 490, 125);
+    const region = clip(235, 590, 830, 130);
     await set({ ice: true, case_snacks: true, case_pastry: true, case_dessert: true, fridge_deli: true, microwave: true });
     await shot('bar_full'); await shot('region_all', region);
     await set({ ice: true, case_snacks: true }); await shot('region_snacks', region);

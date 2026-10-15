@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="534 566 92 28" data-part="scDessert" data-scale="1">
-<!-- Десерты на нижней полке витрины (этап 12.3(1)): кусок слоёного торта с вишней и эклер с глазурью. Основание на дне витрины y 592. -->
-<g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
-<ellipse cx="554" cy="592" rx="17" ry="2.6" fill="{{PAPER}}"/>
-<path d="M542 591V575H566V591Z" fill="{{PINK}}"/>
-<path d="M542 584H566V591H542Z" fill="{{CHOC}}"/>
-<path d="M542 575Q548 572 554 575Q560 572 566 575V578H542Z" fill="{{PAPER}}"/>
-<circle cx="554" cy="571" r="3.2" fill="{{TERRA}}"/>
-<ellipse cx="594" cy="592" rx="22" ry="2.6" fill="{{PAPER}}"/>
-<rect x="577" y="581" width="34" height="10" rx="5" fill="{{BAKE}}"/>
-<path d="M578 585Q578 580 584 580H604Q610 580 610 585Z" fill="{{CHOC}}"/>
-<path d="M582 588H606" fill="none" stroke="{{PAPER}}"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="272 687.8 110.4 33.6" data-part="scDessert" data-scale="1">
+<!-- Десерты на нижней полке подстоечного холодильника (этап 12.3(2)): торт с вишней и эклер. Основание на дне y 719. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
+<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="296" cy="719" rx="20.4" ry="3.1" fill="{{PAPER}}"/>
+<path d="M281.6 717.8V698.6H310.4V717.8Z" fill="{{PINK}}"/>
+<path d="M281.6 709.4H310.4V717.8H281.6Z" fill="{{CHOC}}"/>
+<path d="M281.6 698.6Q288.8 695 296 698.6Q303.2 695 310.4 698.6V702.2H281.6Z" fill="{{PAPER}}"/>
+<circle cx="296" cy="693.8" r="3.8" fill="{{TERRA}}"/>
+<ellipse cx="344" cy="719" rx="26.4" ry="3.1" fill="{{PAPER}}"/>
+<rect x="323.6" y="705.8" width="40.8" height="12" rx="6" fill="{{BAKE}}"/>
+<path d="M324.8 710.6Q324.8 704.6 332 704.6H356Q363.2 704.6 363.2 710.6Z" fill="{{CHOC}}"/>
+<path d="M329.6 714.2H358.4" fill="none" stroke="{{PAPER}}" stroke-width="{{D}}"/>
 </g>
 </svg>

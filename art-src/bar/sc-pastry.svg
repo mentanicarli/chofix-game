@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="626 539 94 28" data-part="scPastry" data-scale="1">
-<!-- Выпечка на верхней полке витрины (этап 12.3(1)): два круассана (полумесяцы с насечками) и маффин. Основание на полке y 565. -->
-<g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
-<path d="M631 565Q630 549 646 547Q660 547 664 565Q656 558 646 558Q637 558 631 565Z" fill="{{BAKE}}"/>
-<path d="M639 549L641 558M647 548V558M655 549L653 558" fill="none" stroke="{{BAKE_SH}}"/>
-<path d="M663 565Q664 551 678 549Q689 549 692 565Q685 559 677 559Q669 559 663 565Z" fill="{{BAKE}}"/>
-<path d="M670 551L671 559M678 550V559M685 551L684 559" fill="none" stroke="{{BAKE_SH}}"/>
-<path d="M700 557Q700 545 709 545Q718 545 718 557Z" fill="{{BAKE}}"/>
-<path d="M702 551Q709 548 716 551" fill="none" stroke="{{BAKE_SH}}"/>
-<path d="M701 557H717L714.5 565H703.5Z" fill="{{PAPER}}"/>
-<path d="M706 558L706.5 564M711 558L710.5 564" fill="none" stroke="{{BAKE_SH}}"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="402 648.8 112.8 33.6" data-part="scPastry" data-scale="1">
+<!-- Выпечка на верхней полке подстоечного холодильника (этап 12.3(2)): два круассана и маффин. Основание на полке y 680. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
+<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M408 680Q406.8 660.8 426 658.4Q442.8 658.4 447.6 680Q438 671.6 426 671.6Q415.2 671.6 408 680Z" fill="{{BAKE}}"/>
+<path d="M417.6 660.8L420 671.6M427.2 659.6V671.6M436.8 660.8L434.4 671.6" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<path d="M446.4 680Q447.6 663.2 464.4 660.8Q477.6 660.8 481.2 680Q472.8 672.8 463.2 672.8Q453.6 672.8 446.4 680Z" fill="{{BAKE}}"/>
+<path d="M454.8 663.2L456 672.8M464.4 662V672.8M472.8 663.2L471.6 672.8" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<path d="M490.8 670.4Q490.8 656 501.6 656Q512.4 656 512.4 670.4Z" fill="{{BAKE}}"/>
+<path d="M493.2 663.2Q501.6 659.6 510 663.2" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<path d="M492 670.4H511.2L508.2 680H495Z" fill="{{PAPER}}"/>
+<path d="M498 671.6L498.6 678.8M504 671.6L503.4 678.8" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
 </g>
 </svg>

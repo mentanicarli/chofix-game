@@ -11,7 +11,7 @@ const HOOK = 'window.__dbg = { get G() { return G; }, get D() { return D; }, get
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const p = await pw.page(b); const errs = []; pw.watch(p, errs);
   const url = pw.url(tmp);
-  const ZONES = ['ice', 'food', 'tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'];
+  const ZONES = ['ice', 'food', 'micro', 'tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'];
   const msgs = () => p.evaluate(() => [...document.querySelectorAll('.bmsg')].map(e => e.textContent).filter(t => !/^Заказ принят/.test(t)));
   const center = z => p.evaluate(z => { const r = document.querySelector('#bZones [data-z="' + z + '"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, z);
   const openBar = async () => {

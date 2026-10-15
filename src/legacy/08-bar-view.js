@@ -200,7 +200,7 @@ function drawCoach(dt) {
   const html = shown + '|' + (COACH.rep ? 'r' : '') + '|' + (COACH.prev ? 'p' : '') + '|' + (skipKey || '');
   if (html !== COACH.html) {
     COACH.html = html; el.hidden = false;
-    el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста${COACH.rep ? ' · повтор' : ''}</b><p>${shown}</p></div><div class="coachBtns"><button type="button" class="coachRep" data-coachrep="1" title="Показать предыдущую подсказку">Повторить</button>${skipKey ? `<button type="button" class="tutSkip" data-tutskip="${skipKey}">Пропустить</button>` : ''}</div>`;
+    el.innerHTML = `<i class="av">М</i><div><b>Макс, старший бариста${COACH.rep ? ' · повтор' : ''}</b><p>${shown}</p></div><div class="coachBtns"><button type="button" class="coachRep" data-coachrep="1" title="Повторить предыдущую подсказку" aria-label="Повторить предыдущую подсказку">↻</button>${skipKey ? `<button type="button" class="tutSkip" data-tutskip="${skipKey}" title="Пропустить подсказку" aria-label="Пропустить подсказку">✕</button>` : ''}</div>`;
   }
   /* цель текущего шага одной строкой над окном станции (стайлгайд, разд. 16): игрок не отводит взгляд от питчера и трубки */
   let goal = '';

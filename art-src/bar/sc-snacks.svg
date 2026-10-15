@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="534 539 92 28" data-part="scSnacks" data-scale="1">
-<!-- Снеки на верхней полке витрины (этап 12.3(1)): пакет чипсов (жёлтый, с загнутым верхом и логотипом), крендель, плитка шоколада с клеткой долек и обёрткой. Основание на полке y 565. -->
-<g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
-<path d="M539 565V548L541 545L544 547L547 544L550 547L553 545L556 548V565Z" fill="{{MUSTARD}}"/>
-<circle cx="547.5" cy="557" r="3.8" fill="{{TERRA}}"/>
-<path d="M540 549H555" fill="none" stroke="{{BAKE_SH}}"/>
-<ellipse cx="578" cy="555" rx="11" ry="9" fill="{{BAKE}}"/>
-<ellipse cx="578" cy="555" rx="5" ry="4" fill="{{PAPER}}"/>
-<path d="M570 561L586 549" fill="none" stroke="{{BAKE_SH}}"/>
-<circle cx="572" cy="550" r="1" fill="{{PAPER}}" stroke="none"/>
-<circle cx="584" cy="561" r="1" fill="{{PAPER}}" stroke="none"/>
-<path d="M599 565V547H615V565Z" fill="{{CHOC}}"/>
-<path d="M603 547V565M607 547V565M611 547V565M599 553H615M599 559H615" fill="none" stroke="{{BAKE_SH}}"/>
-<path d="M599 547H615V551H599Z" fill="{{PAPER}}"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="272 648.8 110.4 33.6" data-part="scSnacks" data-scale="1">
+<!-- Снеки на верхней полке подстоечного холодильника (этап 12.3(2)): пакет чипсов, крендель, шоколадка. Основание на полке y 680. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
+<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M278 680V659.6L280.4 656L284 658.4L287.6 654.8L291.2 658.4L294.8 656L298.4 659.6V680Z" fill="{{MUSTARD}}"/>
+<circle cx="288.2" cy="670.4" r="4.6" fill="{{TERRA}}"/>
+<path d="M279.2 660.8H297.2" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<ellipse cx="324.8" cy="668" rx="13.2" ry="10.8" fill="{{BAKE}}"/>
+<ellipse cx="324.8" cy="668" rx="6" ry="4.8" fill="{{PAPER}}"/>
+<path d="M315.2 675.2L334.4 660.8" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<circle cx="317.6" cy="662" r="1.2" fill="{{PAPER}}" stroke="none"/>
+<circle cx="332" cy="675.2" r="1.2" fill="{{PAPER}}" stroke="none"/>
+<path d="M350 680V658.4H369.2V680Z" fill="{{CHOC}}"/>
+<path d="M354.8 658.4V680M359.6 658.4V680M364.4 658.4V680M350 665.6H369.2M350 672.8H369.2" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<path d="M350 658.4H369.2V663.2H350Z" fill="{{PAPER}}"/>
 </g>
 </svg>
