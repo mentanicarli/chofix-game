@@ -52,7 +52,7 @@ const write = (name, body) => fs.writeFileSync(OUT + name, body);
 
 write(
   'direction-a-ink-paper.svg',
-  head('A. Рисованный контур и бумага', 'Развитие зала: контур #4A2F25, дрожание, два тона тени, зерно', '#FFF8EC', 5) +
+  head('A. Рисованный контур и бумага', 'Развитие зала: контур #4A2F25, дрожание, два тона тени, зерно', '#FFF8EC', 2.5) +
     mug({ ink: '#4A2F25', w: 3, body: '#F6E7CF', sh: '#E3CBA6', hi: '#FFFDF6', coffee: '#8A5B3A', handle: '#F6E7CF', wob: 1 }) +
     guest({ ink: '#4A2F25', w: 3, skin: '#F0C9A4', skinSh: '#DDA982', hair: '#7A3E2B', cloth: '#C4694A', clothSh: '#A9553A', clothHi: '#E39477', wob: 1 }) +
     lines('#4A2F25', [4, 3, 2], 'линия 4 / 3 / 2 px, контур #4A2F25') +
