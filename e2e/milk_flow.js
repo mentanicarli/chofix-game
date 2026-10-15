@@ -70,7 +70,7 @@ const out = process.argv[3] || 'out/milk';
   await p.keyboard.press('Space'); await p.waitForTimeout(900);
   const card = await p.evaluate(() => { const e = document.querySelector('#drinkCard'); return e.hidden ? '' : e.textContent; });
   console.log('карточка:', JSON.stringify(card));
-  ok('перед приготовлением карточка «Новый напиток» с рецептом', /Новый напиток/.test(card) && /Латте/.test(card) && /Вспенить молоко паром/.test(card) && /28%/.test(card) && /Понятно/.test(card));
+  ok('перед приготовлением карточка «Новый напиток» с рецептом', /Новый напиток/.test(card) && /Латте/.test(card) && /Пар: до 55–62/.test(card) && /22%/.test(card) && /Понятно/.test(card));
   ok('пока карточка открыта, бар не начат', await p.evaluate(() => window.__dbg.BR === null));
   await p.screenshot({ path: out + '_4card.png' });
   const pat0 = await p.evaluate(() => window.__dbg.D.customers[0].pat); await p.waitForTimeout(1200);
