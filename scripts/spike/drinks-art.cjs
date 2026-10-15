@@ -37,7 +37,7 @@ function drinkSVG(spec, o) {
 
   if (spec.vessel === 'glass') {
     const old = o.geom === 'old'; /* геометрия текущего drawShell: ширина по cupScale, высота не больше CUP_MAX_KY = 1,12 */
-    const ky = old ? Math.min(k, 1.12) : k;
+    const ky = old || o.geom === 'newcap' ? Math.min(k, 1.12) : k;
     const Wt = (old ? 52 : 46) * k, Wb = (old ? 42 : 36) * k, H = (old ? 78 : 80) * ky, yb = -(old ? 8 : 7) * ky, bulge = (old ? 4 : 3) * ky, ry0 = (old ? 9 : 8.5) * ky;
     const hw = (y) => Wb + (Wt - Wb) * ((yb - y) / (H + yb));      // полуширина стакана на высоте y
     const glassPath = `M${f(-Wt)} ${f(-H)}L${f(Wt)} ${f(-H)}L${f(Wb)} ${f(yb)}Q0 ${f(bulge)} ${f(-Wb)} ${f(yb)}Z`;
@@ -67,7 +67,7 @@ function drinkSVG(spec, o) {
     });
     if (spec.swirl && !compact) { /* языки верхнего слоя вниз в нижний: размытая граница бамбла */
       const yb0 = ytops[spec.swirl.from]; const col = layers[spec.swirl.from + 1].col; const d = liqH * 0.17;
-      [[-0.55, 0.8], [-0.1, 1.2], [0.4, 0.9]].forEach(([ux, sc]) => { const x = ux * Wb; g += `<path d="M${f(x - 9 * k)} ${f(yb0 - 2)}Q${f(x - 7 * k)} ${f(yb0 + d * sc * 0.7)} ${f(x)} ${f(yb0 + d * sc)}Q${f(x + 8 * k)} ${f(yb0 + d * sc * 0.6)} ${f(x + 10 * k)} ${f(yb0 - 2)}Z" fill="${col}"/>`; });
+      [[-0.62, 0.8], [-0.12, 1.15], [0.55, 0.9]].forEach(([ux, sc]) => { const x = ux * Wb; const w = 3.4 * k, dd = liqH * 0.17 * sc; g += `<path d="M${f(x - w)} ${f(yb0 - 3)}C${f(x - w * 0.9)} ${f(yb0 + dd * 0.6)} ${f(x - w * 0.3)} ${f(yb0 + dd)} ${f(x)} ${f(yb0 + dd)}C${f(x + w * 0.3)} ${f(yb0 + dd)} ${f(x + w * 0.9)} ${f(yb0 + dd * 0.6)} ${f(x + w)} ${f(yb0 - 3)}Z" fill="${col}"/>`; });
     }
     /* второй тон: тень справа */
     g += `<path d="M${f(Wt * 0.5)} ${f(-H)}L${f(Wt)} ${f(-H)}L${f(Wb)} ${f(yb)}L${f(Wb * 0.55)} ${f(yb)}Z" fill="${C.SHADOW}" opacity=".09"/>`;
@@ -83,7 +83,10 @@ function drinkSVG(spec, o) {
       if (spec.top?.spice && !compact) for (let i = 0; i < 9; i++) { const a = i * 2.4; g += `<circle cx="${f(Math.cos(a) * rxS * 0.6 * ((i % 3) / 2 + 0.3))}" cy="${f(Ytop + Math.sin(a) * ryS * 0.55)}" r="${f(1.3)}" fill="${C.CHOC}"/>`; }
     }
     /* лёд: кубики, часть выступает над поверхностью */
-    if (spec.ice) g += iceCubes(spec.ice, Wt, Wb, Ytop, yBot, k, compact, sw, hw);
+    if (spec.ice) {
+      const lb = []; let a2 = yBot; layers.forEach((ly, i) => { const h2 = liqH * ly.frac; lb.push({ yt: a2 - h2, yb: a2, col: ly.col, h: h2 }); a2 -= h2; });
+      g += spec.iceStyle === 'old' ? iceCubesOld(spec.ice, Wt, Wb, Ytop, yBot, k, compact, sw, hw) : iceCubes({ n: spec.ice, Ytop, yBot, k, compact, sw, hw, lb, Wt });
+    }
     if (spec.boba) g += boba(Wb, yb, k, compact);
     if (spec.bubbles && !compact) for (let i = 0; i < 9; i++) g += `<circle cx="${f(((i * 37) % 70 - 35) * k * 0.9)}" cy="${f(yBot - 8 - ((i * 53) % 40) * k * 0.9)}" r="${f(1.8)}" fill="#FFFFFF" fill-opacity=".7" stroke="${C.GLASS_DP}" stroke-width="${sw(0.8)}"/>`;
     /* контур стакана */
@@ -152,12 +155,52 @@ function heart(cx, cy, rx, ry, col) {
   return `<g transform="translate(${f(cx)} ${f(cy)}) scale(${f(rx / 22)} ${f(ry / 11)})">${h(1, 0)}${h(0.55, 2.2)}</g>`;
 }
 
-function iceCubes(n, Wt, Wb, Ytop, yBot, k, compact, sw, hw) {
+function iceCubesOld(n, Wt, Wb, Ytop, yBot, k, compact, sw, hw) {
   const cubes = compact ? [[-0.3, 0.55, 15, -10], [0.28, 0.45, 14, 12], [0.0, 0.8, 13, 4]] : [[-0.45, 0.02, 22, -10], [0.12, -0.08, 24, 9], [-0.12, 0.38, 22, -6], [0.5, 0.42, 20, 14], [-0.5, 0.7, 20, 8], [0.1, 0.82, 21, -8]];
   let o = '';
   cubes.slice(0, compact ? 3 : n).forEach(([ux, uy, sz, rot]) => {
     const y = Ytop + (yBot - Ytop) * uy; const x = ux * (hw(y) - 8 * k); const s = sz * k * (compact ? 1.1 : 1);
     o += `<g transform="translate(${f(x)} ${f(y)}) rotate(${rot})"><rect x="${f(-s / 2)}" y="${f(-s / 2)}" width="${f(s)}" height="${f(s)}" rx="${f(4 * k)}" fill="#fff" fill-opacity=".58" stroke="#B8D9DE" stroke-width="${sw(compact ? 1.4 : 2)}"/>${compact ? '' : `<path d="M${f(-s * 0.3)} ${f(-s * 0.18)}h${f(s * 0.22)}" stroke="#fff" stroke-width="${sw(2)}" stroke-linecap="round"/>`}</g>`;
+  });
+  return o;
+}
+/**
+ * Лёд по правилу владельца (16.10.2026): кубики полупрозрачные, без белой заливки. Внутри жидкости заливка = цвет слоя, светлее на 15 %, прозрачность 0,32;
+ * над жидкостью (воздух, пена) светло-голубая прозрачность 0,4. Контур 2 px серо-голубой (из DUSTY и HILITE), один короткий блик на кубик.
+ * Кубик внутри слоя не выше трети высоты слоя; 4–5 кубиков (4 до 0,3 л, 5 с 0,4 л); кубики на поверхности наполовину над жидкостью.
+ * Компактный уровень: 2–3 светлых блика-точки.
+ */
+function iceCubes({ n, Ytop, yBot, k, compact, sw, hw, lb }) {
+  const EDGE = mix(C.DUSTY, C.HILITE, 0.12);
+  if (compact) {
+    const lbw = lb.slice().sort((a, b) => b.h - a.h)[0];
+    return [[-0.45, 0.35], [0.1, 0.62], [0.5, 0.3]].map(([ux, uy]) => { const y = lbw.yt + lbw.h * uy; return `<circle cx="${f(ux * (hw(y) - 10 * k))}" cy="${f(y)}" r="${sw(1.4)}" fill="${C.HILITE}" fill-opacity=".85"/>`; }).join('');
+  }
+  const big = lb.slice().sort((a, b) => b.h - a.h)[0];
+  const topH = lb[lb.length - 1].h;
+  /* кубик на поверхности: в жидкости не больше трети высоты верхнего слоя (и не больше 40 % своей высоты), остальное над ней */
+  const surf = (ux, sz, r) => { const inn = Math.min(0.4 * sz, 0.33 * topH); return { ux, y: Ytop + inn - sz / 2, s: sz, r, air: true }; };
+  const cubes = [
+    surf(-0.42, 20 * k, -10), surf(0.22, 18 * k, 12), surf(0.64, 15 * k, -6),
+    { ux: -0.55, y: big.yt + big.h * 0.5, s: Math.min(12 * k, 0.33 * big.h), r: 8 },
+    { ux: 0.1, y: big.yt + big.h * 0.6, s: Math.min(11 * k, 0.33 * big.h), r: -12 }
+  ].slice(0, Math.min(5, Math.max(4, n)));
+  let o = ''; let id = 0;
+  const cid = 'ic' + Math.random().toString(36).slice(2, 6);
+  o += `<clipPath id="${cid}a"><rect x="-300" y="-300" width="600" height="${f(300 + Ytop)}"/></clipPath><clipPath id="${cid}b"><rect x="-300" y="${f(Ytop)}" width="600" height="400"/></clipPath>`;
+  cubes.forEach((c) => {
+    if (c.s < 7) return;
+    const x = c.ux * (hw(c.y) - 9 * k);
+    const layer = lb.find((l) => c.y >= l.yt && c.y <= l.yb) || lb[lb.length - 1];
+    const yIn = Math.max(c.y, Ytop + 2);
+    const inLayer = lb.find((l) => yIn >= l.yt && yIn <= l.yb) || lb[lb.length - 1];
+    const body = (fill, op) => `<rect x="${f(-c.s / 2)}" y="${f(-c.s / 2)}" width="${f(c.s)}" height="${f(c.s)}" rx="${f(3 * k)}" fill="${fill}" fill-opacity="${op}" stroke="${EDGE}" stroke-opacity=".95" stroke-width="${sw(2)}"/>`;
+    const hi = `<path d="M${f(-c.s * 0.32)} ${f(-c.s * 0.28)}h${f(c.s * 0.28)}" stroke="${C.HILITE}" stroke-opacity=".9" stroke-width="${sw(2)}" stroke-linecap="round" fill="none"/>`;
+    if (c.air) {
+      o += `<g clip-path="url(#${cid}a)"><g transform="translate(${f(x)} ${f(c.y)}) rotate(${c.r})">${body('#DCEBEA', 0.4)}</g></g>`;
+      o += `<g clip-path="url(#${cid}b)"><g transform="translate(${f(x)} ${f(c.y)}) rotate(${c.r})">${body(light(inLayer.col, 0.2), 0.4)}</g></g>`;
+      o += `<g transform="translate(${f(x)} ${f(c.y)}) rotate(${c.r})">${hi}</g>`;
+    } else o += `<g transform="translate(${f(x)} ${f(c.y)}) rotate(${c.r})">${body(light(layer.col, 0.2), 0.4)}${hi}</g>`;
   });
   return o;
 }

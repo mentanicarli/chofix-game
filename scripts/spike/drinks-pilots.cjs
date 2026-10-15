@@ -4,7 +4,8 @@ const { drinkSVG, C, cupScale } = require('./drinks-art.cjs'); const SPEC = requ
 const OUT = path.resolve(process.argv[2] || 'docs/art/drinks'); fs.mkdirSync(OUT, { recursive: true });
 const PAPER_BG = `<filter id="pg"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .55  0 0 0 0 .4  0 0 0 0 .25  0 0 0 .07 0"/></filter>`;
 /** Один макет как отдельный <svg> с заданным масштабом s и отступами. */
-function cell(spec, V, level, s, pad = 12) {
+function cell(spec0, V, level, s, pad = 12) {
+  const spec = spec0.iceAuto ? { ...spec0, ice: V <= 300 ? 4 : 5 } : spec0;
   const { g, bbox } = drinkSVG(spec, { V, level, s });
   const w = (bbox.x1 - bbox.x0) * s + pad * 2, h = (bbox.y1 - bbox.y0) * s + pad * 2;
   return { w: Math.ceil(w), h: Math.ceil(h), svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(w)}" height="${Math.ceil(h)}" viewBox="0 0 ${Math.ceil(w)} ${Math.ceil(h)}"><g transform="translate(${(pad - bbox.x0 * s).toFixed(2)} ${(pad - bbox.y0 * s).toFixed(2)}) scale(${s})">${g}</g></svg>` };
@@ -31,6 +32,7 @@ async function sheet(file, title, specKey, o = {}) {
   const only = process.argv[3];
   const jobs = { latte: ['pilot_latte.png', 'Латте: стекло, горячий, слои и арт', 'latte', { note: 'Стеклянный стакан, слои «молоко → переход → кофе → пена» с ступенчатым переходом, латте-арт на поверхности.' }],
     cappuccino: ['pilot_cappuccino.png', 'Капучино: керамика, горячий', 'cappuccino', { note: 'Непрозрачная керамика, виден только верх: кольцо крема и рисунок на пене.' }],
-    orange_bumble: ['pilot_bumble.png', 'Апельсиновый бамбл: стекло, лёд, слои', 'orange_bumble', { note: 'Холодный, в игре от 0,3 л (0,2 л не заказывается): показаны 0,3 и 0,6 л.' }] };
+    orange_bumble: ['pilot_bumble.png', 'Апельсиновый бамбл: стекло, лёд, слои', 'orange_bumble', { note: 'Холодный, в игре от 0,3 л (0,2 л не заказывается): показаны 0,3 и 0,6 л. Лёд по правилу 16.10.2026: прозрачные кубики цвета слоя, 4 (до 0,3 л) и 5 (с 0,4 л) штуки; компактный уровень: 3 блика-точки.' }],
+    cold_cappuccino: ['pilot_cold_cappuccino.png', 'Холодное капучино: стекло, лёд в молочном напитке', 'cold_cappuccino', { note: 'Эспрессо на дне, молоко с кофе, холодная пена; лёд по новому правилу. Показаны 0,3 и 0,6 л.' }] };
   for (const k of Object.keys(jobs)) if (!only || only === k) await sheet(...jobs[k]);
 })();

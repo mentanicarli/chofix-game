@@ -7,7 +7,19 @@ module.exports = {
     top: { col: '#D9B98F', art: FOAM_W }, sizes: ['0.2', '0.6'] },
   cappuccino: { name: 'Капучино', hot: true, vessel: 'ceramic', fill: 0.92, layers: [{ col: FOAM, frac: 1, edge: 'sharp' }],
     top: { col: FOAM, ring: MIXC, art: FOAM_W }, sizes: ['0.2', '0.6'] },
-  orange_bumble: { name: 'Апельсиновый бамбл', hot: false, vessel: 'glass', fill: 0.96, ice: 6,
+  orange_bumble: { name: 'Апельсиновый бамбл', hot: false, vessel: 'glass', fill: 0.96, iceAuto: true,
     layers: [{ col: '#F2A33A', frac: 0.5, edge: 'wavy' }, { col: '#B8742B', frac: 0.08, edge: 'wavy' }, { col: ESP, frac: 0.42, edge: 'sharp' }],
     top: { col: ESP }, swirl: { from: 1 }, sizes: ['0.3', '0.6'] }
+,
+  /* было: лёд Н0 (6 белых кубиков); без льда — для проверки чтения слоёв */
+  orange_bumble_old: { name: 'Апельсиновый бамбл, лёд Н0', hot: false, vessel: 'glass', fill: 0.96, ice: 6, iceStyle: 'old',
+    layers: [{ col: '#F2A33A', frac: 0.5, edge: 'wavy' }, { col: '#B8742B', frac: 0.08, edge: 'wavy' }, { col: ESP, frac: 0.42, edge: 'sharp' }],
+    top: { col: ESP }, swirl: { from: 1 }, sizes: ['0.3', '0.6'] },
+  orange_bumble_noice: { name: 'Апельсиновый бамбл, без льда', hot: false, vessel: 'glass', fill: 0.96, ice: 0,
+    layers: [{ col: '#F2A33A', frac: 0.5, edge: 'wavy' }, { col: '#B8742B', frac: 0.08, edge: 'wavy' }, { col: ESP, frac: 0.42, edge: 'sharp' }],
+    top: { col: ESP }, swirl: { from: 1 }, sizes: ['0.3', '0.6'] },
+  /* холодное капучино: эспрессо на дно, молоко с кофе (цвет liqCol из barPaint), холодная пена сверху */
+  cold_cappuccino: { name: 'Холодное капучино', hot: false, vessel: 'glass', fill: 0.96, iceAuto: true,
+    layers: [{ col: ESP, frac: 0.12, edge: 'soft' }, { col: MIXC, frac: 0.5, edge: 'soft' }, { col: FOAM, frac: 0.38, edge: 'sharp' }],
+    top: { col: FOAM }, sizes: ['0.3', '0.6'] }
 };
