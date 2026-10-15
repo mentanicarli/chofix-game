@@ -6,6 +6,11 @@ import BG from '../../assets/art/hall-bg.svgf?raw';
 import ITEMS from '../../assets/art/hall-items.svgf?raw';
 import FG from '../../assets/art/hall-fg.svgf?raw';
 import TABLE from '../../assets/art/hall-table.svgf?raw';
+import RUG from '../../assets/art/hall-rug.svgf?raw';
+import CHAIR from '../../assets/art/hall-chair.svgf?raw';
+import LID from '../../assets/art/hall-laptop-lid.svgf?raw';
+import LBASE from '../../assets/art/hall-laptop-base.svgf?raw';
+import SAUCER from '../../assets/art/hall-saucer.svgf?raw';
 import HILLS from '../../assets/art/sky-hills.svgf?raw';
 import LAMP0 from '../../assets/art/lamp-0.svgf?raw';
 import LAMP1 from '../../assets/art/lamp-1.svgf?raw';
@@ -21,6 +26,8 @@ import { bakePaper, canvasTexture, raster, rasterAtlas } from './svg';
 export { lookFor, type Look };
 
 const INK = '#4A2F25';
+/** предметы столика без дрожания (стайлгайд: дрожание только у крупных поверхностей) */
+const WRAP_PLAIN = `stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
 const WRAP = `filter="url(#wobble)" stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"`;
 /* бумага поверх всей сцены: пятна, зерно, виньетка */
 const PAPER = `<rect width="1280" height="720" filter="url(#blotch)" opacity=".5"/><rect width="1280" height="720" filter="url(#grain)" opacity=".55"/><rect width="1280" height="720" fill="url(#gVig)"/>`;
@@ -192,7 +199,7 @@ export class World {
 
     const full = box(0, 0, W, H);
     const lampBox = (x: number) => box(x - 60, -30, 120, 180);
-    const [bg, items, hills, clock, l0, l1, l2, fg, tableT, paperT, woodT] = await Promise.all([
+    const [bg, items, hills, clock, l0, l1, l2, fg, tableT, paperT, woodT, rugT] = await Promise.all([
       raster(BG, full, r),
       raster(ITEMS, box(690, 280, 610, 140), r),
       raster(HILLS, box(80, 230, 240, 140), r),
@@ -204,6 +211,7 @@ export class World {
       raster(TABLE, TABLE_BOX, r * GUEST_K),
       bakePaper(PAPER, full),
       bakePaper(WOOD, full),
+      raster(RUG, box(40, 596, 380, 112), r),
       fonts
     ]);
 
@@ -256,6 +264,7 @@ export class World {
       return s;
     };
     S.addChild(place(bg, 0, 0, W, H));
+    S.addChild(place(rugT, 40, 596, 380, 112)); /* ковёр под столиком: art-src/hall/rug.svg */
     this.floorGrain = place(woodT, 0, 0, W, H);
     S.addChild(this.floorGrain);
     /* мягкая тень под столиком, блик на стекле витрины */
@@ -677,21 +686,19 @@ export class World {
       sp.anchor.set(ax, ay);
       sp.position.set(x, y);
       sp.visible = false;
-      void raster(`<g ${WRAP}>${inner}</g>`, box, this.texRes * GUEST_K).then((t) => {
+      void raster(`<g ${WRAP_PLAIN}>${inner}</g>`, box, this.texRes * GUEST_K).then((t) => {
         sp.texture = t;
         sp.width = box.w;
         sp.height = box.h;
         after?.();
       });
     };
-    set(this.lid, box(188, 482, 84, 62), '<rect x="198" y="488" width="64" height="52" rx="6" fill="#EADFCB"/><circle cx="230" cy="514" r="6" fill="#C4694A" stroke="none"/>', 0.5, (540 - 482) / 62, 230, 540, () => (this.lidSy = this.lid.scale.y));
-    set(this.deskBase, box(186, 536, 88, 18), '<rect x="190" y="540" width="80" height="9" rx="4" fill="#D5C7AE"/>', 0, 0, 186, 536);
-    set(this.saucer, box(258, 543, 48, 16), '<ellipse cx="282" cy="550" rx="17" ry="4" fill="#FBF4E8"/>', 0, 0, 258, 543);
+    set(this.lid, box(188, 482, 84, 62), LID, 0.5, (540 - 482) / 62, 230, 540, () => (this.lidSy = this.lid.scale.y));
+    set(this.deskBase, box(186, 536, 88, 18), LBASE, 0, 0, 186, 536);
+    set(this.saucer, box(258, 543, 48, 16), SAUCER, 0, 0, 258, 543);
     /* стул: спинка и задние ножки; «подвес» внизу, чтобы отодвигаться и наклоняться от пола */
     const CH = box(172, 474, 116, 176);
-    const wood = '#C48A56';
-    const chairSvg = `<rect x="190" y="580" width="7" height="58" rx="3" fill="#A9693E"/><rect x="263" y="580" width="7" height="58" rx="3" fill="#A9693E"/><rect x="187" y="486" width="10" height="96" rx="4" fill="${wood}"/><rect x="263" y="486" width="10" height="96" rx="4" fill="${wood}"/><rect x="187" y="482" width="86" height="14" rx="6" fill="#D49A62"/><rect x="195" y="522" width="70" height="7" rx="3" fill="${wood}"/>`;
-    set(this.chair, CH, chairSvg, 0.5, (640 - 474) / 176, 230, 640);
+    set(this.chair, CH, CHAIR, 0.5, (640 - 474) / 176, 230, 640);
     this.chair.visible = true;
   }
 

@@ -47,9 +47,6 @@
 <circle cx="1060" cy="140" r="96" fill="url(#gGlow)" stroke="none"/>
 
 
-<ellipse cx="230" cy="652" rx="176" ry="34" fill="#DDA583"/>
-<ellipse cx="230" cy="652" rx="144" ry="25" fill="none" stroke="#FBF4E8" stroke-width="3" stroke-dasharray="2 9"/>
-<ellipse cx="230" cy="658" rx="92" ry="14" fill="#3B2418" fill-opacity=".3" stroke="none" filter="url(#blur6)"/>
 
 <ellipse cx="990" cy="630" rx="340" ry="16" fill="#3B2418" fill-opacity=".38" stroke="none" filter="url(#blur6)"/>
 

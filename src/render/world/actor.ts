@@ -442,10 +442,15 @@ export class Actor {
   }
 
   private drawCup(top: string): void {
+    /* Чашка в руке и на столе (этап 12.3(0)): керамика непрозрачная, контур 3 px на экране (в руке растёт от гостя в GUEST_K раз: 1,9 в исходнике), тень справа, блик слева */
     this.cupBody.clear();
-    this.cupBody.moveTo(-9, -8).lineTo(9, -8).lineTo(7, 8).quadraticCurveTo(0, 12, -7, 8).closePath().fill('#FFF8EC').stroke({ width: 2.4, color: INK, join: 'round' });
-    this.cupBody.moveTo(9, -3).quadraticCurveTo(16, -3, 15, 3).quadraticCurveTo(14, 7, 8, 5).stroke({ width: 2.2, color: INK, cap: 'round', join: 'round' });
-    this.cupTop.clear().ellipse(0, -8, 9, 2.8).fill(top).stroke({ width: 2, color: INK });
+    const out = (g: Graphics): Graphics => g.moveTo(-9, -8).lineTo(9, -8).lineTo(7, 8).quadraticCurveTo(0, 12, -7, 8).closePath();
+    out(this.cupBody).fill('#FFF8EC');
+    this.cupBody.moveTo(3, -8).lineTo(9, -8).lineTo(7, 8).quadraticCurveTo(4, 10.2, 1, 10.8).quadraticCurveTo(3, 2, 3, -8).fill('#E3CBA6');
+    out(this.cupBody).stroke({ width: 1.9, color: INK, join: 'round' });
+    this.cupBody.moveTo(9, -3).quadraticCurveTo(16, -3, 15, 3).quadraticCurveTo(14, 7, 8, 5).stroke({ width: 1.9, color: INK, cap: 'round', join: 'round' });
+    this.cupBody.moveTo(-6, -4).lineTo(-5, 4).stroke({ width: 1.25, color: 0xffffff, alpha: 0.7, cap: 'round' });
+    this.cupTop.clear().ellipse(0, -8, 9, 2.8).fill(top).stroke({ width: 1.6, color: INK });
   }
 
   /* ---------- координаты ---------- */
