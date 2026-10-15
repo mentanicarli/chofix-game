@@ -36,7 +36,8 @@ export function drawShot(b: Brush, v: ShotView): void {
   b.text(v.target + ' мл', gx - 22, ty + 5, 15, '#C4694A', 'right');
   b.text(f1(v.t) + ' с', 396, 128, 40, INK, 'right');
   b.text(Math.round(v.ml) + ' мл', 396, 160, 22, SOFT, 'right');
-  if (v.idx) b.text('Шот ' + v.idx, 396, 100, 18, SOFT, 'right');
+  /* подпись шота над временем с зазором ≥ 20 px (цифры 40 px: верх на y ≈ 99): раньше baseline 100 касался цифр */
+  if (v.idx) b.text('Шот ' + v.idx.replace('/', ' из '), 396, 76, 18, SOFT, 'right');
   const bx0 = 250;
   const bw = 150;
   b.rr(bx0, 186, bw, 16, 8).fill('#E7D6BC');

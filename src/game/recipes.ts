@@ -163,6 +163,9 @@ export interface LegacyRecipe {
   pitcherShot?: boolean;
   /** холодный капучино: расширение холодного молока для рисунка */
   coldX?: number;
+  /** заварка чая и вода матчи, мл: по ним бар рисует уровень в чашке (раньше брались константы 120 и 50 мл) */
+  tea?: { g: number; waterMl: number };
+  matcha?: { g: number; waterMl: number };
 }
 /** Виды пены: густая (капучино), лёгкая (латте и остальные), микро (флэт уайт). Цель шкалы «Пена» = расширение при вспенивании · 1,1. */
 export const THICK: Readonly<Record<string, number>> = { thick: 0.55, thin: 0.22, micro: 0.11 };
@@ -187,6 +190,8 @@ export function legacyRecipe(key: string, size?: Size, cold = false): LegacyReci
   }
   if (r.ice !== undefined) out.ice = r.ice;
   if (r.coldX) out.coldX = r.coldX;
+  if (r.tea) out.tea = r.tea;
+  if (r.matcha) out.matcha = r.matcha;
   if (d.family === 'raf') out.pitcherShot = true;
   return out;
 }

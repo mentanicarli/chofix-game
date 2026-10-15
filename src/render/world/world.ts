@@ -392,7 +392,7 @@ export class World {
     rows.forEach((r, i) => {
       const b = new Text({ text: String(r.price), style: st, resolution: this.res });
       b.anchor.set(1, 1);
-      b.position.set(598, 163 + i * 21);
+      b.position.set(598, 163 + i * 24);
       /* название слева, цена справа: длинное название сжимаем, а если и так не влезает — обрезаем с многоточием */
       const room = 598 - b.width - 10 - 464;
       let name = r.name;
@@ -403,7 +403,7 @@ export class World {
       }
       if (a.width > room) a.scale.set(room / a.width);
       a.anchor.set(0, 1);
-      a.position.set(464, 163 + i * 21);
+      a.position.set(464, 163 + i * 24);
       a.alpha = b.alpha = 0.96;
       this.signC.addChild(a, b);
     });

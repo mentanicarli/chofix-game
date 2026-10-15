@@ -58,6 +58,9 @@ const hexNum = (c: string): number => {
 };
 
 /** Бар: статичный арт одним спрайтом, подвижные детали — отдельными узлами. */
+/** потолок масштаба чашки по высоте: обод остаётся ниже носика группы (y ≈ 372) */
+const CUP_MAX_KY = 1.25;
+
 export class BarScene {
   readonly root = new Container();
   private tex = new Map<string, Texture>();
@@ -283,7 +286,8 @@ export class BarScene {
     const bs = f.bell ? 1 + f.bell : 1;
     this.bell.scale.set(bs);
     /* чашка */
-    this.inner.scale.set(f.cupK);
+    /* высота чашки ограничена нишей группы (верх обода не выше y 380): крупные объёмы растут вширь, а не вверх; стайлгайд, раздел 15 */
+    this.inner.scale.set(f.cupK, Math.min(f.cupK, CUP_MAX_KY));
     this.saucer.scale.set(Math.min(1.4, Math.max(0.85, 0.2 + 0.8 * f.cupK)));
     this.cupC.visible = !f.pitUnder;
     this.pitUnderG.visible = !!f.pitUnder;
