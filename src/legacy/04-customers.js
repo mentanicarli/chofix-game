@@ -45,7 +45,7 @@ function exit(c) {
 }
 function lose(c) {
   if (BR && BR.c === c) { refund(BR.paid); barAbort('Клиент ушёл, пока вы готовили'); updateHud(true); }
-  if (D.helper && D.helper.c === c) { refund(D.helper.paid); D.helper.c = null; }
+  if (D.helper && D.helper.c === c) { refund(D.helper.paid); D.helper.paid = 0; D.helper.c = null; }
   D.stats.lost++; G.rating = MENUAPI.ratingAfterLoss(G.rating); sndBad();
   floatText(c.x, 'Ушёл', true); c.act.setMood('angry'); exit(c); updateHud();
 }

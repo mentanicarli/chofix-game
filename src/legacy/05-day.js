@@ -46,7 +46,7 @@ function tickDay(dt) {
 function endDay() {
   /* день закрылся посреди заказа: расходы за невыданный напиток возвращаем */
   if (BR) refund(BR.paid);
-  if (D.helper && D.helper.c) { refund(D.helper.paid); D.helper.c = null; }
+  if (D.helper && D.helper.c) { refund(D.helper.paid); D.helper.paid = 0; D.helper.c = null; }
   const s = D.stats, fin = MENUAPI.settleDay({ money: G.money, pace: G.pace, rank: G.rank, wage: G.helper ? MENUAPI.helperWage(G.rank) : 0 }), rent = fin.rent;
   G.money = fin.money;
   G.served += s.served;
