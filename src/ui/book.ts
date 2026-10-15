@@ -1,7 +1,8 @@
 // Книга рецептов: чистая функция «состояние -> HTML». Обработчики кликов — в старом ядре (data-book*).
 import { ADDONS, ALT_MILK, BOTTLES, DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, FOOD, MAX_RANK, SYRUPS, needsMilk, rankInfo } from '../game/menu';
 import { lesson, lessonKeysOfDrink } from '../game/lessons';
-import { cardVariants, recipeCard, type RecipeCard } from '../game/recipeCard';
+import { cardVariants, recipeCard, sizeLabelOf, type RecipeCard } from '../game/recipeCard';
+import { drinkText, glossaryGroups, stepsForShots } from '../game/content';
 import { TUTORIALS, coachSteps, equipmentName, tutorialEqsOfDrink } from '../game/tutorial';
 import type { Drink, Family, Size, Temp } from '../game/types';
 
@@ -15,11 +16,12 @@ const FAM: Record<Family, string> = {
   bumble: 'Бамблы', tonic: 'Тоники', aero: 'Аэрокано', foamlatte: 'Латте с пенкой', shake: 'Шейки и фраппе',
   boba: 'Бабл ти', protein: 'Протеин'
 };
-export type BookTab = 'drinks' | 'food' | 'extra';
+export type BookTab = 'drinks' | 'food' | 'extra' | 'guide';
 const BOOK_TABS: readonly (readonly [BookTab, string])[] = [
   ['drinks', 'Напитки'],
   ['food', 'Еда'],
-  ['extra', 'Добавки']
+  ['extra', 'Добавки'],
+  ['guide', 'Справочник']
 ];
 
 const EQ_NAME: Record<string, string> = { milk: 'Молоко и капучино', ...Object.fromEntries(EQUIPMENT.map((e) => [e.id, e.name])) };
@@ -47,43 +49,76 @@ function foamText(c: RecipeCard): string {
   const r = c.recipe;
   if (r.foamX && r.milk) return `+${Math.round(r.foamX * 100)}%: ≈${Math.round(r.milk * r.foamX)} мл пены, ${Math.round(r.milk * (1 + r.foamX))} мл всего`;
   if (r.coldX && r.milk) return `холодная, +${Math.round(r.coldX * 100)}%`;
-  if (r.topFoam) return `сверху ${r.topFoam} мл`;
+  if (r.topFoam) return `поверх напитка ${r.topFoam} мл`;
   return '—';
 }
 const variantName = (c: RecipeCard, d: Drink): string => (d.temp === 'both' ? (c.cold ? 'холодный ' : 'горячий ') : '') + c.sizeLabel;
 const shotsText = (n: number): string => (n === 0 ? '—' : n === 1 ? '1 шот' : `${n} шота`);
 
-/** Таблица «размер → шоты → состав → пена → цена» и шаги каждого варианта (они лежат под спойлером, первый открыт). */
-function recipeBlock(d: Drink): string {
-  const cards = cardVariants(d).map((v) => recipeCard(d.id, v.size, v.cold)).filter((c): c is RecipeCard => !!c);
-  const rows = cards
-    .map((c) => `<tr><td>${esc(variantName(c, d))}</td><td>${shotsText(c.shots)}</td><td>${partsText(c)}</td><td>${esc(foamText(c))}</td><td>${c.price}&nbsp;₽</td></tr>`)
-    .join('');
-  const table = `<table class="bkTbl"><thead><tr><th>Размер</th><th>Шоты</th><th>Состав</th><th>Пена</th><th>Цена</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const first = cards[0];
-  const temp = first?.temperature ? `<p class="bkTemp">${esc(first.temperature)}</p>` : '';
-  const cup = first ? `<p class="bkCup">${cards.map((c) => `${esc(variantName(c, d))}: чашка ${c.cupMl} мл`).filter((t, i, a) => a.indexOf(t) === i).join(' · ')}</p>` : '';
-  const steps = cards
-    .map(
-      (c, i) =>
-        `<details class="bkVar"${i === 0 ? ' open' : ''}><summary>${esc(variantName(c, d))} · шаги</summary><ol class="bkSteps">${c.steps
-          .map((x) => `<li><b>${esc(x.label)}</b>${x.detail ? ': ' + esc(x.detail) : ''}</li>`)
-          .join('')}</ol></details>`
-    )
-    .join('');
-  return `${table}${temp}${cup}${steps}`;
+/** Выбранный вариант напитка в книге: размер и горячий/холодный. */
+export interface BookPick { size: Size; cold: boolean }
+/** Приводит выбор к существующему варианту: холодный без механики недоступен, размер подбирается из доступных. */
+export function pickVariant(d: Drink, sel?: Partial<BookPick>): BookPick {
+  const vars = cardVariants(d);
+  let cold = sel?.cold ?? d.temp === 'cold';
+  if (!vars.some((v) => v.cold === cold)) cold = !cold;
+  const sizes = vars.filter((v) => v.cold === cold).map((v) => v.size);
+  const size = sel?.size && sizes.includes(sel.size) ? sel.size : (sizes[0] ?? (Object.keys(d.sizes)[0] as Size));
+  return { size, cold };
 }
 
-function card(d: Drink, rank: number, eq: Readonly<Record<string, boolean>>, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string): string {
+/** Переключатели температуры и размера (кнопки; состояние живёт в старом ядре, data-booksize / data-bookcold). */
+function pickBlock(d: Drink, pick: BookPick): string {
+  const vars = cardVariants(d);
+  const canTemp = vars.some((v) => v.cold) && vars.some((v) => !v.cold);
+  const sizes = vars.filter((v) => v.cold === pick.cold).map((v) => v.size);
+  const temp = canTemp
+    ? `<div class="bkPick" role="group" aria-label="Температура">${[false, true]
+        .map((c) => `<button type="button" class="chip${c === pick.cold ? ' on' : ''}" aria-pressed="${c === pick.cold}" data-bookcold="${esc(d.id)}|${c ? 1 : 0}">${c ? 'Холодный' : 'Горячий'}</button>`)
+        .join('')}</div>`
+    : '';
+  const size =
+    sizes.length > 1
+      ? `<div class="bkPick" role="group" aria-label="Размер">${sizes
+          .map((z) => `<button type="button" class="chip${z === pick.size ? ' on' : ''}" aria-pressed="${z === pick.size}" data-booksize="${esc(d.id)}|${z}">${esc(sizeLabelOf(d, z))}</button>`)
+          .join('')}</div>`
+      : '';
+  return temp || size ? `<div class="bkPicks">${temp}${size}</div>` : '';
+}
+
+/** Блок «Точные цифры» выбранного варианта: состав, пена, цена, шаги с количествами. Числа берутся из recipeCard, как цели налива в баре. */
+function exactBlock(d: Drink, c: RecipeCard): string {
+  const table = `<table class="bkTbl"><thead><tr><th>Шоты</th><th>Состав</th><th>Пена</th><th>Цена</th></tr></thead><tbody><tr><td>${shotsText(c.shots)}</td><td>${partsText(c)}</td><td>${esc(foamText(c))}</td><td>${c.price}&nbsp;₽</td></tr></tbody></table>`;
+  const temp = c.temperature ? `<p class="bkTemp">${esc(c.temperature)}</p>` : '';
+  const cup = `<p class="bkCup">${esc(variantName(c, d))}: чашка ${c.cupMl} мл</p>`;
+  const steps = `<ol class="bkSteps">${c.steps.map((x) => `<li><b>${esc(x.label)}</b>${x.detail ? ': ' + esc(x.detail) : ''}</li>`).join('')}</ol>`;
+  return `<div class="bkExact">${table}${temp}${cup}${steps}${d.note ? `<p class="bkNote">${esc(d.note)}</p>` : ''}</div>`;
+}
+
+function card(
+  d: Drink, rank: number, eq: Readonly<Record<string, boolean>>, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string,
+  sel: Partial<BookPick> | undefined, exactOpen: boolean
+): string {
   const open = d.rank <= rank;
   if (!open)
     return `<div class="bk lock"><div class="bkTop"><b>? ? ?</b><em>ранг ${d.rank}</em></div><p>Откроется на ранге «${esc(rankInfo(d.rank).title)}».</p></div>`;
   const miss = missing(d, eq);
   const made = d.id in ENGINE;
   const need = miss.length ? needText(miss, costs, avail) : '<p class="bkReady">Можно готовить</p>';
-  return `<div class="bk${made && !miss.length ? '' : ' soon'}"><div class="bkTop"><b>${esc(d.name)}</b><em>${esc(FAM[d.family] || '')}</em></div>
+  const pick = pickVariant(d, sel);
+  const c = recipeCard(d.id, pick.size, pick.cold);
+  const t = drinkText(d.id);
+  const human = t ? stepsForShots(t.steps, c?.shots ?? 1) : (c?.steps.map((x) => x.label) ?? []);
+  const ice = t && c?.cold ? t.ice : [];
+  const ex = c
+    ? `<button type="button" class="chip bkExactBtn${exactOpen ? ' on' : ''}" aria-expanded="${exactOpen}" data-bookexact="${esc(d.id)}">Точные цифры</button>${exactOpen ? exactBlock(d, c) : ''}`
+    : '';
+  const list = (xs: readonly string[]): string => `<ol class="bkSteps bkHuman">${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`;
+  return `<div class="bk${made && !miss.length ? '' : ' soon'}" data-drink="${esc(d.id)}"><div class="bkTop"><b>${esc(d.name)}</b><em>${esc(FAM[d.family] || '')}</em></div>
 <div class="bkSub">${TEMP[d.temp]} · ранг ${d.rank} «${esc(rankInfo(d.rank).title)}»</div>
-<p class="bkIng">Ингредиенты: ${esc(d.ing.join(', '))}</p>${recipeBlock(d)}${d.note ? `<p class="bkNote">${esc(d.note)}</p>` : ''}${need}${hintBlock(d, tut)}</div>`;
+<div class="imgSlot bkImg" data-img="${esc(d.id)}" hidden></div>
+${t ? `<p class="bkWhat">${esc(t.what)}</p>` : ''}<p class="bkIng">Ингредиенты: ${esc(d.ing.join(', '))}</p>${pickBlock(d, pick)}
+<h5 class="bkH">Как готовится</h5>${list(human)}${ice.length ? `<h5 class="bkH">Если со льдом</h5>${list(ice)}` : ''}${t ? `<p class="bkDiff"><b>Чем отличается.</b> ${esc(t.differs)}</p>` : ''}${ex}${need}${hintBlock(d, tut)}</div>`;
 }
 /** Кнопка «Подсказка»: показывает коуча по станциям напитка ещё раз. */
 function hintBlock(d: Drink, tut: string): string {
@@ -98,7 +133,10 @@ function hintBlock(d: Drink, tut: string): string {
     : '';
   return `<button type="button" class="chip bkHint${shown ? ' on' : ''}" data-booktut="${esc(d.id)}">Подсказка</button>${body}`;
 }
-function tabDrinks(rank: number, eq: Readonly<Record<string, boolean>>, fam: string, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string): string {
+function tabDrinks(
+  rank: number, eq: Readonly<Record<string, boolean>>, fam: string, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string,
+  sel: Readonly<Record<string, Partial<BookPick>>>, exact: readonly string[]
+): string {
   const all = [...DRINKS].sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, 'ru'));
   const present = Array.from(new Set(all.filter((d) => d.rank <= rank).map((d) => d.family)));
   const chips = ['all', ...present]
@@ -111,10 +149,26 @@ function tabDrinks(rank: number, eq: Readonly<Record<string, boolean>>, fam: str
     .map((d) => {
       const head = d.rank !== last ? `<h4 class="bkRank">Ранг ${d.rank}: ${esc(rankInfo(d.rank).title)}${d.rank > rank ? ' <small>(ещё закрыто)</small>' : ''}</h4>` : '';
       last = d.rank;
-      return head + card(d, rank, eq, costs, avail, tut);
+      return head + card(d, rank, eq, costs, avail, tut, sel[d.id], exact.includes(d.id));
     })
     .join('');
   return `<div class="bkChips">${chips}</div><div class="bkGrid">${cards}</div>`;
+}
+
+/** Справочник: термины по группам, каждый раскрывается по клику. Поиск по названию фильтрует их на месте (обработчик input в старом ядре). */
+function tabGuide(): string {
+  const groups = glossaryGroups()
+    .map(
+      (g) =>
+        `<section class="gGroup"><h4>${esc(g.group)}</h4><div class="gList">${g.terms
+          .map(
+            (t) =>
+              `<details class="gTerm" data-n="${esc(t.name.toLowerCase())}"><summary>${esc(t.name)}</summary><p>${esc(t.text)}</p><div class="imgSlot" data-img="${esc(t.name)}" hidden></div></details>`
+          )
+          .join('')}</div></section>`
+    )
+    .join('');
+  return `<div class="gSearch"><label for="gQ">Найти термин</label><input id="gQ" type="search" placeholder="Например, питчер" autocomplete="off" data-guideq="1"></div><p class="gEmpty" hidden>Такого термина нет в справочнике.</p><div class="gBody">${groups}</div>`;
 }
 
 function tabFood(rank: number): string {
@@ -155,6 +209,10 @@ export interface BookState { rank: number; tab: BookTab | string; eq?: Readonly<
   avail?: Readonly<Record<string, boolean>>;
   /** карточка напитка, у которой раскрыта подсказка */
   tut?: string;
+  /** выбранный размер и холодность напитков: id → выбор (по умолчанию первый размер, горячий) */
+  sel?: Readonly<Record<string, Partial<BookPick>>>;
+  /** напитки, у которых раскрыт блок «Точные цифры» (по умолчанию закрыт) */
+  exact?: readonly string[];
 }
 export function bookHTML(state: BookState): string {
   const { rank, tab } = state;
@@ -162,7 +220,11 @@ export function bookHTML(state: BookState): string {
   const tabs = BOOK_TABS.map(
     ([id, n]) => `<button type="button" class="tab${id === tab ? ' on' : ''}" data-booktab="${id}">${n}</button>`
   ).join('');
-  const body = tab === 'food' ? tabFood(rank) : tab === 'extra' ? tabExtra(rank) : tabDrinks(rank, eq, state.fam ?? 'all', state.costs ?? {}, state.avail ?? {}, state.tut ?? '');
+  const body =
+    tab === 'food' ? tabFood(rank)
+    : tab === 'extra' ? tabExtra(rank)
+    : tab === 'guide' ? tabGuide()
+    : tabDrinks(rank, eq, state.fam ?? 'all', state.costs ?? {}, state.avail ?? {}, state.tut ?? '', state.sel ?? {}, state.exact ?? []);
   const total = DRINKS.length;
   const open = DRINKS.filter((d) => d.rank <= rank).length;
   return `<div class="book"><div class="bookHead"><div><h2>Книга рецептов</h2><span>Ранг ${rank} из ${MAX_RANK}: ${esc(rankInfo(rank).title)} · напитков открыто ${open} из ${total}</span></div>

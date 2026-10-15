@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-  DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, recipeCard, drinkSeenKey, foamLine, freshSeen, lesson, lessonGoal, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
+  DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, drinkSeenKey, foamLine, freshSeen, lesson, lessonGoal, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
   newDrinkCard, nextTutorial, purchaseToast, recipeLines, steamKind, steamSeconds, stepKeysOf, tutorialKeys, exactLines, WHY_MARK
 } from '../src/game/api';
 

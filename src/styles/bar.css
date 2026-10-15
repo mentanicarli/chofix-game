@@ -188,3 +188,18 @@ html.kbd .xp button:focus-visible { outline: 3px solid #E8B04A; outline-offset: 
 #bCoach.compact .av { width: 30px; height: 30px; font-size: 16px; border-width: 2.5px; }
 #bCoach.compact b { display: none; }
 #bCoach.compact p { margin: 0; font-size: 14px; line-height: 1.25; }
+
+/* К2: карточка напитка и «Зачем это нужно» */
+.dcard { width: 520px; max-height: 94%; overflow-y: auto; }
+.dcard .dcWhat { margin: 0 0 8px; font-size: 16px; font-weight: 600; line-height: 1.4; }
+.dcard.why .dcWhat { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.dcard h4 { margin: 10px 0 4px; font-size: 15px; }
+.dcard ol { font-size: 16px; font-weight: 700; }
+.dcExactBtn { margin: 12px 0 0; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 999px; background: #FFF9EE; font: 800 13px 'Nunito', sans-serif; color: var(--ink); cursor: pointer; }
+.dcExactBtn::before { content: '▸'; margin-right: 5px; display: inline-block; }
+.dcExactBtn.on { background: var(--ink); color: #FFF8EC; }
+.dcExactBtn.on::before { content: '▾'; }
+.dcExact { margin-top: 6px; padding: 6px 10px; border-radius: 10px; border: 2px dashed var(--ink); background: #FFF3DC; }
+.dcExact[hidden] { display: none; }
+.dcExact ul { margin: 0; padding-left: 18px; font-size: 13px; font-weight: 700; line-height: 1.35; }
+html.kbd .dcard :focus-visible { outline: 3px solid #E8B04A; outline-offset: 2px; }

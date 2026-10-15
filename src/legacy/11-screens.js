@@ -75,11 +75,20 @@ function showOver() {
 <div class="paper"><p class="overtxt">На счёте ${money(G.money)}, а аренду платить нечем. Попробуйте ещё раз: в «Уютном» темпе клиенты терпеливее и банкротства нет.</p><div class="foot"><button type="button" class="big" data-restart="1">Начать заново</button></div></div></div>`;
   scr.hidden = false;
 }
-let bookTab = 'drinks', bookBack = null, bookFam = 'all', bookTut = '';
+let bookTab = 'drinks', bookBack = null, bookFam = 'all', bookTut = '', bookSel = {}, bookExact = [];
 function showBook(back) {
   if (back) bookBack = back;
-  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), avail: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), MENUAPI.isShopItemAvailable(i, shopState())])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
+  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, sel: bookSel, exact: bookExact, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), avail: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), MENUAPI.isShopItemAvailable(i, shopState())])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
 }
+/* перерисовать книгу, не сбросив прокрутку списка (переключатели размера, «Точные цифры») */
+function bookRefresh() { const bb = scr.querySelector('.bookBody'), y = bb ? bb.scrollTop : 0; showBook(); const nb = scr.querySelector('.bookBody'); if (nb) nb.scrollTop = y; }
+/* справочник: поиск по названию прячет остальные термины на месте */
+scr.addEventListener('input', e => {
+  const q = e.target.closest('[data-guideq]'); if (!q) return; const v = q.value.trim().toLowerCase();
+  let any = false; scr.querySelectorAll('.gTerm').forEach(el => { const ok = !v || el.dataset.n.includes(v); el.hidden = !ok; any = any || ok; });
+  scr.querySelectorAll('.gGroup').forEach(g => { g.hidden = !g.querySelector('.gTerm:not([hidden])'); });
+  const em = scr.querySelector('.gEmpty'); if (em) em.hidden = any;
+});
 function closeBook() {
   const b = bookBack; bookBack = null;
   if (b === 'pause') setPause(true); else if (b === 'evening') showEvening(true); else if (b === 'title') showTitle(); else scr.hidden = true;
@@ -94,6 +103,9 @@ scr.addEventListener('click', e => {
   else if (t.dataset.resume) setPause(false);
   else if (t.dataset.book) { showBook(t.dataset.book); sndTap(); }
   else if (t.dataset.booktut) { const bb = scr.querySelector('.bookBody'), y = bb ? bb.scrollTop : 0; bookTut = bookTut === t.dataset.booktut ? '' : t.dataset.booktut; showBook(); const nb = scr.querySelector('.bookBody'); if (nb) nb.scrollTop = y; sndTap(); }
+  else if (t.dataset.booksize) { const [id, z] = t.dataset.booksize.split('|'); bookSel[id] = { ...bookSel[id], size: z }; bookRefresh(); sndTap(); }
+  else if (t.dataset.bookcold) { const [id, c] = t.dataset.bookcold.split('|'); bookSel[id] = { ...bookSel[id], cold: c === '1' }; bookRefresh(); sndTap(); }
+  else if (t.dataset.bookexact) { const id = t.dataset.bookexact; bookExact = bookExact.includes(id) ? bookExact.filter(x => x !== id) : [...bookExact, id]; bookRefresh(); sndTap(); }
   else if (t.dataset.bookfam) { bookFam = t.dataset.bookfam; showBook(); sndTap(); }
   else if (t.dataset.booktab) { bookTab = t.dataset.booktab; showBook(); sndTap(); }
   else if (t.dataset.bookclose) { closeBook(); sndTap(); }

@@ -6,16 +6,62 @@ import type { Size } from '../src/game/types';
 const allEq = Object.fromEntries(['milk', ...EQUIPMENT.map((e) => e.id)].map((k) => [k, true]));
 const html = bookHTML({ rank: 9, tab: 'drinks', fam: 'all', eq: allEq });
 
-/** Кусок книги про один вариант напитка (размер и горячий/холодный) */
-function variantHtml(name: string, label: string): string {
-  const card = html.split(/<div class="bk(?: soon| lock)?">/).find((c) => c.includes(`<b>${name.replace(/&/g, '&amp;')}</b>`)) ?? '';
-  const i = card.indexOf(`<summary>${label} · шаги`);
-  expect(i, `${name} / ${label}`).toBeGreaterThanOrEqual(0);
-  return card.slice(i, card.indexOf('</details>', i));
+const ids = DRINKS.map((d) => d.id);
+/** Книга, где у каждого напитка выбран вариант с номером i (или последний) и раскрыты «Точные цифры». */
+function roundHtml(i: number): string {
+  const sel: Record<string, { size: Size; cold: boolean }> = {};
+  for (const d of DRINKS) {
+    const vs = cardVariants(d);
+    const v = vs[Math.min(i, vs.length - 1)];
+    if (v) sel[d.id] = v;
+  }
+  return bookHTML({ rank: 9, tab: 'drinks', fam: 'all', eq: allEq, sel, exact: ids });
+}
+const MAX_VARIANTS = Math.max(...DRINKS.map((d) => cardVariants(d).length));
+const rounds = Array.from({ length: MAX_VARIANTS }, (_, i) => roundHtml(i));
+const allHtml = rounds.join('\n');
+/** Кусок книги про один напиток. */
+function drinkHtml(h: string, id: string): string {
+  const i = h.indexOf(`data-drink="${id}"`);
+  expect(i, id).toBeGreaterThanOrEqual(0);
+  const j = h.indexOf('data-drink="', i + 10);
+  return h.slice(i, j < 0 ? undefined : j);
 }
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
 
 describe('книга рецептов строится из тех же данных, что и бар', () => {
+  test('один рецепт на напиток: переключатель размера и холодного; «Точные цифры» по умолчанию свёрнуты', () => {
+    expect(html.match(/data-drink="/g)?.length).toBe(DRINKS.length);
+    expect(html).not.toContain('class="bkExact"');
+    expect(html).toContain('aria-expanded="false"');
+    const latte = drinkHtml(html, 'latte');
+    expect(latte).toContain('data-booksize="latte|0.2"');
+    expect(latte).toContain('data-bookcold="latte|1"');
+    expect(latte).not.toContain('Если со льдом');
+    const iced = bookHTML({ rank: 9, tab: 'drinks', fam: 'all', eq: allEq, sel: { latte: { size: '0.3', cold: true } } });
+    expect(drinkHtml(iced, 'latte')).toContain('Если со льдом');
+    expect(drinkHtml(iced, 'latte')).not.toContain('data-booksize="latte|0.2"');
+    // у напитка без холодной механики переключателя температуры нет, у холодного бамбла есть только размеры
+    expect(drinkHtml(html, 'flat_white')).not.toContain('data-bookcold');
+    expect(drinkHtml(html, 'orange_bumble')).not.toContain('data-bookcold');
+    expect(drinkHtml(html, 'orange_bumble')).toContain('data-booksize');
+    // слот под картинку есть и скрыт
+    expect(latte).toMatch(/class="imgSlot bkImg"[^>]* hidden/);
+  });
+  test('основной текст без цифр с единицами, они только в «Точных цифрах»', () => {
+    for (const d of DRINKS) {
+      const part = drinkHtml(html, d.id).replace(/<p class="bkNote">[\s\S]*?<\/p>/, '');
+      const text = part.replace(/<[^>]+>/g, ' ');
+      expect(text, d.id).not.toMatch(/\d+\s?(г|мл|°|кг)(\s|[.,:;)]|$)/);
+    }
+  });
+  test('справочник открывается отдельной вкладкой', () => {
+    const g = bookHTML({ rank: 1, tab: 'guide' });
+    expect(g).toContain('data-guideq');
+    expect((g.match(/class="gTerm"/g) ?? []).length).toBeGreaterThanOrEqual(35);
+    expect(g).toContain('Питчер');
+  });
+
   test('для каждого напитка и каждого размера шаги книги = buildTasks (с «Шот 1/2»)', () => {
     let n = 0;
     for (const d of DRINKS) {
@@ -29,15 +75,17 @@ describe('книга рецептов строится из тех же данн
         const labels = stepLabels(tasks, d.id);
         expect(c.steps.map((s) => s.label)).toEqual(labels);
         if (c.shots > 1) expect(labels).toContain('Шот 2/' + c.shots);
-        // страница книги содержит ровно эти шаги, в этом порядке
-        const part = variantHtml(esc(d.name), c.sizeLabel.length && d.temp === 'both' ? (v.cold ? 'холодный ' : 'горячий ') + c.sizeLabel : c.sizeLabel);
+        // выбранный вариант: «Точные цифры» содержат ровно эти шаги, в этом порядке
+        const vi = cardVariants(d).findIndex((x) => x.size === v.size && x.cold === v.cold);
+        const part = drinkHtml(rounds[vi] as string, d.id);
+        const ex = part.slice(part.indexOf('<div class="bkExact">'));
         let at = 0;
         for (const l of labels) {
-          const j = part.indexOf(`<li><b>${esc(l)}</b>`, at);
+          const j = ex.indexOf(`<li><b>${esc(l)}</b>`, at);
           expect(j, `${d.id} ${v.size}: шаг «${l}» в книге по порядку`).toBeGreaterThanOrEqual(at);
           at = j + 1;
         }
-        expect((part.match(/<li>/g) ?? []).length).toBe(labels.length);
+        expect((ex.match(/<li><b>/g) ?? []).length).toBe(labels.length);
         n++;
       }
     }
@@ -63,7 +111,7 @@ describe('книга рецептов строится из тех же данн
         // каждая цифра состава попадает в строку таблицы книги
         for (const p of c.parts) {
           const txt = p.unit === 'помп' ? String(p.amount) : String(Math.round(p.amount * 10) / 10).replace('.', ',');
-          expect(html.includes(esc(p.label)) && html.includes(txt), `${d.id} ${v.size}: «${p.label}» ${txt}`).toBe(true);
+          expect(allHtml.includes(esc(p.label)) && allHtml.includes(txt), `${d.id} ${v.size}: «${p.label}» ${txt}`).toBe(true);
         }
         // сумма составляющих сходится с объёмом напитка
         expect(Math.abs(partsVolume(r) - r.drinkMl) / r.drinkMl).toBeLessThanOrEqual(0.03);

@@ -48,8 +48,12 @@ function barOpen(c) {
   if (BR) { if (BR.c === c) barShow(true); else hint('Сначала закончите текущий напиток'); return; }
   if (notFirst(c)) return;
   const rc = rcFor(c);
-  const card = c.order && !tutOffNow() ? MENUAPI.newDrinkCard(c.order.id, G.tutorialSeen, rc.foam, c.order.size) : null;
-  if (card) { showDrinkCard(card, () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); }); return; }
+  /* перед приготовлением: сначала «Зачем это нужно» (по одному), потом карточка нового напитка; после каждого окна заказ открывается заново */
+  const intro = c.order && !tutOffNow() ? MENUAPI.orderIntro(c.order.id, G.tutorialSeen, { shots: rc.shots || 1, foam: rc.foam, size: c.order.size, cold: !!c.order.cold }) : [];
+  if (intro.length) {
+    const again = () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); };
+    const it = intro[0]; if (it.kind === 'why') showWhy(it.key, again); else showDrinkCard(it.card, again); return;
+  }
   const d = c.drink, exp = MENUAPI.buildTasks(d, { cold: !!(c.order && c.order.cold), syrup: !!c.syrup, shots: rc.shots });
   if (c.order && c.order.food) exp.push('food');
   const tasks = MENUAPI.uniqueTasks(exp);
@@ -70,16 +74,30 @@ function barOpen(c) {
 const dcEl = $('#drinkCard'); let CARDON = null;
 const escH = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 function markSeen(key) { if (!G.tutorialSeen.includes(key)) G.tutorialSeen.push(key); }
+/* Общее окно поверх бара: карточка напитка и «Зачем это нужно». Пока открыто (CARDON), таймер дня, терпение гостей и симуляция бара стоят. Цифры в карточке только по кнопке «Точные цифры». */
+function openModal(html, next) {
+  CARDON = { next }; dcEl.innerHTML = html; dcEl.hidden = false; sndTap();
+  const b = dcEl.querySelector('[data-cardok]'); if (b) b.focus({ preventScroll: true });
+}
+const dcList = xs => `<ol>${xs.map(s => `<li>${escH(s)}</li>`).join('')}</ol>`;
 function showDrinkCard(card, next) {
-  markSeen(card.key); CARDON = { next };
-  dcEl.innerHTML = `<div class="dcard" role="dialog" aria-label="Новый напиток"><span class="tutTag">Новый напиток</span><h3>${escH(card.name)}</h3><ol>${card.steps.map(s => `<li>${escH(s)}</li>`).join('')}</ol>${card.tip ? `<p class="tip">${escH(card.tip)}</p>` : ''}<button type="button" class="big" data-cardok="1">Понятно</button></div>`;
-  dcEl.hidden = false; sndTap();
-  const b = dcEl.querySelector('button'); if (b) b.focus({ preventScroll: true });
+  markSeen(card.key);
+  openModal(`<div class="dcard" role="dialog" aria-label="Новый напиток"><span class="tutTag">Новый напиток</span><h3>${escH(card.name)}</h3><div class="imgSlot dcImg" hidden></div>${card.what ? `<p class="dcWhat">${escH(card.what)}</p>` : ''}${dcList(card.steps)}${card.ice.length ? `<h4>Если со льдом</h4>${dcList(card.ice)}` : ''}${card.differs ? `<p class="tip"><b>Чем отличается.</b> ${escH(card.differs)}</p>` : ''}<button type="button" class="dcExactBtn" data-dcexact="1" aria-expanded="false">Точные цифры</button><div class="dcExact" hidden><ul>${card.exact.map(s => `<li>${escH(s)}</li>`).join('')}</ul></div><button type="button" class="big" data-cardok="1">Понятно</button></div>`, next);
+}
+/* «Зачем это нужно»: один раз при первом упоминании станции или механики (ключи why:* в tutorialSeen) */
+function showWhy(key, next) {
+  const w = MENUAPI.WHY_TEXTS[key]; markSeen(key);
+  if (!w) { if (next) next(); return; }
+  openModal(`<div class="dcard why" role="dialog" aria-label="Зачем это нужно"><span class="tutTag">Зачем это нужно</span><h3>${escH(w.title)}</h3><div class="imgSlot dcImg" hidden></div><p class="dcWhat">${escH(w.text.join(' '))}</p><button type="button" class="big" data-cardok="1">Понятно</button></div>`, next);
 }
 function closeDrinkCard() {
-  if (!CARDON) return; const f = CARDON.next; CARDON = null; dcEl.hidden = true; dcEl.innerHTML = ''; sndTap(); f();
+  if (!CARDON) return; const f = CARDON.next; CARDON = null; dcEl.hidden = true; dcEl.innerHTML = ''; sndTap(); if (f) f();
 }
-dcEl.addEventListener('click', e => { if (e.target.closest('[data-cardok]')) closeDrinkCard(); });
+dcEl.addEventListener('click', e => {
+  if (e.target.closest('[data-cardok]')) closeDrinkCard();
+  const x = e.target.closest('[data-dcexact]');
+  if (x) { const box = dcEl.querySelector('.dcExact'); box.hidden = !box.hidden; x.setAttribute('aria-expanded', String(!box.hidden)); x.classList.toggle('on', !box.hidden); sndTap(); }
+});
 function barShow(on) {
   stage.classList.toggle('inbar', on);
   if (on) { zonesSync(); UI.close.hidden = !BR || !BR.inset; coachKey = ''; tkKey = ''; }
@@ -148,6 +166,9 @@ function openInset(mode) {
   if (mode === 'pour') { BR.mx = 220; BR.my = 150; }
   if (mode === 'steam') { BR.my = 140; BR.steamT = 0; }
   sndTap();
+  /* первое открытие станции: «Зачем это нужно» (при выключенных подсказках не показывается) */
+  const wk = BR.c.order && !tutOffNow() ? MENUAPI.whyOfInset(mode, { drinkId: BR.c.order.id, cream: !!BR.rc.pitcherShot }) : null;
+  if (wk && !G.tutorialSeen.includes(wk)) showWhy(wk);
 }
 function closeInset() {
   if (!BR) return;
