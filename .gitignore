@@ -5,6 +5,7 @@ dist
 out
 *.log
 *.png
+!public/*.png
 .DS_Store
 Thumbs.db
 .env*
