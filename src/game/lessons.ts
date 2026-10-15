@@ -3,17 +3,20 @@ import { THICK } from './recipes';
 import { recipeCard } from './recipeCard';
 import { steamZoneOf } from './volumes';
 import { TUTORIALS, equipmentName, tutorialEqs } from './tutorial';
+import { WHY_MARK, whyOfOrder, whySeenOf } from './why';
+import { drinkText, stepsForShots } from './content';
 import type { RecipeStep } from './types';
 
 /* ---------- обучение по шагам и «Новый напиток» ----------
    Что уже показано, лежит в tutorialSeen (в сохранении) строками:
-   `matcha` (станция), `drink:latte` (карточка напитка), `step:milk` / `step:steam:thin` / `step:pour` / `step:syrup` (шаги). */
+   `matcha` (станция), `drink:latte` (карточка напитка), `step:milk` / `step:steam:thin` / `step:pour` / `step:syrup` (шаги),
+   `why:grind` … (экраны «Зачем это нужно», см. why.ts). */
 
 /** Метка «сохранение уже знает про обучение по шагам». Без неё старое сохранение переносится один раз (migrateSeen). */
 export const SEEN_MARK = 'v2';
 /** Подсказки по шагам (кроме пара: у него ключ на вид пены). */
 export const STEP_KEYS: readonly string[] = ['step:milk', 'step:pour', 'step:syrup', 'step:shots', 'step:pitcher'];
-export const freshSeen = (): string[] => [SEEN_MARK];
+export const freshSeen = (): string[] => [SEEN_MARK, WHY_MARK];
 
 /** Параметры пара. Должны совпадать с 07-bar-sim.js (steamDone, шаг пара) и steamView.ts; старт молока 8° задан в 06-bar.js.
     Зона температуры зависит от напитка (steamZoneOf в volumes.ts); zone/zoneThermo здесь — общая зона по умолчанию. */
@@ -70,24 +73,57 @@ export function recipeStepText(s: RecipeStep): string {
 }
 export const recipeLines = (drinkId: string): string[] => (drinkById[drinkId]?.steps ?? []).map(recipeStepText);
 
-/** Карточка «Новый напиток» при первом заказе. */
+/** Карточка «Новый напиток» при первом заказе. Цифры только в exact (кнопка «Точные цифры»). */
 export interface DrinkCard {
   key: string;
   name: string;
+  /** «Что это» */
+  what: string;
+  /** шаги простыми словами, без цифр */
   steps: string[];
-  /** чем напиток отличается, если есть что сказать (вид пены) */
-  tip: string;
+  /** «Если со льдом» (только когда заказан холодный вариант и у напитка есть холодная механика) */
+  ice: string[];
+  /** «Чем отличается» */
+  differs: string;
+  /** точные цифры: шаги с количествами и пена (числа из recipeCard и параметров станции) */
+  exact: string[];
+  /** подсказка для картинки напитка (этап Н); слот в карточке пока скрыт */
+  picture: string;
 }
 export const drinkSeenKey = (drinkId: string): string => `drink:${drinkId}`;
+
+/** Строки блока «Точные цифры» для заказа: размер, цена, шаги с количествами, пена. */
+export function exactLines(drinkId: string, size?: string, cold = false, foam?: number): string[] {
+  const d = drinkById[drinkId];
+  if (!d) return [];
+  const rc = recipeCard(drinkId, (size ?? Object.keys(d.sizes)[0]) as '0.2', cold);
+  if (!rc) return [];
+  const out = [`${rc.cold ? 'Холодный, ' : ''}${rc.sizeLabel}, цена ${rc.price} ₽, чашка ${rc.cupMl} мл`];
+  rc.steps.forEach((x) => out.push(x.detail ? `${x.label}: ${x.detail}` : x.label));
+  if (rc.temperature) out.push(rc.temperature);
+  if (d.steps.some((s) => s.st === 'steam')) out.push(foamLine(steamKind(drinkId), foam));
+  return out;
+}
+
 /** null — уже показывали (или такого напитка нет). */
 /** foam — целевая пена из механики бара (если она отличается от меню), иначе берётся из вида пены. */
-export function newDrinkCard(drinkId: string, seen: readonly string[], foam?: number, size?: string): DrinkCard | null {
+export function newDrinkCard(drinkId: string, seen: readonly string[], foam?: number, size?: string, cold = false): DrinkCard | null {
   const d = drinkById[drinkId];
   if (!d || seen.includes(drinkSeenKey(drinkId))) return null;
-  const tip = d.steps.some((s) => s.st === 'steam') ? foamLine(steamKind(drinkId), foam) : '';
-  const rc = recipeCard(drinkId, (size ?? Object.keys(d.sizes)[0]) as '0.2');
-  const steps = rc ? rc.steps.map((x) => (x.detail ? `${x.label}: ${x.detail}` : x.label)) : recipeLines(drinkId);
-  return { key: drinkSeenKey(drinkId), name: d.name, steps, tip };
+  const rc = recipeCard(drinkId, (size ?? Object.keys(d.sizes)[0]) as '0.2', cold);
+  const t = drinkText(drinkId);
+  const steps = t ? stepsForShots(t.steps, rc?.shots ?? 1) : rc ? rc.steps.map((x) => x.label) : recipeLines(drinkId);
+  const ice = t && rc?.cold ? [...t.ice] : [];
+  return { key: drinkSeenKey(drinkId), name: d.name, what: t?.what ?? '', steps, ice, differs: t?.differs ?? '', exact: exactLines(drinkId, size, cold, foam), picture: t?.picture ?? '' };
+}
+
+/** Что показать перед приготовлением нового заказа: сначала «Зачем это нужно», потом карточка напитка (не два окна сразу). */
+export type IntroItem = { kind: 'why'; key: string } | { kind: 'card'; card: DrinkCard };
+export function orderIntro(drinkId: string, seen: readonly string[], o: { shots?: number; foam?: number; size?: string; cold?: boolean } = {}): IntroItem[] {
+  const out: IntroItem[] = whyOfOrder(drinkId, o.shots ?? 1, seen).map((key) => ({ kind: 'why', key }));
+  const card = newDrinkCard(drinkId, seen, o.foam, o.size, o.cold);
+  if (card) out.push({ kind: 'card', card });
+  return out;
 }
 
 /** Что известно о заказе, когда подсказка собирает текст. Всё необязательное: книга рецептов цифр не знает. */
@@ -154,42 +190,39 @@ export function lesson(key: string, c: LessonCtx): Lesson | null {
   const t = TUTORIALS[key];
   if (t) return { key, tag: 'Новая станция', title: equipmentName(key), where: t.where, steps: [...t.steps], paced: false };
   if (key === 'step:milk') {
-    const until = c.ml ? `до линии: ${Math.round(c.ml)} мл` : 'до красной линии';
     const where = c.steam === false ? 'в стакане' : 'в питчере';
     if (c.cream)
       return {
-        key, tag: STEP_TAG, title: 'Сливки', where: 'Нажмите на холодильник справа: кувшин сливок стоит там же.', paced: true,
-        steps: [`Держите «Лить молоко со сливками» или Пробел, пока сливки ${where} не дойдут ${until}.`, 'Налили лишнее: «Вылить». Потом «Готово».'],
-        goals: [`Сливки до линии: ${c.ml ? Math.round(c.ml) + ' мл' : 'красная черта'}`, 'Лишнее вылить, затем «Готово»']
+        key, tag: STEP_TAG, title: 'Сливки', where: 'Нажмите на кувшин сливок.', paced: true,
+        steps: [`Держите «Лить молоко со сливками» или Пробел, пока сливки ${where} не дойдут до красной линии.`, 'Налили лишнее: «Вылить». Потом «Готово».'],
+        goals: ['Сливки до красной линии', 'Лишнее вылить, затем «Готово»']
       };
     return {
-      key, tag: STEP_TAG, title: 'Молоко', where: 'Нажмите на холодильник справа.', paced: true,
-      steps: [`Держите «Лить молоко (держите)» или Пробел, пока молоко ${where} не дойдёт ${until}.`, 'Налили лишнее: «Вылить». Потом «Готово».'],
-      goals: [`Молоко до линии: ${c.ml ? Math.round(c.ml) + ' мл' : 'красная черта'}`, 'Лишнее вылить, затем «Готово»']
+      key, tag: STEP_TAG, title: 'Молоко', where: 'Нажмите на холодильник с молоком.', paced: true,
+      steps: [`Держите «Лить молоко (держите)» или Пробел, пока молоко ${where} не дойдёт до красной линии.`, 'Налили лишнее: «Вылить». Потом «Готово».'],
+      goals: ['Молоко до красной линии', 'Лишнее вылить, затем «Готово»']
     };
   }
   if (key.startsWith('step:steam:')) {
     const kind = key.slice('step:steam:'.length) as FoamKind;
     if (!FOAM_KINDS.includes(kind)) return null;
-    const [lo, hi] = steamZone(c.drinkId, c.thermo);
-    const [s1, s2] = steamSeconds(c.drinkId, c.thermo);
     return {
-      key, tag: STEP_TAG, title: 'Пар и пена', where: 'Нажмите на паровую трубку справа.', paced: true,
+      key, tag: STEP_TAG, title: 'Пар и пена', where: 'Нажмите на паровую трубку.', paced: true,
       steps: [
-        `Воздух. Зажмите мышь, кончик трубки держите в жёлтой полосе у поверхности: пока молоко холоднее ${STEAM.airUntil}°, растёт пена.`,
+        'Воздух. Зажмите мышь, кончик трубки держите в жёлтой полосе у поверхности: пока молоко холодное, растёт пена.',
         'Закрутите. Опустите трубку глубже: пена перестанет расти, молоко станет гладким и будет греться.',
-        `Остановите. На зелёной зоне ${lo}–${hi}° (${s1}–${s2} с пара) отпустите мышь и нажмите «Готово». Выше ${STEAM.burnAt}° пригорает.`
+        'Остановите. Когда термометр дойдёт до зелёной зоны, отпустите мышь и нажмите «Готово». Если перегреть, молоко пригорит.'
       ],
-      goals: [`Пена около ${Math.round((c.foam ?? THICK[kind] ?? 0.26) * 100)}%: у поверхности ${airTime(c.foam ?? THICK[kind] ?? 0.26)}`, 'Опустите трубку глубже', `Стоп на ${lo}–${hi}°, не выше ${STEAM.burnAt}°`]
+      goals: ['Кончик трубки у поверхности: растёт пена', 'Опустите трубку глубже', 'Остановите в зелёной зоне термометра']
     };
   }
   if (key === 'step:shots') {
     const n = c.shots && c.shots > 1 ? c.shots : 2;
     return {
-      key, tag: STEP_TAG, title: n === 2 ? 'Два шота подряд' : 'Несколько шотов', where: 'Нажмите на кофемолку слева: шоты делаются по одному.', paced: true,
+      key, tag: STEP_TAG, title: n === 2 ? 'Два шота подряд' : 'Несколько шотов', where: 'Нажмите на кофемолку: шоты делаются по одному.', paced: true,
       steps: [
-        'Первый шот: помол (около 9 г), темпер и шот 30 мл, как обычно. На билете он подписан «Шот 1/2».',
-        'Второй шот такой же: снова помол, темпер и шот. Он попадает в ту же чашку. Подписан «Шот 2/2».'
+        `Первый шот: помол, темпер и шот, как обычно. На билете он подписан «Шот 1/${n}».`,
+        `Второй шот такой же: снова помол, темпер и шот. Он попадает в ту же чашку. Подписан «Шот 2/${n}».`
       ],
       goals: ['Первый шот: помол, темпер, шот', 'Второй шот: так же, в ту же чашку']
     };
@@ -202,14 +235,14 @@ export function lesson(key: string, c: LessonCtx): Lesson | null {
     };
   if (key === 'step:pour')
     return {
-      key, tag: STEP_TAG, title: 'Заливка и рисунок', where: 'Нажмите на чашку по центру.', paced: true,
+      key, tag: STEP_TAG, title: 'Заливка и рисунок', where: 'Нажмите на чашку.', paced: true,
       steps: ['Зажмите мышь над чашкой и ведите по контуру рисунка: молоко льётся, пока вы водите.', 'Когда питчер опустеет, напиток готов. Закончить раньше можно кнопкой «Готово».'],
       goals: ['Ведите мышью по контуру рисунка', 'Питчер пуст: напиток готов']
     };
   if (key === 'step:syrup') {
-    const what = c.syrupName ? `${c.syrupName.toLowerCase()} ×${c.pumps ?? 1}` : 'сколько просил гость (написано на тикете)';
+    const what = c.syrupName ? `${c.syrupName.toLowerCase()} ×${c.pumps ?? 1}` : 'сколько просил гость (написано на билете)';
     return {
-      key, tag: STEP_TAG, title: 'Сироп', where: 'Нажмите на полку с сиропами вверху.', paced: true,
+      key, tag: STEP_TAG, title: 'Сироп', where: 'Нажмите на полку сиропов.', paced: true,
       steps: [`Нажмите на бутылку нужного сиропа: одно нажатие это одна порция. Нужно: ${what}.`, 'Нажмите «Готово». Ошиблись: «Вылить».'],
       goals: [`Сироп: ${what}`, 'Нажмите «Готово»']
     };
@@ -282,12 +315,20 @@ export function lessonKeysOfDrink(drinkId: string): string[] {
  * Старое сохранение (без метки v2): что игрок уже проходил, второй раз не показываем.
  * Напитки прошлых рангов и, если день не первый, напитки 1-го ранга считаются знакомыми; молоко и пар — если молоко куплено.
  */
-export function migrateSeen(seen: readonly string[], p: { rank: number; day: number; served: number; milk: boolean }): string[] {
-  if (seen.includes(SEEN_MARK)) return [...seen];
+export function migrateSeen(seen: readonly string[], p: { rank: number; day: number; served: number; milk: boolean; /** купленное: id вида 'eq_matcha' */ up?: readonly string[] }): string[] {
+  if (seen.includes(WHY_MARK)) return [...seen];
   const out = new Set(seen);
-  for (const d of DRINKS) if (d.rank < p.rank || (d.rank === 1 && (p.day > 1 || p.served > 0))) out.add(drinkSeenKey(d.id));
-  if (p.day > 1 || p.served > 0) out.add('step:syrup');
-  if (p.milk) ['step:milk', 'step:pour', ...FOAM_KINDS.map((k) => `step:steam:${k}`)].forEach((k) => out.add(k));
-  out.add(SEEN_MARK);
+  const played = p.day > 1 || p.served > 0;
+  if (!seen.includes(SEEN_MARK)) {
+    for (const d of DRINKS) if (d.rank < p.rank || (d.rank === 1 && played)) out.add(drinkSeenKey(d.id));
+    if (played) out.add('step:syrup');
+    if (p.milk) ['step:milk', 'step:pour', ...FOAM_KINDS.map((k) => `step:steam:${k}`)].forEach((k) => out.add(k));
+    out.add(SEEN_MARK);
+  }
+  /* экраны «Зачем»: всё, что уже открыто рангом или куплено, считается виденным, иначе игрок получит пачку окон */
+  const eqs = (p.up ?? []).filter((x) => x.startsWith('eq_')).map((x) => x.slice(3));
+  const drinkIds = DRINKS.filter((d) => out.has(drinkSeenKey(d.id))).map((d) => d.id);
+  whySeenOf({ played, milk: p.milk, eqs, drinkIds }).forEach((k) => out.add(k));
+  out.add(WHY_MARK);
   return [...out];
 }

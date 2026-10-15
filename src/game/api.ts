@@ -10,6 +10,8 @@ export * from './save';
 export * from './settings';
 export * from './tutorial';
 export * from './lessons';
+export * from './why';
+export * from './content';
 export type * from './types';
 export * from './stations/station';
 export * from './stations/fill';

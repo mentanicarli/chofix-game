@@ -14,14 +14,16 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/game src/ui src/render test",
     "format": "prettier --write \"src/game/**/*.ts\" \"test/**/*.ts\"",
-    "check": "npm run typecheck && npm run lint && npm test",
+    "check": "npm run typecheck && npm run lint && npm test && npm run content:check",
     "sim:table": "node scripts/make-typical-progress.mjs",
     "audit:recipes": "node scripts/make-recipes-audit.mjs",
     "lint:legacy": "node scripts/lint-legacy.mjs",
     "prebuild:debug": "node scripts/make-music-manifest.mjs",
     "build:debug": "CUPPABLE_DEBUG=1 vite build && node scripts/fragment.mjs",
     "art": "node scripts/art-build.mjs",
-    "art:check": "node scripts/art-build.mjs --check"
+    "art:check": "node scripts/art-build.mjs --check",
+    "content": "node scripts/make-content.mjs",
+    "content:check": "node scripts/make-content.mjs --check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

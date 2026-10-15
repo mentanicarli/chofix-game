@@ -2,6 +2,7 @@ import typicalJson from '../../data/typical-progress.json';
 import { DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, MAX_RANK, needsMilk, rankInfo } from './menu';
 import { rentFor } from './economy';
 import { FOAM_KINDS, SEEN_MARK, STEP_KEYS, drinkSeenKey, freshSeen, lessonKeysOfDrink } from './lessons';
+import { WHY_KEYS, WHY_MARK, whySeenOf } from './why';
 import { SHOP_BASE, SHOP_DEFS, isPurchasable } from './playerModel';
 import { TUTORIALS } from './tutorial';
 import type { PaceId } from './types';
@@ -191,24 +192,27 @@ export function resolveSandbox(config: Partial<SandboxConfig>): Resolved {
  */
 export function seenFor(day: number, rank: number, items: readonly string[]): string[] {
   const owned = new Set(items);
-  const out = new Set<string>([SEEN_MARK]);
+  const out = new Set<string>([SEEN_MARK, WHY_MARK]);
+  const known: string[] = [];
   for (const d of DRINKS) {
     if (!(d.id in ENGINE)) continue;
     if (needsMilk(d) && !owned.has('milk')) continue;
     if (!(DRINK_NEEDS[d.id] ?? []).every((n) => owned.has('eq_' + n))) continue;
     if (d.rank < rank || (d.rank === 1 && day > 1)) {
       out.add(drinkSeenKey(d.id));
+      known.push(d.id);
       lessonKeysOfDrink(d.id).forEach((k) => out.add(k));
     }
   }
   if (day > 1) out.add('step:syrup');
+  whySeenOf({ played: day > 1, milk: owned.has('milk'), eqs: items.filter((i) => i.startsWith('eq_')).map((i) => i.slice(3)), drinkIds: known }).forEach((k) => out.add(k));
   for (const e of EQUIPMENT) if (e.id in TUTORIALS && owned.has('eq_' + e.id) && e.rank < rank) out.add(e.id);
   return [...out];
 }
 
 /** Всё обучение уже пройдено: карточки новых напитков, шаги и подсказки станций не показываются. */
 export function fullSeen(): string[] {
-  return [SEEN_MARK, ...DRINKS.map((d) => drinkSeenKey(d.id)), ...STEP_KEYS, ...FOAM_KINDS.map((k) => `step:steam:${k}`), ...Object.keys(TUTORIALS)];
+  return [SEEN_MARK, WHY_MARK, ...WHY_KEYS, ...DRINKS.map((d) => drinkSeenKey(d.id)), ...STEP_KEYS, ...FOAM_KINDS.map((k) => `step:steam:${k}`), ...Object.keys(TUTORIALS)];
 }
 
 export type SandboxState = {

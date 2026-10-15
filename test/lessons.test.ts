@@ -1,30 +1,47 @@
 import { describe, expect, test } from 'vitest';
 import {
   DRINKS, FOAM_KINDS, SEEN_MARK, STEAM, airTime, recipeCard, drinkSeenKey, foamLine, freshSeen, lesson, lessonGoal, lessonKeysOfDrink, lessonStep, legacyRecipe, migrateSeen,
-  newDrinkCard, nextTutorial, purchaseToast, recipeLines, steamKind, steamSeconds, stepKeysOf, tutorialKeys
+  newDrinkCard, nextTutorial, purchaseToast, recipeLines, steamKind, steamSeconds, stepKeysOf, tutorialKeys, exactLines, WHY_MARK
 } from '../src/game/api';
 
 describe('карточка «Новый напиток»', () => {
-  test('первый заказ: рецепт тот же, что в книге; повторно карточки нет', () => {
+  test('первый заказ: текст К1, цифры только в «Точных цифрах»; повторно карточки нет', () => {
     const c = newDrinkCard('latte', freshSeen());
     expect(c?.name).toBe('Латте');
-    // шаги карточки — те же, что в книге (recipeCard), с количествами
-    expect(c?.steps).toEqual(recipeCard('latte', '0.2')?.steps.map((x) => (x.detail ? `${x.label}: ${x.detail}` : x.label)));
-    expect(recipeLines('latte').length).toBeGreaterThan(3);
+    expect(c?.what).toMatch(/молока/);
     expect(c?.steps.length).toBeGreaterThan(3);
-    expect(c?.tip).toMatch(/лёгкая пена/);
+    expect(c?.differs).toMatch(/капучино/);
+    expect([c?.what, ...(c?.steps ?? []), c?.differs].join(' ')).not.toMatch(/\d+\s?(г|мл|°|кг)\b/);
+    // точные цифры — из recipeCard, как в книге
+    expect(c?.exact).toEqual(exactLines('latte'));
+    expect(c?.exact.join('\n')).toContain('лёгкая пена');
+    expect(recipeLines('latte').length).toBeGreaterThan(3);
     expect(newDrinkCard('latte', [...freshSeen(), drinkSeenKey('latte')])).toBeNull();
   });
   test('цель пены из бара подменяет значение меню (латте в баре 28 %)', () => {
-    expect(newDrinkCard('latte', freshSeen(), 0.28)?.tip).toContain('28%');
-    expect(newDrinkCard('latte', freshSeen())?.tip).toContain('22%');
+    expect(newDrinkCard('latte', freshSeen(), 0.28)?.exact.join(' ')).toContain('28%');
+    expect(newDrinkCard('latte', freshSeen())?.exact.join(' ')).toContain('22%');
   });
-  test('у напитка без пара нет совета про пену; неизвестный напиток — null', () => {
-    expect(newDrinkCard('americano', freshSeen())?.tip).toBe('');
+  test('у напитка без пара нет строки про пену; неизвестный напиток — null', () => {
+    expect(newDrinkCard('americano', freshSeen())?.exact.join(' ')).not.toContain('шкалы «Пена»');
     expect(newDrinkCard('нет такого', freshSeen())).toBeNull();
   });
-  test('каждый напиток меню получает карточку со всеми шагами', () => {
-    for (const d of DRINKS) expect(newDrinkCard(d.id, [])?.steps.length, d.id).toBe(recipeCard(d.id, Object.keys(d.sizes)[0] as '0.2')?.tasks.length);
+  test('«Если со льдом» только для холодного заказа с холодной механикой', () => {
+    expect(newDrinkCard('latte', [], undefined, '0.3', true)?.ice.length).toBeGreaterThan(0);
+    expect(newDrinkCard('latte', [], undefined, '0.3', false)?.ice).toEqual([]);
+    expect(newDrinkCard('orange_bumble', [], undefined, '0.3', true)?.ice).toEqual([]);
+  });
+  test('шаг про второй шот подстраивается под размер', () => {
+    expect(newDrinkCard('latte', [], undefined, '0.2')?.steps.join(' ')).not.toMatch(/Шота два|шотов два/);
+    expect(newDrinkCard('latte', [], undefined, '0.4')?.steps.join(' ')).toContain('Шота два');
+  });
+  test('каждый напиток меню получает карточку с текстом и шагами', () => {
+    for (const d of DRINKS) {
+      const c = newDrinkCard(d.id, []);
+      expect(c?.what.length, d.id).toBeGreaterThan(10);
+      expect(c?.steps.length, d.id).toBeGreaterThan(1);
+      expect(c?.exact.length, d.id).toBeGreaterThan(2);
+    }
   });
 });
 
@@ -49,7 +66,7 @@ describe('вид пены', () => {
       const foam = legacyRecipe(d.id).foam;
       if (foam === undefined) continue;
       // подсказка книги и бара получает цель пены из рецепта (у рафа 33% при виде «лёгкая»)
-      expect(lesson(`step:steam:${steamKind(d.id)}`, { drinkId: d.id, foam })?.goals?.[0], d.id).toContain(`${Math.round(foam * 100)}%`);
+      expect(lesson(`step:steam:${steamKind(d.id)}`, { drinkId: d.id, foam })?.goals?.length, d.id).toBe(3);
     }
   });
 });
@@ -67,24 +84,22 @@ describe('шаги подсказок', () => {
     }
   });
   test('lessonGoal берёт цель по номеру шага и не выходит за список', () => {
-    expect(lessonGoal('step:milk', { drinkId: 'latte', ml: 150 }, 0)).toBe('Молоко до линии: 150 мл');
+    expect(lessonGoal('step:milk', { drinkId: 'latte', ml: 150 }, 0)).toBe('Молоко до красной линии');
     expect(lessonGoal('step:milk', { drinkId: 'latte', ml: 150 }, 9)).toContain('Лишнее');
     expect(lessonGoal('step:nothing', { drinkId: 'latte' }, 0)).toBeNull();
   });
-  test('пар: три шага и числа из станции', () => {
+  test('пар: три шага без цифр, зона на термометре', () => {
     const l = lesson('step:steam:thick', { drinkId: 'cappuccino', drinkName: 'Капучино', foam: 0.55 });
     expect(l?.steps).toHaveLength(3);
-    expect(l?.goals?.[0]).toContain('Пена около 55%');
-    expect(l?.steps[0]).toContain(`${STEAM.airUntil}°`);
-    expect(l?.steps[2]).toContain('60–65°');
-    expect(l?.steps[2]).toContain(`${STEAM.burnAt}°`);
-    expect(lesson('step:steam:thin', { drinkId: 'latte', thermo: true })?.steps[2]).toContain('53–65°');
+    expect(l?.steps[2]).toContain('зелёной зоны');
+    expect([...(l?.steps ?? []), ...(l?.goals ?? [])].join(' ')).not.toMatch(/\d/);
     expect(steamSeconds('latte')).toEqual([7, 8]);
+    expect(STEAM.burnAt).toBeGreaterThan(70);
     expect(lesson('step:steam:мусор', { drinkId: 'latte' })).toBeNull();
   });
-  test('молоко: питчер или стакан, линия в миллилитрах', () => {
+  test('молоко: питчер или стакан, линия без цифр', () => {
     expect(lesson('step:milk', { drinkId: 'latte', ml: 200 })?.steps[0]).toContain('в питчере');
-    expect(lesson('step:milk', { drinkId: 'latte', ml: 200 })?.steps[0]).toContain('200 мл');
+    expect(lesson('step:milk', { drinkId: 'latte', ml: 200 })?.steps[0]).toContain('красной линии');
     expect(lesson('step:milk', { drinkId: 'milkshake_vanilla', steam: false })?.steps[0]).toContain('в стакане');
   });
   test('текущий шаг и подсвеченная кнопка', () => {
@@ -139,7 +154,7 @@ describe('шаги подсказок', () => {
 
 describe('что уже показано', () => {
   test('новая игра: только метка', () => {
-    expect(freshSeen()).toEqual([SEEN_MARK]);
+    expect(freshSeen()).toEqual([SEEN_MARK, WHY_MARK]);
   });
   test('старое сохранение: пройденное не повторяется, текущий ранг остаётся новым', () => {
     const m = migrateSeen(['matcha'], { rank: 3, day: 8, served: 40, milk: true });
@@ -159,10 +174,28 @@ describe('что уже показано', () => {
     expect(m).toContain(drinkSeenKey('americano'));
   });
   test('сохранение с меткой не трогаем, повторный перенос ничего не меняет', () => {
-    const a = [SEEN_MARK, 'step:milk'];
+    const a = [SEEN_MARK, WHY_MARK, 'step:milk'];
     expect(migrateSeen(a, { rank: 9, day: 30, served: 900, milk: true })).toEqual(a);
     const once = migrateSeen([], { rank: 4, day: 9, served: 60, milk: true });
     expect(migrateSeen(once, { rank: 4, day: 9, served: 60, milk: true })).toEqual(once);
+  });
+  test('сохранение до «Зачем» (только v2): окна открытого и купленного не повторяются', () => {
+    const m = migrateSeen([SEEN_MARK, 'step:milk', drinkSeenKey('cappuccino'), drinkSeenKey('latte')], { rank: 4, day: 9, served: 60, milk: true, up: ['milk', 'eq_matcha', 'eq_ice'] });
+    expect(m).toContain(WHY_MARK);
+    for (const k of ['why:grind', 'why:tamp', 'why:shot', 'why:syrup', 'why:water', 'why:milk', 'why:steam', 'why:pour', 'why:matcha', 'why:ice', 'why:steam-foam']) expect(m, k).toContain(k);
+    // чего нет: не куплено или напитков ещё нет
+    for (const k of ['why:brew', 'why:blend', 'why:boba', 'why:topping']) expect(m, k).not.toContain(k);
+  });
+  test('старое сохранение без метки: «Зачем» за один проход, повторно ничего не меняется', () => {
+    const p = { rank: 3, day: 6, served: 30, milk: true, up: ['milk'] };
+    const m = migrateSeen(['matcha'], p);
+    expect(m).toContain('why:milk');
+    expect(m).toContain(SEEN_MARK);
+    expect(migrateSeen(m, p)).toEqual(m);
+  });
+  test('первый день без смен: ничего не отмечено', () => {
+    const m = migrateSeen([], { rank: 1, day: 1, served: 0, milk: false });
+    expect(m.filter((k) => k.startsWith('why:'))).toEqual([]);
   });
   test('тост про молоко обещает подсказки', () => {
     expect(purchaseToast('milk')).toMatch(/^Новое: молоко\./);
