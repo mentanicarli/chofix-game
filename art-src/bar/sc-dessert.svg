@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="272 687.8 110.4 33.6" data-part="scDessert" data-scale="1">
-<!-- Десерты на нижней полке подстоечного холодильника (этап 12.3(2)): торт с вишней и эклер. Основание на дне y 719. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
-<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="272 683.8 110.4 33.6" data-part="scDessert" data-scale="1">
+<!-- Десерты на нижней полке подстоечного холодильника (этап 12.3(2)): торт с вишней и эклер. Основание на нижней полке y 715. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
+<g transform="translate(0 -4)" stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
 <ellipse cx="296" cy="719" rx="20.4" ry="3.1" fill="{{PAPER}}"/>
 <path d="M281.6 717.8V698.6H310.4V717.8Z" fill="{{PINK}}"/>
 <path d="M281.6 709.4H310.4V717.8H281.6Z" fill="{{CHOC}}"/>

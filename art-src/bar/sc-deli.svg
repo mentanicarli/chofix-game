@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="402 687.8 112.8 33.6" data-part="scDeli" data-scale="1">
-<!-- Сэндвич и салат на нижней полке подстоечного холодильника (этап 12.3(2)). Основание на дне y 719. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
-<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="402 683.8 112.8 33.6" data-part="scDeli" data-scale="1">
+<!-- Сэндвич и салат на нижней полке подстоечного холодильника (этап 12.3(2)). Основание на нижней полке y 715. Масштаб ×1,2 от версии 12.3(1): контур 3 px, детали 2 px. -->
+<g transform="translate(0 -4)" stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
 <ellipse cx="433.2" cy="719" rx="26.4" ry="3.1" fill="{{PAPER}}"/>
 <path d="M414 703.4Q414 693.8 433.2 693.8Q452.4 693.8 452.4 703.4Z" fill="{{BAKE}}"/>
 <path d="M412.8 703.4Q418.8 707 424.8 703.4Q430.8 707 436.8 703.4Q442.8 707 448.8 703.4Q452.4 705.8 453.6 703.4V707H412.8Z" fill="{{SAGE_LT}}"/>

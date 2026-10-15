@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 604 1280 42" data-part="counterNose" data-after="scMicro" data-scale="1">
+<!--
+  Кромка столешницы (этап 12.3(2), исправление 24б): нос рабочей поверхности во всю ширину кадра, нависает над фасадом. Рисуется ПОВЕРХ подстоечных блоков и под плитками оборудования: блоки уходят под кромку, а не стоят на столе.
+  Верхняя грань светлая (свет сверху слева), торец плиты тёплое дерево, под носом два тона тени (коричневая SHADOW с прозрачностью, не чёрная): ближе к кромке гуще. Контур 3,5 / 3 / 2 px.
+-->
+<g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
+<rect x="-6" y="628" width="1292" height="9" fill="{{SHADOW}}" fill-opacity=".42" stroke="none"/>
+<rect x="-6" y="636" width="1292" height="6" fill="{{SHADOW}}" fill-opacity=".16" stroke="none"/>
+<rect x="-6" y="607" width="1292" height="21" rx="4" fill="{{WOOD}}" stroke-width="{{L}}"/>
+<rect x="-6" y="607" width="1292" height="7" rx="4" fill="{{WOOD_HI}}" stroke="none"/>
+<path d="M-6 614H1286" fill="none" stroke="{{INK}}" stroke-opacity=".55" stroke-width="{{D}}"/>
+<path d="M12 610H1270" fill="none" stroke="{{HILITE}}" stroke-opacity=".7" stroke-width="{{D}}"/>
+<rect x="-6" y="618" width="1292" height="10" fill="{{WOOD_SH}}" stroke="none"/>
+<path d="M-6 628H1286" fill="none" stroke-width="{{L}}"/>
+</g>
+</svg>

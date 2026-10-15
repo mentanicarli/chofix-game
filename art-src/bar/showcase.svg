@@ -1,24 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="240 604 330 116" data-part="showcase" data-scale="1">
 <!--
-  Подстоечная холодильная витрина (этап 12.3(2)): блок 60 см под рабочей поверхностью, виден верх фасада (низ обрезан краем кадра). Шкала бара 4,64 px/см: ширина фасада 294 px = 63 см.
-  Слои: ниша (тёмный проём), торец столешницы, фасад (панель управления, рама дверцы, задняя стенка, полка), ручка. Еда четырёх наборов — sc-*.svg внутри окна, переднее стекло — showcase-glass.svg поверх.
-  Зона food (перенесена): x 250, y 626, w 310, h 94. Свет сверху слева: тень справа. Контур 3,5 / 3 / 2 px.
+  Подстоечная холодильная витрина (этап 12.3(2), исправление 24б): блок 60 см под рабочей поверхностью, виден верх фасада (низ обрезан краем кадра на нижней полке). Шкала бара 4,64 px/см: ширина фасада 294 px = 63 см.
+  Слои: ниша (тёмный проём), фасад с панелью (дисплей, снежинка, индикатор), рама стеклянной дверцы, холодная задняя стенка с лампой-подсветкой, две полки (верхняя y 680, нижняя y 716), ценники, ручка. Кромка столешницы — counter-nose.svg поверх.
+  Еда четырёх наборов — sc-*.svg внутри окна (верхний ряд на полке y 680, нижний на полке y 716), переднее стекло — showcase-glass.svg поверх. Зона food: x 250, y 626, w 310, h 94. Свет сверху слева. Контур 3,5 / 3 / 2 px.
 -->
 <g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
 <rect x="250" y="620" width="310" height="110" rx="6" fill="{{DARK}}" stroke-width="{{L}}"/>
 <rect x="258" y="626" width="294" height="104" rx="6" fill="{{STEEL}}" stroke-width="{{L}}"/>
 <path d="M528 627H546Q551 627 551 632V730H528Z" fill="{{STEEL_SH}}" stroke="none"/>
-<rect x="268" y="629" width="48" height="10" rx="2.5" fill="{{DARK}}" stroke-width="{{D}}"/>
-<path d="M273 634H290M295 634H299" fill="none" stroke="{{MUSTARD}}" stroke-width="{{D}}"/>
-<circle cx="332" cy="634" r="4.5" fill="{{PAPER}}" stroke-width="{{D}}"/>
-<circle cx="346" cy="634" r="4.5" fill="{{PAPER}}" stroke-width="{{D}}"/>
-<circle cx="522" cy="634" r="3.5" fill="{{DUSTY}}" stroke-width="{{D}}"/>
+<rect x="268" y="630" width="44" height="9" rx="2.5" fill="{{DARK}}" stroke-width="{{D}}"/>
+<path d="M273 634.5H288M293 634.5H297" fill="none" stroke="{{MUSTARD}}" stroke-width="{{D}}"/>
+<g fill="none" stroke="{{DUSTY}}" stroke-width="{{D}}">
+<path d="M332 629.5V639.5M327.7 632L336.3 637M327.7 637L336.3 632"/>
+</g>
+<circle cx="522" cy="634.5" r="3.5" fill="{{DUSTY}}" stroke-width="{{D}}"/>
 <rect x="262" y="640" width="286" height="94" rx="5" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
-<rect x="268" y="645" width="260" height="89" rx="3" fill="{{PAPER}}" stroke-width="{{D}}"/>
-<path d="M269 646H400L313 733H269Z" fill="{{KRAFT}}" fill-opacity=".55" stroke="none"/>
+<rect x="268" y="645" width="260" height="89" rx="3" fill="{{GLASS}}" stroke-width="{{D}}"/>
+<path d="M269 646H400L313 733H269Z" fill="{{GLASS_DP}}" fill-opacity=".6" stroke="none"/>
+<rect x="270" y="646" width="256" height="3.5" fill="{{PAPER}}" stroke="none"/>
 <rect x="268" y="680" width="260" height="5" fill="{{STEEL_HI}}" stroke-width="{{D}}"/>
+<rect x="268" y="716" width="260" height="8" fill="{{STEEL_HI}}" stroke-width="{{D}}"/>
+<rect x="290" y="681.5" width="13" height="5.5" rx="1.5" fill="{{MUSTARD}}" stroke="none"/>
+<rect x="420" y="681.5" width="13" height="5.5" rx="1.5" fill="{{MUSTARD}}" stroke="none"/>
+<rect x="475" y="681.5" width="13" height="5.5" rx="1.5" fill="{{MUSTARD}}" stroke="none"/>
 <rect x="533" y="660" width="9" height="50" rx="4" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
-<rect x="244" y="606" width="322" height="14" rx="5" fill="{{WOOD}}" stroke-width="{{M}}"/>
-<path d="M252 610H470" fill="none" stroke="{{HILITE}}" stroke-opacity=".7" stroke-width="{{D}}"/>
 </g>
 </svg>

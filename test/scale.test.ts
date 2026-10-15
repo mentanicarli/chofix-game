@@ -3,6 +3,8 @@ import FRIDGE from '../art-src/bar/showcase.svg?raw';
 import ICE from '../art-src/bar/ice.svg?raw';
 import MICRO from '../art-src/bar/sc-micro.svg?raw';
 import INDEX from '../index.html?raw';
+import FRONT from '../art-src/bar/counter-front.svg?raw';
+import NOSE from '../art-src/bar/counter-nose.svg?raw';
 
 /* Этап 12.3(2): соотношения размеров по шкале docs/art/scale.md. Бар: 4,64 px/см (кофемашина 75 см = 348 px). Допуск у фона 0,75–1,25. */
 const S_BAR = 4.64;
@@ -71,10 +73,10 @@ describe('подстоечные блоки: опора и стыковка', ()
       expect(z.y + z.h).toBe(720);
     }
   });
-  test('совок ледогенератора меньше проёма между фасадом и стенкой ниши', () => {
-    const bay = rect(ICE, 'DARK');
-    const front = rect(ICE, 'STEEL');
-    const gap = bay.x + bay.w - (front.x + front.w);
-    expect(gap).toBeGreaterThanOrEqual(22); /* головка совка шириной 20 px */
+  test('фасад тумбы: дверцы counter-front стоят точно в нишах блоков (x и ширина), кромка столешницы во всю ширину кадра', () => {
+    const front = FRONT;
+    const nose = NOSE;
+    for (const b of bays) expect(front).toContain(`<rect x="${b.bay.x}" y="630" width="${b.bay.w}"`);
+    expect(nose).toMatch(/<rect x="-6" y="607" width="1292"/);
   });
 });

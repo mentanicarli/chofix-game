@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 604 1280 116" data-part="counterFront" data-after="static" data-scale="1">
+<!--
+  Фасад тумбы под столешницей (этап 12.3(2), исправление 24б): всегда виден, во всю ширину кадра. Тёмный низ, пять дверец; три средние стоят ровно в нишах подстоечных блоков (x 250–560, 572–804, 816–1048): купленный блок закрывает свою дверцу.
+  Низ обрезан краем кадра (y 720) на корпусе. Кромка столешницы и тень под ней — counter-nose.svg (рисуется поверх блоков). Свет сверху слева: ручки светлые слева, тень справа. Контур 3,5 / 3 / 2 px.
+-->
+<g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
+<rect x="-6" y="622" width="1292" height="110" fill="{{CHOC}}" stroke="none"/>
+<g stroke-width="{{M}}" fill="{{WOOD_SH}}">
+<rect x="6" y="630" width="232" height="104" rx="5"/>
+<rect x="250" y="630" width="310" height="104" rx="5"/>
+<rect x="572" y="630" width="232" height="104" rx="5"/>
+<rect x="816" y="630" width="232" height="104" rx="5"/>
+<rect x="1060" y="630" width="214" height="104" rx="5"/>
+</g>
+<g fill="{{WOOD}}" stroke="none">
+<rect x="9" y="633" width="226" height="6" rx="2"/>
+<rect x="253" y="633" width="304" height="6" rx="2"/>
+<rect x="575" y="633" width="226" height="6" rx="2"/>
+<rect x="819" y="633" width="226" height="6" rx="2"/>
+<rect x="1063" y="633" width="208" height="6" rx="2"/>
+</g>
+<g fill="{{STEEL_HI}}" stroke-width="{{D}}">
+<rect x="212" y="652" width="8" height="40" rx="4"/>
+<rect x="1082" y="652" width="8" height="40" rx="4"/>
+</g>
+</g>
+</svg>

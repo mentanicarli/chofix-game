@@ -175,6 +175,8 @@ export class BarScene {
 
     spr('static');
     txt('static', R);
+    /* фасад тумбы под столешницей: всегда виден, блоки (ледогенератор, витрина, микроволновка) стоят в его нишах (этап 12.3(2), 24б) */
+    spr('counterFront');
     /* холодильник с молоком: рисуется под кофемолкой и сиропами, как раньше в статике */
     spr('milk', this.fridge);
     txt('milk', this.fridge);
@@ -300,6 +302,8 @@ export class BarScene {
     spr('scMicro', micro);
     this.subs.set('scMicro', micro);
     R.addChild(micro);
+    /* кромка столешницы с тенью: поверх блоков, под плитками оборудования, чтобы блоки уходили под неё */
+    spr('counterNose');
     ids.filter((k) => k.startsWith('eq_')).forEach((k) => {
       const c = new Container();
       spr(k, c);

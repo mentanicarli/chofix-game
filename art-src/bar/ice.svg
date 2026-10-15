@@ -1,34 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="562 604 248 116" data-part="ice" data-scale="1">
 <!--
-  Подстоечный ледогенератор (этап 12.3(2)): блок 41 см под рабочей поверхностью, виден верх фасада (низ обрезан краем кадра). Шкала бара 4,64 px/см: фасад 198 px = 43 см.
-  Конструкция: ниша, торец столешницы, фасад с индикатором и дисплеем, откидная дверца с утопленной ручкой и окном со льдом, совок на крючке справа (его головка меньше проёма ниши).
-  Зона ice (перенесена): x 572, y 626, w 232, h 94. Свет сверху слева. Контур 3,5 / 3 / 2 px. Подписи нет.
+  Подстоечный ледогенератор (этап 12.3(2), исправление 24б): блок 41 см под рабочей поверхностью, виден верх фасада (срез краем кадра приходится на откидную дверцу-лоток). Шкала бара 4,64 px/см: фасад 198 px = 43 см.
+  Читается как ледогенератор, а не духовка: панель со снежинкой, открытый бункер (холодная бирюзовая стенка) с горкой кубиков льда, совок торчит из льда, откидная дверца опущена на нас с ручкой.
+  Зона ice: x 572, y 626, w 232, h 94. Свет сверху слева. Контур 3,5 / 3 / 2 px. Подписи нет.
 -->
 <g stroke="{{INK}}" stroke-linejoin="round" stroke-linecap="round">
 <rect x="572" y="620" width="232" height="110" rx="6" fill="{{DARK}}" stroke-width="{{L}}"/>
 <rect x="580" y="626" width="198" height="104" rx="6" fill="{{STEEL}}" stroke-width="{{L}}"/>
 <path d="M758 627H772Q777 627 777 632V730H758Z" fill="{{STEEL_SH}}" stroke="none"/>
-<rect x="590" y="629" width="40" height="10" rx="2.5" fill="{{DARK}}" stroke-width="{{D}}"/>
-<path d="M595 634H606M611 634H625" fill="none" stroke="{{DUSTY}}" stroke-width="{{D}}"/>
-<circle cx="760" cy="634" r="3.5" fill="{{DUSTY}}" stroke-width="{{D}}"/>
-<rect x="586" y="642" width="186" height="92" rx="5" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
-<rect x="632" y="649" width="94" height="10" rx="5" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
-<rect x="598" y="667" width="162" height="53" rx="4" fill="{{GLASS_DP}}" stroke-width="{{M}}"/>
-<g stroke-width="{{D}}">
-<rect x="604" y="696" width="26" height="23" rx="4" fill="{{PAPER}}" transform="rotate(-7 617 707)"/>
-<rect x="630" y="689" width="28" height="25" rx="4" fill="{{GLASS}}" transform="rotate(5 644 701)"/>
-<rect x="658" y="696" width="27" height="23" rx="4" fill="{{PAPER}}" transform="rotate(-4 671 707)"/>
-<rect x="686" y="690" width="25" height="24" rx="4" fill="{{GLASS}}" transform="rotate(8 698 702)"/>
-<rect x="714" y="696" width="26" height="23" rx="4" fill="{{PAPER}}" transform="rotate(-6 727 707)"/>
-<rect x="618" y="676" width="24" height="21" rx="4" fill="{{GLASS}}" transform="rotate(9 630 686)"/>
-<rect x="664" y="675" width="26" height="20" rx="4" fill="{{PAPER}}" transform="rotate(-8 677 685)"/>
-<rect x="706" y="677" width="24" height="20" rx="4" fill="{{GLASS}}" transform="rotate(6 718 687)"/>
+<rect x="590" y="630" width="40" height="9" rx="2.5" fill="{{DARK}}" stroke-width="{{D}}"/>
+<path d="M595 634.5H606M611 634.5H625" fill="none" stroke="{{MUSTARD}}" stroke-width="{{D}}"/>
+<g fill="none" stroke="{{DUSTY}}" stroke-width="{{D}}">
+<path d="M650 629.5V639.5M645.7 632L654.3 637M645.7 637L654.3 632"/>
 </g>
-<path d="M606 669H622L604 719H599Z" fill="{{HILITE}}" fill-opacity=".34" stroke="none"/>
-<circle cx="792" cy="634" r="2.8" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
-<rect x="789" y="637" width="6" height="34" rx="3" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
-<path d="M782 671H802Q804 689 792 693Q780 689 782 671Z" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
-<rect x="566" y="606" width="244" height="14" rx="5" fill="{{WOOD}}" stroke-width="{{M}}"/>
-<path d="M574 610H700" fill="none" stroke="{{HILITE}}" stroke-opacity=".7" stroke-width="{{D}}"/>
+<circle cx="760" cy="634.5" r="3.5" fill="{{DUSTY}}" stroke-width="{{D}}"/>
+<rect x="586" y="642" width="186" height="92" rx="5" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
+<rect x="596" y="649" width="166" height="62" rx="4" fill="{{DUSTY}}" stroke-width="{{M}}"/>
+<g stroke-width="{{D}}">
+<rect x="602" y="686" width="25" height="24" rx="4" fill="{{PAPER}}" transform="rotate(-6 614 698)"/>
+<rect x="628" y="688" width="26" height="22" rx="4" fill="{{GLASS}}" transform="rotate(4 641 699)"/>
+<rect x="655" y="686" width="26" height="24" rx="4" fill="{{PAPER}}" transform="rotate(-3 668 698)"/>
+<rect x="682" y="688" width="26" height="22" rx="4" fill="{{GLASS}}" transform="rotate(7 695 699)"/>
+<rect x="709" y="686" width="25" height="24" rx="4" fill="{{PAPER}}" transform="rotate(-5 721 698)"/>
+<rect x="735" y="688" width="22" height="22" rx="4" fill="{{GLASS}}" transform="rotate(5 746 699)"/>
+<rect x="616" y="664" width="26" height="23" rx="4" fill="{{GLASS}}" transform="rotate(8 629 675)"/>
+<rect x="643" y="662" width="27" height="25" rx="4" fill="{{PAPER}}" transform="rotate(-5 656 674)"/>
+<rect x="670" y="665" width="26" height="23" rx="4" fill="{{GLASS}}" transform="rotate(4 683 676)"/>
+<rect x="697" y="663" width="27" height="24" rx="4" fill="{{PAPER}}" transform="rotate(-7 710 675)"/>
+</g>
+<path d="M606 652H620L602 708H598Z" fill="{{HILITE}}" fill-opacity=".3" stroke="none"/>
+<path d="M731 642L739 646L727 675L718 671Z" fill="{{STEEL_SH}}" stroke-width="{{M}}"/>
+<path d="M704 676H730Q730 692 717 694Q704 692 704 676Z" fill="{{STEEL_SH}}" stroke-width="{{M}}"/>
+<path d="M592 711H766L774 734H584Z" fill="{{STEEL_HI}}" stroke-width="{{M}}"/>
+<rect x="633" y="713" width="92" height="6" rx="3" fill="{{STEEL_SH}}" stroke-width="{{D}}"/>
 </g>
 </svg>
