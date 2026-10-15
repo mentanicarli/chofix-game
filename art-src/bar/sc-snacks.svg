@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="534 539 92 28" data-part="scSnacks" data-scale="1">
-<!-- Снеки на верхней полке витрины (этап 12.3(1)): пакет чипсов, крендель, шоколадка. Основание на полке y 565. -->
+<!-- Снеки на верхней полке витрины (этап 12.3(1)): пакет чипсов (жёлтый, с загнутым верхом и логотипом), крендель, плитка шоколада с клеткой долек и обёрткой. Основание на полке y 565. -->
 <g stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
-<path d="M540 565V547L542 544L545 546L548 543L551 546L554 544L556 547V565Z" fill="{{SAGE}}"/>
-<ellipse cx="548" cy="555" rx="4" ry="3.4" fill="{{PAPER}}" stroke="none"/>
+<path d="M539 565V548L541 545L544 547L547 544L550 547L553 545L556 548V565Z" fill="{{MUSTARD}}"/>
+<circle cx="547.5" cy="557" r="3.8" fill="{{TERRA}}"/>
+<path d="M540 549H555" fill="none" stroke="{{BAKE_SH}}"/>
 <ellipse cx="578" cy="555" rx="11" ry="9" fill="{{BAKE}}"/>
 <ellipse cx="578" cy="555" rx="5" ry="4" fill="{{PAPER}}"/>
-<path d="M570 561L586 549" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
+<path d="M570 561L586 549" fill="none" stroke="{{BAKE_SH}}"/>
 <circle cx="572" cy="550" r="1" fill="{{PAPER}}" stroke="none"/>
 <circle cx="584" cy="561" r="1" fill="{{PAPER}}" stroke="none"/>
-<path d="M596 565L600 545L612 546L616 565Z" fill="{{CHOC}}"/>
-<path d="M600 553H614M599 559H615" fill="none" stroke="{{BAKE_SH}}" stroke-width="{{D}}"/>
-<path d="M600 545L612 546L611 549L601 548Z" fill="{{PAPER}}" stroke="none"/>
+<path d="M599 565V547H615V565Z" fill="{{CHOC}}"/>
+<path d="M603 547V565M607 547V565M611 547V565M599 553H615M599 559H615" fill="none" stroke="{{BAKE_SH}}"/>
+<path d="M599 547H615V551H599Z" fill="{{PAPER}}"/>
 </g>
 </svg>

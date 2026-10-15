@@ -80,6 +80,8 @@ function overlaps(items) {
   const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
   const b = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const p = await PW.page(b); const errs = []; PW.watch(p, errs);
+  /* фиксированный состав очереди для честного сравнения между сборками (этап 12.3(1)): генератор с ручным зерном, перед спавном ставим зерно */
+  await p.addInitScript(() => { let a = 1; window.__seed = n => { a = n | 0; }; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
   const url = PW.url(tmp);
   const start = async (o) => { await p.goto('about:blank'); await p.goto(url + '#dev'); await p.waitForSelector('[data-sandbox]', { timeout: 60000 }); await p.waitForTimeout(400); await p.evaluate(c => window.__sandbox.start(c), o); await p.waitForSelector('#screen', { state: 'hidden', timeout: 20000 }); };
   await start({ day: 10, profile: 'medium' });
@@ -105,7 +107,7 @@ function overlaps(items) {
     await p.setViewportSize({ width: 1312, height: 752 }); await p.waitForTimeout(300);
     report.states[name] = per; console.log('state', name);
   };
-  const first = async () => { await p.evaluate(() => { const d = __dbg; d.D.nextArr = 1e9; if (d.D.customers.length < 6) for (let i = d.D.customers.length; i < 6; i++) d.spawn(); d.D.customers.forEach(c => { c.pat = c.max = 1e9; }); }); await p.waitForFunction(() => __dbg.D.customers.slice(0, 3).every(c => c.arrived), null, { timeout: 90000 }).catch(() => {}); };
+  const first = async () => { await p.evaluate(() => { window.__seed(20261015); const d = __dbg; d.D.nextArr = 1e9; if (d.D.customers.length < 6) for (let i = d.D.customers.length; i < 6; i++) d.spawn(); d.D.customers.forEach(c => { c.pat = c.max = 1e9; }); }); await p.waitForFunction(() => __dbg.D.customers.slice(0, 3).every(c => c.arrived), null, { timeout: 90000 }).catch(() => {}); };
   if (on('overlap') || on('panels') || on('cups') || on('recog') || on('texts')) await first();
 
   if (on('overlap') || on('panels')) {
