@@ -31,6 +31,8 @@ export interface BarFrame {
   topCol: string;
   topOn: boolean;
   art: { pts: [number, number][]; alpha: number } | null;
+  /** холодный напиток: прозрачный стакан со слоями и льдом; иначе непрозрачная керамическая чашка (стайлгайд, разд. 15) */
+  glass: boolean;
   pitH: number;
   stream: { y: number; h: number; col: string } | null;
   gaugeDeg: number;
@@ -59,7 +61,7 @@ const hexNum = (c: string): number => {
 
 /** Бар: статичный арт одним спрайтом, подвижные детали — отдельными узлами. */
 /** потолок масштаба чашки по высоте: обод остаётся ниже носика группы (y ≈ 372) */
-const CUP_MAX_KY = 1.15;
+const CUP_MAX_KY = 1.12;
 
 export class BarScene {
   readonly root = new Container();
@@ -79,6 +81,15 @@ export class BarScene {
   private pitUnderG = new Container();
   private pitCoffee = new Graphics();
   private inner = new Container();
+  /* чашка (этап 12.3(0)): снизу вверх — блюдце, ручка, тело (заливка), inner (внутри обода: интерьер, слои стакана, поверхность напитка), контур спереди; форма пересобирается при смене размера или материала */
+  private handleG = new Graphics();
+  private bodyG = new Graphics();
+  private frontG = new Graphics();
+  private openC = new Container();
+  private surfC = new Container();
+  private clipC = new Container();
+  private openMask = new Graphics();
+  private shellKey = '';
   private layers = new Graphics();
   private ice = new Container();
   private top = new Graphics();
@@ -93,6 +104,46 @@ export class BarScene {
   private lastKey = '';
   private lastHop = -1;
   private lastPit = -1;
+
+  /**
+   * Корпус чашки (не масштабируется, контур ровно 3 px). Керамика: непрозрачное тело с тенью справа, ручка, овал обода; три формы по размеру
+   * (эспрессо — приземистая, до 0,3 л — кружка, больше — широкая чашка). Стакан: полупрозрачное тело и контур, слои видны сквозь стенку.
+   * Размеры считаются из тех же чисел, что inner: ширина 55·kx, высота 78·ky (ky не больше CUP_MAX_KY — обод остаётся ниже носика группы).
+   */
+  private drawShell(kx: number, ky: number, glass: boolean): void {
+    const h = this.handleG.clear();
+    const b = this.bodyG.clear();
+    const f = this.frontG.clear();
+    const H = (glass ? 78 : 75) * ky; /* у керамики овал обода выше (взгляд сверху сильнее), корпус ниже на 3: верх обода остаётся на прежней высоте */
+    if (glass) {
+      const Wt = 52 * kx;
+      const Wb = 42 * kx;
+      const path = (g: Graphics): Graphics => g.moveTo(-Wt, -H).lineTo(Wt, -H).lineTo(Wb, -8 * ky).quadraticCurveTo(0, 4 * ky, -Wb, -8 * ky).closePath();
+      path(b).fill({ color: 0xffffff, alpha: 0.18 });
+      f.moveTo(-Wt, -H).lineTo(-Wb, -8 * ky).quadraticCurveTo(0, 4 * ky, Wb, -8 * ky).lineTo(Wt, -H).stroke({ width: 3, color: INK, join: 'round', cap: 'round' });
+      f.ellipse(0, -H, Wt, 9 * ky).stroke({ width: 2, color: INK });
+      f.moveTo(-Wt * 0.8, -H * 0.8).lineTo(-Wb * 0.85, -H * 0.2).stroke({ width: 3, color: 0xffffff, alpha: 0.65, cap: 'round' });
+      return;
+    }
+    const W = 55 * kx;
+    const Wb = W * (kx < 0.9 ? 0.62 : kx < 1.2 ? 0.8 : 0.72);
+    const yb = -8 * ky;
+    const side = (g: Graphics): Graphics =>
+      g.moveTo(-W, -H).bezierCurveTo(-W * 1.03, -H * 0.5, -Wb * 1.1, -H * 0.1, -Wb, yb).quadraticCurveTo(0, 4 * ky, Wb, yb).bezierCurveTo(Wb * 1.1, -H * 0.1, W * 1.03, -H * 0.5, W, -H);
+    /* ручка за телом: чёрный контур и заливка поверх */
+    const reach = kx < 0.9 ? 15 : kx < 1.2 ? 24 : 30;
+    const th = 6 * Math.min(kx, 1.2);
+    const hx = W - 3;
+    const y0 = -H * 0.8;
+    const y1 = -H * 0.26;
+    h.moveTo(hx, y0).bezierCurveTo(hx + reach, y0 - 6 * ky, hx + reach, y1 + 4 * ky, hx - 3, y1).stroke({ width: th + 6, color: INK, cap: 'round', join: 'round' });
+    h.moveTo(hx, y0).bezierCurveTo(hx + reach, y0 - 6 * ky, hx + reach, y1 + 4 * ky, hx - 3, y1).stroke({ width: th, color: 0xfff8ec, cap: 'round', join: 'round' });
+    side(b).closePath().fill(0xfff8ec);
+    b.moveTo(W * 0.55, -H * 0.98).lineTo(W, -H).bezierCurveTo(W * 1.03, -H * 0.5, Wb * 1.1, -H * 0.1, Wb, yb).quadraticCurveTo(Wb * 0.4, 1 * ky, Wb * 0.15, 0).bezierCurveTo(Wb * 0.5, -H * 0.3, W * 0.72, -H * 0.62, W * 0.55, -H * 0.98).fill(0xe3cba6);
+    side(f).stroke({ width: 3, color: INK, join: 'round', cap: 'round' });
+    f.ellipse(0, -H, W, 14 * ky).stroke({ width: 3, color: INK });
+    f.moveTo(-W * 0.82, -H * 0.8).quadraticCurveTo(-W * 0.88, -H * 0.45, -Wb * 0.88, -H * 0.2).stroke({ width: 3, color: 0xffffff, alpha: 0.75, cap: 'round' });
+  }
 
   async build(res: number, fontRes: number): Promise<void> {
     this.res = res;
@@ -185,27 +236,25 @@ export class BarScene {
     /* чашка */
     this.cupC.position.set(630, 478);
     const saucer = this.saucer;
-    saucer.ellipse(0, 7, 76, 10).fill(0xe9ddc7).stroke({ width: 3, color: INK });
-    saucer.ellipse(0, 5, 52, 5).fill(0xd9cdb6);
-    this.cupC.addChild(saucer, this.inner);
-    const shape = (g: Graphics): Graphics => g.moveTo(-55, -78).lineTo(55, -78).lineTo(45, -6).quadraticCurveTo(0, 10, -45, -6).closePath();
-    this.inner.addChild(shape(new Graphics()).fill(0xfff8ec));
-    this.inner.addChild(new Graphics().ellipse(0, -78, 55, 9).fill(0xe9ddc7));
-    const clip = new Container();
-    const cmask = shape(new Graphics()).fill(0xffffff);
-    clip.addChild(cmask, this.layers, this.ice);
-    clip.mask = cmask;
-    this.inner.addChild(clip);
+    saucer.ellipse(0, 7, 76, 10).fill(0xf1dfc2).stroke({ width: 3, color: INK });
+    saucer.ellipse(0, 5, 52, 5).fill(0xe3cba6);
+    /* внутри inner (масштаб cupK по x и ≤ CUP_MAX_KY по y): интерьер керамики, слои и лёд стакана, поверхность напитка */
+    const glassShape = (g: Graphics): Graphics => g.moveTo(-52, -78).lineTo(52, -78).lineTo(42, -8).quadraticCurveTo(0, 4, -42, -8).closePath();
+    const openEllipse = (g: Graphics): Graphics => g.ellipse(0, -75, 55, 14);
+    this.openC.addChild(openEllipse(new Graphics()).fill(0xd8bf99), new Graphics().ellipse(0, -78, 50, 10).fill(0xc9b59d));
+    const cmask = glassShape(new Graphics()).fill(0xffffff);
+    this.clipC.addChild(cmask, this.layers, this.ice);
+    this.clipC.mask = cmask;
+    openEllipse(this.openMask).fill(0xffffff);
+    this.surfC.addChild(this.openMask, this.top, this.art);
+    this.inner.addChild(this.openC, this.clipC, this.surfC);
+    this.cupC.addChild(saucer, this.handleG, this.bodyG, this.inner, this.frontG);
     [[-38, -44, 26, -10, 0.6], [-8, -50, 28, 8, 0.6], [18, -34, 24, -6, 0.6], [-26, -22, 22, 12, 0.55]].forEach(([x, y, s, a, al]) => {
       const g = new Graphics().roundRect(-(s as number) / 2, -(s as number) / 2, s as number, s as number, 5).fill({ color: 0xffffff, alpha: al as number }).stroke({ width: 2, color: 0xdceef1 });
       g.position.set((x as number) + (s as number) / 2, (y as number) + (s as number) / 2);
       g.rotation = ((a as number) * Math.PI) / 180;
       this.ice.addChild(g);
     });
-    this.inner.addChild(shape(new Graphics()).stroke({ width: 2.5, color: 0xfff8ec }));
-    const handle = new Graphics().moveTo(55, -62).quadraticCurveTo(82, -62, 76, -34).quadraticCurveTo(72, -16, 48, -20).stroke({ width: 7, color: 0xfff8ec, cap: 'round' });
-    this.inner.addChild(handle, this.top, this.art);
-    this.inner.addChild(new Graphics().moveTo(-48, -62).quadraticCurveTo(-46, -30, -38, -14).stroke({ width: 4, color: 0xffffff, alpha: 0.55, cap: 'round' }));
     R.addChild(this.cupC);
     /* питчер из нержавейки под группой (раф): корпус, уровень эспрессо, носик и ручка */
     const pb = new Graphics();
@@ -287,7 +336,18 @@ export class BarScene {
     this.bell.scale.set(bs);
     /* чашка */
     /* высота чашки ограничена нишей группы (верх обода не выше y 380): крупные объёмы растут вширь, а не вверх; стайлгайд, раздел 15 */
-    this.inner.scale.set(f.cupK, Math.min(f.cupK, CUP_MAX_KY));
+    const ky = Math.min(f.cupK, CUP_MAX_KY);
+    this.inner.scale.set(f.cupK, ky);
+    const shellKey = f.cupK.toFixed(3) + '|' + f.glass;
+    if (shellKey !== this.shellKey) {
+      this.shellKey = shellKey;
+      this.drawShell(f.cupK, ky, f.glass);
+      this.openC.visible = !f.glass;
+      this.clipC.visible = f.glass;
+      this.surfC.mask = f.glass ? null : this.openMask;
+      this.openMask.visible = !f.glass; /* маска лежит в дереве: у стакана без маски она бы рисовалась белым овалом */
+      this.lastKey = '';
+    }
     this.saucer.scale.set(Math.min(1.4, Math.max(0.85, 0.2 + 0.8 * f.cupK)));
     this.cupC.visible = !f.pitUnder;
     this.pitUnderG.visible = !!f.pitUnder;
@@ -296,7 +356,7 @@ export class BarScene {
       this.pitCoffee.clear().poly([-26 - (h / 68) * 6 + 6, -4 - h, 26 + (h / 68) * 6 - 6, -4 - h, 26, -6, -26, -6]).fill(0x4a2e20);
     }
     this.ice.alpha = Math.max(0, Math.min(1, f.ice));
-    const key = JSON.stringify([f.rects, f.topY, f.topRx, f.topCol, f.topOn, f.art]);
+    const key = JSON.stringify([f.rects, f.topY, f.topRx, f.topCol, f.topOn, f.art, f.glass]);
     if (key !== this.lastKey) {
       this.lastKey = key;
       this.layers.clear();
@@ -304,7 +364,11 @@ export class BarScene {
         if (r.h > 0.05) this.layers.rect(-60, r.y, 120, r.h).fill(hexNum(r.col));
       });
       this.top.clear();
-      if (f.topOn) this.top.ellipse(0, f.topY, f.topRx, 9).fill(hexNum(f.topCol));
+      /* керамика: поверхность напитка видна только в овале обода; чем меньше налито, тем ниже и уже она уходит за переднюю кромку (пустая чашка: видно только интерьер) */
+      const lvl = Math.min(1, Math.max(0, (2 - f.topY) / 72));
+      const surfY = f.glass ? f.topY : -73 + (1 - lvl) * 23.5;
+      if (f.glass ? f.topOn : lvl > 0.12) this.top.ellipse(0, surfY, f.glass ? f.topRx : 51 * (1 - 0.12 * (1 - lvl)), f.glass ? 9 : 11).fill(hexNum(f.topCol));
+      this.art.y = f.glass ? 0 : surfY - f.topY;
       this.art.clear();
       if (f.art && f.art.pts.length > 1) {
         const p = f.art.pts;

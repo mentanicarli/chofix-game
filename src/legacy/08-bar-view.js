@@ -71,7 +71,7 @@ function barPaint(dt) {
     pf: B.pf0, cof: B.dose > 2 && !B.done.shot,
     grindDeg: ((G.grindSet || 3) - 3) * 40, dose: B.dose,
     tamperUp: B.inset === 'tamp', cupK: k, pitUnder,
-    ice: rc.ice ? clamp(cup.ice / rc.ice, 0, 1) : 0, rects, topY, topRx: 46 + (-topY) * .12, topCol, topOn: topY < -10, art,
+    ice: rc.ice ? clamp(cup.ice / rc.ice, 0, 1) : 0, rects, topY, topRx: 46 + (-topY) * .12, topCol, topOn: topY < -10, art, glass: !!(B.c.order && B.c.order.cold),
     pitH: Math.min(74, (B.pit.ml + B.pit.es) / B.pitCap * 74 * 1.6),
     stream: run ? { y: 354, h: Math.max(8, (pitUnder ? 470 : 478 + topY * k) - 354), col: mixC('#4A2E20', '#C99B6E', clamp((B.shot.t - 14) / 24, 0, 1)) } : null,
     gaugeDeg: run ? 70 + Math.sin(now / 120) * 4 : B.inset === 'steam' ? 40 : -30,
