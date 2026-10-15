@@ -1,5 +1,5 @@
 {
-  "_": "Токены для art-src (стайлгайд docs/art/styleguide.md, направление A). {{ИМЯ}} в SVG заменяется скриптом scripts/art-build.mjs; толщины L/M/D считаются от экранных 3,5 / 3 / 2 px делением на data-scale предмета (масштаб гостя GUEST_K = 1,6 у стола, стула, ноутбука и чашки гостя).",
+  "_": "Токены для art-src (стайлгайд docs/art/styleguide.md, направление A). {{ИМЯ}} в SVG заменяется скриптом scripts/art-build.mjs; толщины L/M/D считаются от экранных 3,5 / 3 / 2 px делением на data-scale предмета (масштаб гостя GUEST_K = 1,6 у стола, стула, ноутбука и чашки гостя; 1 у частей бара и ковра). Этот же файл читает Pixi-код (src/render/world/style.ts): толщины и цвета чашки берутся отсюда, а не числами.",
   "colors": {
     "INK": "#4A2F25",
     "PAPER": "#FFF8EC",
@@ -13,7 +13,31 @@
     "TOP": "#DDB083",
     "TERRA": "#C4694A",
     "RUG": "#DDA583",
-    "SHADOW": "#3B2418"
+    "SHADOW": "#3B2418",
+    "CER_IN": "#D8BF99",
+    "CER_IN_DP": "#C9B59D",
+    "STEEL_HI": "#E8E2D6",
+    "STEEL": "#CFC7BA",
+    "STEEL_SH": "#A9A092",
+    "GLASS": "#DCEBEA",
+    "GLASS_DP": "#BBD6D3",
+    "MUSTARD": "#F0BC55",
+    "SAGE": "#93A684",
+    "SAGE_LT": "#B9CAA9",
+    "DUSTY": "#7FA3A8",
+    "BAKE": "#E0A24C",
+    "BAKE_SH": "#B8733A",
+    "PINK": "#F0B3A0",
+    "CHOC": "#7A4A38",
+    "DARK": "#3B2F2A"
   },
-  "stroke": { "L": 3.5, "M": 3, "D": 2 }
+  "stroke": {
+    "L": 3.5,
+    "M": 3,
+    "D": 2
+  },
+  "glass": {
+    "alpha": 0.18,
+    "fill": "#FFFFFF"
+  }
 }

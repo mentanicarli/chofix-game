@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
 import PARTS from '../../assets/art/bar-parts.json';
 import { raster } from './svg';
+import { GLASS_FILL, STROKE, pc } from './style';
 
 interface Box { x: number; y: number; w: number; h: number }
 interface TextSpec { t: string; x: number; y: number; size: number; weight: string; fill: string; family: string; tl: number | null }
@@ -119,10 +120,10 @@ export class BarScene {
       const Wt = 52 * kx;
       const Wb = 42 * kx;
       const path = (g: Graphics): Graphics => g.moveTo(-Wt, -H).lineTo(Wt, -H).lineTo(Wb, -8 * ky).quadraticCurveTo(0, 4 * ky, -Wb, -8 * ky).closePath();
-      path(b).fill({ color: 0xffffff, alpha: 0.18 });
-      f.moveTo(-Wt, -H).lineTo(-Wb, -8 * ky).quadraticCurveTo(0, 4 * ky, Wb, -8 * ky).lineTo(Wt, -H).stroke({ width: 3, color: INK, join: 'round', cap: 'round' });
-      f.ellipse(0, -H, Wt, 9 * ky).stroke({ width: 2, color: INK });
-      f.moveTo(-Wt * 0.8, -H * 0.8).lineTo(-Wb * 0.85, -H * 0.2).stroke({ width: 3, color: 0xffffff, alpha: 0.65, cap: 'round' });
+      path(b).fill(GLASS_FILL);
+      f.moveTo(-Wt, -H).lineTo(-Wb, -8 * ky).quadraticCurveTo(0, 4 * ky, Wb, -8 * ky).lineTo(Wt, -H).stroke({ width: STROKE.M, color: INK, join: 'round', cap: 'round' });
+      f.ellipse(0, -H, Wt, 9 * ky).stroke({ width: STROKE.D, color: INK });
+      f.moveTo(-Wt * 0.8, -H * 0.8).lineTo(-Wb * 0.85, -H * 0.2).stroke({ width: STROKE.M, color: 0xffffff, alpha: 0.65, cap: 'round' });
       return;
     }
     const W = 55 * kx;
@@ -136,13 +137,13 @@ export class BarScene {
     const hx = W - 3;
     const y0 = -H * 0.8;
     const y1 = -H * 0.26;
-    h.moveTo(hx, y0).bezierCurveTo(hx + reach, y0 - 6 * ky, hx + reach, y1 + 4 * ky, hx - 3, y1).stroke({ width: th + 6, color: INK, cap: 'round', join: 'round' });
-    h.moveTo(hx, y0).bezierCurveTo(hx + reach, y0 - 6 * ky, hx + reach, y1 + 4 * ky, hx - 3, y1).stroke({ width: th, color: 0xfff8ec, cap: 'round', join: 'round' });
-    side(b).closePath().fill(0xfff8ec);
-    b.moveTo(W * 0.55, -H * 0.98).lineTo(W, -H).bezierCurveTo(W * 1.03, -H * 0.5, Wb * 1.1, -H * 0.1, Wb, yb).quadraticCurveTo(Wb * 0.4, 1 * ky, Wb * 0.15, 0).bezierCurveTo(Wb * 0.5, -H * 0.3, W * 0.72, -H * 0.62, W * 0.55, -H * 0.98).fill(0xe3cba6);
-    side(f).stroke({ width: 3, color: INK, join: 'round', cap: 'round' });
-    f.ellipse(0, -H, W, 14 * ky).stroke({ width: 3, color: INK });
-    f.moveTo(-W * 0.82, -H * 0.8).quadraticCurveTo(-W * 0.88, -H * 0.45, -Wb * 0.88, -H * 0.2).stroke({ width: 3, color: 0xffffff, alpha: 0.75, cap: 'round' });
+    h.moveTo(hx, y0).bezierCurveTo(hx + reach, y0 - 6 * ky, hx + reach, y1 + 4 * ky, hx - 3, y1).stroke({ width: th + 2 * STROKE.M, color: INK, cap: 'round', join: 'round' });
+    h.moveTo(hx, y0).bezierCurveTo(hx + reach, y0 - 6 * ky, hx + reach, y1 + 4 * ky, hx - 3, y1).stroke({ width: th, color: pc('PAPER'), cap: 'round', join: 'round' });
+    side(b).closePath().fill(pc('PAPER'));
+    b.moveTo(W * 0.55, -H * 0.98).lineTo(W, -H).bezierCurveTo(W * 1.03, -H * 0.5, Wb * 1.1, -H * 0.1, Wb, yb).quadraticCurveTo(Wb * 0.4, 1 * ky, Wb * 0.15, 0).bezierCurveTo(Wb * 0.5, -H * 0.3, W * 0.72, -H * 0.62, W * 0.55, -H * 0.98).fill(pc('KRAFT_SH'));
+    side(f).stroke({ width: STROKE.M, color: INK, join: 'round', cap: 'round' });
+    f.ellipse(0, -H, W, 14 * ky).stroke({ width: STROKE.M, color: INK });
+    f.moveTo(-W * 0.82, -H * 0.8).quadraticCurveTo(-W * 0.88, -H * 0.45, -Wb * 0.88, -H * 0.2).stroke({ width: STROKE.M, color: 0xffffff, alpha: 0.75, cap: 'round' });
   }
 
   async build(res: number, fontRes: number): Promise<void> {
@@ -236,12 +237,12 @@ export class BarScene {
     /* чашка */
     this.cupC.position.set(630, 478);
     const saucer = this.saucer;
-    saucer.ellipse(0, 7, 76, 10).fill(0xf1dfc2).stroke({ width: 3, color: INK });
-    saucer.ellipse(0, 5, 52, 5).fill(0xe3cba6);
+    saucer.ellipse(0, 7, 76, 10).fill(pc('KRAFT')).stroke({ width: STROKE.M, color: INK });
+    saucer.ellipse(0, 5, 52, 5).fill(pc('KRAFT_SH'));
     /* внутри inner (масштаб cupK по x и ≤ CUP_MAX_KY по y): интерьер керамики, слои и лёд стакана, поверхность напитка */
     const glassShape = (g: Graphics): Graphics => g.moveTo(-52, -78).lineTo(52, -78).lineTo(42, -8).quadraticCurveTo(0, 4, -42, -8).closePath();
     const openEllipse = (g: Graphics): Graphics => g.ellipse(0, -75, 55, 14);
-    this.openC.addChild(openEllipse(new Graphics()).fill(0xd8bf99), new Graphics().ellipse(0, -78, 50, 10).fill(0xc9b59d));
+    this.openC.addChild(openEllipse(new Graphics()).fill(pc('CER_IN')), new Graphics().ellipse(0, -78, 50, 10).fill(pc('CER_IN_DP')));
     const cmask = glassShape(new Graphics()).fill(0xffffff);
     this.clipC.addChild(cmask, this.layers, this.ice);
     this.clipC.mask = cmask;
