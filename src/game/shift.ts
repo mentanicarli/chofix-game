@@ -3,8 +3,8 @@ import type { Rng } from './types';
 export const DAY_LEN = 300;
 export const OPEN_MIN = 480;
 export const SPAN_MIN = 600;
-export const LAST_CALL_BEFORE = 25;
-export const FORCE_LOSE_AFTER = 90;
+/** После 18:00 новых гостей нет, очередь дообслуживается; если за столько секунд не управились, день тихо заканчивается (без штрафа). */
+export const CLOSING_LIMIT = 240;
 export const RUSH_FROM = 720;
 export const RUSH_TO = 780;
 

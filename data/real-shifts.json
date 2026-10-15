@@ -1,0 +1,165 @@
+[
+  {
+    "label": "день 4, ранг 2",
+    "note": "6 подано, 1 ушёл; гостей мало: очередь забивалась на 3 слота",
+    "json": {
+      "profile": {
+        "name": "dev: день 4, ранг 2",
+        "speed": 0.94,
+        "q": [
+          0,
+          0.17,
+          0.83
+        ]
+      },
+      "served": 6,
+      "servedByHelper": 0,
+      "lost": 1,
+      "income": 1745,
+      "revenue": 1362,
+      "tips": 383,
+      "costs": 476,
+      "serveTime": {
+        "mean": 149.35,
+        "median": 166.25
+      },
+      "prepTime": {
+        "mean": 60.1,
+        "median": 60.04
+      },
+      "byTasks": {
+        "3": {
+          "n": 2,
+          "serveTime": {
+            "mean": 136.71,
+            "median": 136.71
+          },
+          "prepTime": {
+            "mean": 43.34,
+            "median": 43.34
+          }
+        },
+        "4": {
+          "n": 2,
+          "serveTime": {
+            "mean": 145.07,
+            "median": 145.07
+          },
+          "prepTime": {
+            "mean": 61.76,
+            "median": 61.76
+          }
+        },
+        "6": {
+          "n": 1,
+          "serveTime": {
+            "mean": 178.58,
+            "median": 178.58
+          },
+          "prepTime": {
+            "mean": 60.29,
+            "median": 60.29
+          }
+        },
+        "7": {
+          "n": 1,
+          "serveTime": {
+            "mean": 153.93,
+            "median": 153.93
+          },
+          "prepTime": {
+            "mean": 90.09,
+            "median": 90.09
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "день 10, ранг 4",
+    "note": "7 подано, 1 ушёл: этот уход почти наверняка вынужденный при закрытии (владелец видел его при полном терпении), поэтому lost=1 не показывает потерь по терпению; byTasks группирует по числу уникальных шагов, а не по оценке модели",
+    "json": {
+      "profile": {
+        "name": "dev: день 10, ранг 4",
+        "speed": 0.99,
+        "q": [
+          0,
+          0,
+          1
+        ]
+      },
+      "served": 7,
+      "servedByHelper": 0,
+      "lost": 1,
+      "income": 2930,
+      "revenue": 2249,
+      "tips": 681,
+      "costs": 616,
+      "serveTime": {
+        "mean": 116.97,
+        "median": 142.01
+      },
+      "prepTime": {
+        "mean": 48.5,
+        "median": 37.55
+      },
+      "byTasks": {
+        "1": {
+          "n": 3,
+          "serveTime": {
+            "mean": 79.8,
+            "median": 52.76
+          },
+          "prepTime": {
+            "mean": 25.5,
+            "median": 24.9
+          }
+        },
+        "2": {
+          "n": 1,
+          "serveTime": {
+            "mean": 146.51,
+            "median": 146.51
+          },
+          "prepTime": {
+            "mean": 20.88,
+            "median": 20.88
+          }
+        },
+        "5": {
+          "n": 1,
+          "serveTime": {
+            "mean": 161.53,
+            "median": 161.53
+          },
+          "prepTime": {
+            "mean": 50.29,
+            "median": 50.29
+          }
+        },
+        "6": {
+          "n": 1,
+          "serveTime": {
+            "mean": 126.8,
+            "median": 126.8
+          },
+          "prepTime": {
+            "mean": 84.67,
+            "median": 84.67
+          }
+        },
+        "7": {
+          "n": 1,
+          "serveTime": {
+            "mean": 144.55,
+            "median": 144.55
+          },
+          "prepTime": {
+            "mean": 107.19,
+            "median": 107.19
+          }
+        }
+      }
+    }
+  }
+]

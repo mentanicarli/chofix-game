@@ -3,7 +3,7 @@ function interval() { const v = MENUAPI.arrivalInterval({ day: G.day, rating: G.
 function startDay() {
   G.phase = 'day'; paused = false; scr.hidden = true;
   WORLD.clearActors(); ACT.clear();
-  D = { t: 0, customers: [], nextArr: 4, lastCall: false, closing: false, closeT: 0, cup: null, hold: null, rushShown: false, idc: 0, focus: G.fresh.slice(), focusDone: new Set(), stats: { served: 0, lost: 0, revenue: 0, tips: 0, costs: 0, perfect: 0 } };
+  D = { t: 0, customers: [], nextArr: 4, closing: false, closeT: 0, cup: null, hold: null, rushShown: false, idc: 0, focus: G.fresh.slice(), focusDone: new Set(), stats: { served: 0, lost: 0, revenue: 0, tips: 0, costs: 0, perfect: 0 } };
   if (SBX.on) { SBX.log = []; SBX.clock = 0; }
   BR = null; renderCup(); lastHud = ''; updateHud(); stopLoops(); stage.classList.remove('inbar');
   G.fresh = [];
@@ -17,17 +17,16 @@ function tickDay(dt) {
   if (SBX.inf && G.money < 1e6) G.money = 1e6;
   const clock = OPEN_MIN + Math.min(1, D.t / DAY_LEN) * SPAN_MIN;
   if (!D.rushShown && clock >= 720 && !D.closing) { D.rushShown = true; toast('Обеденный час пик: клиентов станет больше'); }
-  if (!D.lastCall && D.t >= DAY_LEN - 25) { D.lastCall = true; banner('Последний заказ', 'Скоро закрываемся'); }
-  if (!D.closing && D.t >= DAY_LEN) { D.closing = true; toast('Закрываемся: доделайте заказы'); }
-  if (!D.closing && !D.lastCall) {
+  if (!D.closing && D.t >= DAY_LEN) { D.closing = true; banner('Закрываемся', 'Доделываем заказы'); }
+  if (!D.closing) {
     D.nextArr -= dt;
     if (D.nextArr <= 0) {
       if (D.customers.length >= SLOTS.length) D.nextArr = 1.2; else { spawn(); D.nextArr = interval(); }
     }
-  } else if (D.lastCall && !D.closing) { /* новых не пускаем */ } else {
+  } else {
+    /* после 18:00 новых гостей нет, очередь дообслуживается по обычным правилам; страховка от зависшего дня — без штрафа */
     D.closeT += dt;
-    if (D.closeT > 90) D.customers.slice().forEach(lose);
-    if (D.customers.length === 0 && !BR) { endDay(); return; }
+    if ((D.customers.length === 0 && !BR) || D.closeT > MENUAPI.CLOSING_LIMIT) { endDay(); return; }
   }
   for (const c of D.customers.slice()) {
     if (!c.arrived) continue;

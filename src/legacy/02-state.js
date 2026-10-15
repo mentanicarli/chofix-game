@@ -32,10 +32,12 @@ function updateHud(bump) {
   const clockMin = D ? OPEN_MIN + Math.min(1, D.t / DAY_LEN) * SPAN_MIN : OPEN_MIN;
   const hh = String(Math.floor(clockMin / 60)).padStart(2, '0'), mm = String(Math.floor(clockMin % 60)).padStart(2, '0');
   const r = G.rating;
-  const key = [G.day, hh + mm, Math.round(G.money), r.toFixed(2), D ? D.stats.served : 0].join('|');
+  const closed = !!(D && D.closing);
+  const key = [G.day, hh + mm, closed, Math.round(G.money), r.toFixed(2), D ? D.stats.served : 0].join('|');
   if (key === lastHud) return; lastHud = key;
   $('#chDay span').textContent = 'День ' + G.day;
   $('#chClock span').textContent = hh + ':' + mm;
+  $('#chClock').classList.toggle('closed', closed);
   if (bump) { const cm = $('#chMoney'); cm.classList.remove('pulse'); void cm.offsetWidth; cm.classList.add('pulse'); }
   let st = ''; for (let i = 0; i < 5; i++) st += starSVG(r >= i + .75 ? '#E8B04A' : r >= i + .25 ? 'url(#gStarHalf)' : '#F3E4CB');
   $('#stars').innerHTML = st + `<b>${r.toFixed(1)}</b>`;

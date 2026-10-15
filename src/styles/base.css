@@ -46,6 +46,7 @@ button.chip:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink);
 .chip.ib { padding: 8px; width: 48px; height: 46px; justify-content: center; box-sizing: border-box; }
 #chSound:not(.off) .slash { display: none; }
 #chServed { font-size: 18px; padding: 8px 16px 8px 10px; }
+#chClock.closed span::after { content: "закрыто"; margin-left: 9px; padding: 3px 9px; border-radius: 999px; background: var(--ink); color: #FFF8EC; font-size: 13px; font-weight: 800; letter-spacing: .02em; vertical-align: 2px; }
 #hud { position: absolute; left: 24px; top: 20px; display: flex; gap: 12px; align-items: center; }
 #hudR { position: absolute; right: 24px; top: 20px; display: flex; gap: 12px; align-items: center; }
 #stars { display: flex; gap: 3px; align-items: center; padding: 7px 14px; }

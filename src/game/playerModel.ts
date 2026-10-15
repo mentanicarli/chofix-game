@@ -1,7 +1,7 @@
 import { EQUIPMENT, EQ_IMPL, nextRank } from './menu';
 import { drinkCost, helperWage, ratingAfterLoss, rentFor, settle, settleDay } from './economy';
 import { estimatedPrepSeconds, patienceMax, queueDecayRate, queueOrder } from './patience';
-import { DAY_LEN, FORCE_LOSE_AFTER, LAST_CALL_BEFORE, arrivalInterval } from './shift';
+import { CLOSING_LIMIT, DAY_LEN, arrivalInterval } from './shift';
 import { FOOD_COST_SHARE } from './food';
 import { rollOrder } from './orders';
 import { isShopItemAvailable } from './shop';
@@ -74,6 +74,9 @@ export interface Run {
   snaps: DaySnap[];
   /** по дням: после вечерних покупок не осталось ни одной доступной непокупленной позиции («нечего покупать») */
   idle: boolean[];
+  /** всего гостей пришло / ушло по терпению за все сыгранные дни */
+  guests: number;
+  lost: number;
 }
 
 const STEP = 0.5;
@@ -81,7 +84,7 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
   const rng = seeded(seed);
   const owned: Record<string, boolean> = {};
   const order: string[] = [];
-  const run: Run = { avail: new Map(), afford: new Map(), bought: new Map(), rank: new Map([[1, 1]]), income: [], over: false, snaps: [], idle: [] };
+  const run: Run = { avail: new Map(), afford: new Map(), bought: new Map(), rank: new Map([[1, 1]]), income: [], over: false, snaps: [], idle: [], guests: 0, lost: 0 };
   let money = 500, rank = 1, rating = 3, served = 0;
   const pace = 'normal' as const;
   const typeOf = (day: number): CustomerType => {
@@ -97,15 +100,16 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
     interface Guest { type: CustomerType; pat: number; order: Order; leaving?: boolean }
     const queue: Guest[] = [];
     let nextArr = 4, prep: Guest | null = null, prepLeft = 0, prepCost = 0;
-    const lastCall = DAY_LEN - LAST_CALL_BEFORE;
     const lose = (g: Guest): void => {
       rating = ratingAfterLoss(rating);
+      run.lost++;
       queue.splice(queue.indexOf(g), 1);
       if (g === prep) { prep = null; costs -= prepCost; }
     };
-    for (let t = 0; t < DAY_LEN + FORCE_LOSE_AFTER; t += STEP) {
-      if (t >= lastCall && !queue.length) break;
-      if (t < lastCall) {
+    /* гости приходят до DAY_LEN; потом очередь дообслуживается с обычным терпением; не управились за CLOSING_LIMIT — день тихо заканчивается без штрафа */
+    for (let t = 0; t < DAY_LEN + CLOSING_LIMIT; t += STEP) {
+      if (t >= DAY_LEN && !queue.length && !prep) break;
+      if (t < DAY_LEN) {
         nextArr -= STEP;
         if (nextArr <= 0) {
           if (queue.length >= 3) nextArr = 1.2;
@@ -115,6 +119,7 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
             const ord = rollOrder({ rank, day, milk: !!owned['milk'], eq }, type, rng);
             const pat = patienceMax(type, { pace, cozy: !!owned['cozy'], helper: !!owned['helper'], prep: estimatedPrepSeconds(ord), day, rng });
             queue.push({ type, pat, order: ord });
+            run.guests++;
           }
         }
       }
@@ -145,7 +150,7 @@ export function simulate(seed: number, prof: Profile, days = 40): Run {
         }
       }
     }
-    queue.slice().forEach(lose);
+    if (prep) costs -= prepCost; // день закрылся посреди заказа: расход возвращается, как в игре
     const fin = settleDay({ money: money + revenue - costs, pace, rank, wage: owned['helper'] ? helperWage(rank) : 0 });
     money = fin.money;
     run.income.push(revenue - costs - fin.rent);
