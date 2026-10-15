@@ -64,12 +64,12 @@ function showTitle(notice) {
     rd = { kind: 'none' };
   }
   const cont = rd.kind === 'ok' ? { day: rd.data.day, rank: MENUAPI.rankInfo(MENUAPI.restore(rd.data).rank).title } : null;
-  menuRender(titleHTML({ logo: CUP_LOGO, cont, notice: msg, np: npText(), dev: DEV }), true);
+  menuRender(titleHTML({ cont, notice: msg, np: npText(), dev: DEV }), true);
   focusFirst();
 }
 function showPace() {
   const paces = Object.keys(PACE).map(k => `<button type="button" class="pace${k === selPace ? ' sel' : ''}" data-pace="${k}">${PACE_ICON[k]}<b>${PACE[k].name}</b><span>${PACE[k].text}</span></button>`).join('');
-  menuRender(paceScreenHTML(CUP_LOGO, paces), true); focusFirst('.pace.sel');
+  menuRender(paceScreenHTML(paces), true); focusFirst('.pace.sel');
 }
 function showHowto(msg) { menuRender(howtoHTML(msg), menuFrom === 'title'); focusFirst('.big'); }
 function showSettings(from, msg) {

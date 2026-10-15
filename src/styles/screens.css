@@ -1,10 +1,11 @@
 /* ---------- экраны: вывеска, бумага, чек ---------- */
 .title { display: flex; flex-direction: column; align-items: center; }
-.sign { position: relative; display: flex; align-items: center; gap: 18px; padding: 18px 40px 20px 28px; margin-bottom: -6px; z-index: 1; border-radius: 22px; background: #3B3A33; border: 4px solid #8A5B3A; box-shadow: 0 8px 0 #2B1B14, inset 0 0 0 3px #2B2A25; color: #F6EEDD; }
+.sign { position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 490px; padding: 16px 45px 18px; margin-bottom: -6px; z-index: 1; border-radius: 22px; background: #3B3A33; border: 4px solid #8A5B3A; box-shadow: 0 8px 0 #2B1B14, inset 0 0 0 3px #2B2A25; color: #F6EEDD; }
 .sign h1 { margin: 0; font-family: 'Caveat', 'Nunito', cursive; font-size: 64px; font-weight: 700; line-height: .95; color: #F6EEDD; letter-spacing: .01em; }
-.sign h1 .wordmark { display: block; height: 76px; width: auto; }
+.sign > div { text-align: center; }
+.sign h1 .wordmark { display: block; width: 400px; height: auto; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.sign p { margin: 4px 0 0; font-family: 'Caveat', cursive; font-size: 26px; font-weight: 600; color: #E8CDA8; }
+.sign p { margin: 2px 0 0; font-family: 'Caveat', cursive; font-size: 30px; font-weight: 600; color: #E8CDA8; }
 .sign .logo { width: 84px; height: 84px; flex: none; }
 .sign .steam path { animation: steam 3.2s ease-in-out infinite; transform-box: fill-box; }
 .sign .steam path:nth-child(2) { animation-delay: .8s } .sign .steam path:nth-child(3) { animation-delay: 1.6s }

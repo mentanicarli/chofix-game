@@ -9,7 +9,6 @@ export function nowPlayingHTML(text: string): string {
 }
 
 export interface TitleOpts {
-  logo: string;
   /** сохранение: день и название ранга; null — сохранения нет */
   cont: { day: number; rank: string } | null;
   notice?: string;
@@ -25,7 +24,7 @@ export function titleHTML(o: TitleOpts): string {
     ? `<button type="button" class="mbtn main" data-continue="1"><b>Продолжить</b><span>День ${o.cont.day} · ${esc(o.cont.rank)}</span></button>`
     : '';
   return `<div class="title" data-menu="title">
-<div class="sign"><i class="chain l"></i><i class="chain r"></i>${o.logo}<div><h1><span class="vh">Cuppable</span>${WORDMARK}</h1><p>кофе между парами</p></div></div>
+<div class="sign"><i class="chain l"></i><i class="chain r"></i><div><h1><span class="vh">Cuppable</span>${WORDMARK}</h1><p>Кофе между парами</p></div></div>
 <div class="paper menucard">
 <div class="mbtns">${cont}<button type="button" class="mbtn${o.cont ? '' : ' main'}" data-start="1"><b>Новая игра</b></button>${o.dev ? '<button type="button" class="mbtn" data-sandbox="1"><b>Песочница</b></button>' : ''}<button type="button" class="mbtn" data-settings="title"><b>Настройки</b></button><button type="button" class="mbtn" data-howto="1"><b>Как играть</b></button></div>
 ${o.notice ? `<p class="mnote" role="status">${esc(o.notice)}</p>` : ''}
@@ -34,9 +33,9 @@ ${nowPlayingHTML(o.np)}
 </div>`;
 }
 
-export function paceScreenHTML(logo: string, paces: string): string {
+export function paceScreenHTML(paces: string): string {
   return `<div class="title" data-menu="pace">
-<div class="sign"><i class="chain l"></i><i class="chain r"></i>${logo}<div><h1><span class="vh">Cuppable</span>${WORDMARK}</h1><p>кофе между парами</p></div></div>
+<div class="sign"><i class="chain l"></i><i class="chain r"></i><div><h1><span class="vh">Cuppable</span>${WORDMARK}</h1><p>Кофе между парами</p></div></div>
 <div class="paper"><div class="lbl">Вы бариста в университетской кофейне. Как будем играть?</div><div class="paces">${paces}</div>
 <div class="foot"><button type="button" class="ghost" data-menuback="1">Назад</button><button type="button" class="big" data-go="1">Открыть кофейню</button></div></div></div>`;
 }
