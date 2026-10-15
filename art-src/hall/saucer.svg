@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="258 543 48 16" data-out="hall-saucer.svgf" data-scale="1.6">
+<!--
+  Блюдце на столе справа от ноутбука (этап 12.3(0)); чашка гостя рисуется в actor.ts (drawCup) и стоит в точке tableCup. Эллипс 4:1. Класс «средние»: контур 3 px на экране.
+-->
+<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="285" cy="552.5" rx="20" ry="4" fill="{{SHADOW}}" fill-opacity=".25" stroke="none"/>
+<ellipse cx="282" cy="550" rx="20" ry="5" fill="{{KRAFT}}"/>
+<ellipse cx="282" cy="549.5" rx="12" ry="2.8" fill="{{KRAFT_SH}}" stroke="none"/>
+</g>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "_": "Токены для art-src (стайлгайд docs/art/styleguide.md, направление A). {{ИМЯ}} в SVG заменяется скриптом scripts/art-build.mjs; толщины L/M/D считаются от экранных 3,5 / 3 / 2 px делением на data-scale предмета (масштаб гостя GUEST_K = 1,6 у стола, стула, ноутбука и чашки гостя).",
+  "colors": {
+    "INK": "#4A2F25",
+    "PAPER": "#FFF8EC",
+    "HILITE": "#FFF4E0",
+    "KRAFT": "#F1DFC2",
+    "KRAFT_SH": "#E3CBA6",
+    "KRAFT_DP": "#C9B59D",
+    "WOOD": "#C98B5A",
+    "WOOD_SH": "#AA734B",
+    "WOOD_HI": "#D9AA82",
+    "TOP": "#DDB083",
+    "TERRA": "#C4694A",
+    "RUG": "#DDA583",
+    "SHADOW": "#3B2418"
+  },
+  "stroke": { "L": 3.5, "M": 3, "D": 2 }
+}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="172 474 116 176" data-out="hall-chair.svgf" data-scale="1.6">
+<!--
+  Стул за гостем (этап 12.3(0)): виден со стороны зрителя за гостем — спинка (две стойки, перекладины, верхняя планка) и задние ножки.
+  Спрайт CH = (172,474,116,176), якорь внизу (230,640): стул отодвигается и наклоняется от пола (world.ts, chairK). Класс «средние»: контур 3 px на экране.
+  Ножки с лёгким развалом, стойки светлее ножек (ножки дальше от света). Без дрожания.
+-->
+<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M191 580L188 638H196L197 580Z" fill="{{WOOD_SH}}"/>
+<path d="M263 580L264 638H272L270 580Z" fill="{{WOOD_SH}}"/>
+<rect x="187" y="486" width="10" height="96" rx="4" fill="{{WOOD}}"/>
+<rect x="263" y="486" width="10" height="96" rx="4" fill="{{WOOD}}"/>
+<path d="M193 490H196V578H193Z" fill="{{WOOD_SH}}" stroke="none"/>
+<path d="M269 490H272V578H269Z" fill="{{WOOD_SH}}" stroke="none"/>
+<rect x="197" y="518" width="66" height="8" rx="3" fill="{{WOOD}}"/>
+<rect x="197" y="544" width="66" height="8" rx="3" fill="{{WOOD}}"/>
+<rect x="184" y="480" width="92" height="17" rx="7" fill="{{WOOD_HI}}"/>
+<path d="M194 485H266" fill="none" stroke="{{HILITE}}" stroke-opacity=".7" stroke-width="{{D}}"/>
+</g>
+</svg>

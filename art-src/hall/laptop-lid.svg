@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="188 482 84 62" data-out="hall-laptop-lid.svgf" data-scale="1.6">
+<!--
+  Крышка ноутбука со спины (этап 12.3(0)); зритель видит заднюю сторону экрана, гость за ней. Спрайт (188,482,84,62), якорь на шарнире (230,540):
+  крышка «открывается» масштабом по Y от шарнира (laptopK), поэтому нижний край ОБЯЗАН быть на y 540.
+  Ширина крышки 68 (196–264), основание (laptop-base.svg) 64 — основание не шире экрана. Класс «средние»: контур 3 px на экране.
+-->
+<g stroke="{{INK}}" stroke-width="{{M}}" stroke-linejoin="round" stroke-linecap="round">
+<path d="M196 540L198 495Q198 488 206 488H254Q262 488 262 495L264 540Z" fill="{{KRAFT}}"/>
+<path d="M250 489H254Q262 488 262 495L264 540H247Z" fill="{{KRAFT_SH}}" stroke="none"/>
+<circle cx="229" cy="513" r="6" fill="{{TERRA}}" stroke="none"/>
+<path d="M203 496Q203 493 207 493H219" fill="none" stroke="{{HILITE}}" stroke-opacity=".8" stroke-width="{{D}}"/>
+<path d="M203 534H257V540H203Z" fill="{{KRAFT_DP}}"/>
+</g>
+</svg>

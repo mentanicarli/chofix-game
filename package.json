@@ -19,7 +19,9 @@
     "audit:recipes": "node scripts/make-recipes-audit.mjs",
     "lint:legacy": "node scripts/lint-legacy.mjs",
     "prebuild:debug": "node scripts/make-music-manifest.mjs",
-    "build:debug": "CUPPABLE_DEBUG=1 vite build && node scripts/fragment.mjs"
+    "build:debug": "CUPPABLE_DEBUG=1 vite build && node scripts/fragment.mjs",
+    "art": "node scripts/art-build.mjs",
+    "art:check": "node scripts/art-build.mjs --check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

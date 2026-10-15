@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 596 380 112" data-out="hall-rug.svgf" data-scale="1">
+<!--
+  Ковёр под столиком и стулом (этап 12.3(0)): эллипс на полу 4:1, лежит под всем (слой сразу над стеной, под досками пола). Центр (230,652) как у SEAT_PIVOT.
+  Раньше был частью hall-bg.svgf (rx 176, ry 34 — не 4:1) вместе с тенью основания стола; тень теперь в table.svg.
+-->
+<g filter="url(#wobbleA)" stroke="{{INK}}" stroke-width="{{D}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="230" cy="652" rx="176" ry="42" fill="{{RUG}}"/>
+<ellipse cx="230" cy="652" rx="144" ry="34" fill="none" stroke="{{PAPER}}" stroke-width="{{M}}" stroke-dasharray="2 9"/>
+</g>
+</svg>

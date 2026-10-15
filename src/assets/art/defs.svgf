@@ -14,6 +14,7 @@
 <radialGradient id="gGlow"><stop offset="0" stop-color="#FFE6A0" stop-opacity=".65"/><stop offset="1" stop-color="#FFE6A0" stop-opacity="0"/></radialGradient>
 <radialGradient id="gVig" cx=".5" cy=".55" r=".75"><stop offset=".55" stop-color="#4A2F25" stop-opacity="0"/><stop offset="1" stop-color="#4A2F25" stop-opacity=".32"/></radialGradient>
 <filter id="wobble" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="wobbleA" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.014 0.02" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G"/></filter>
 <filter id="wobbleS" x="-10%" y="-5%" width="120%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.04" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/></filter>
 <filter id="blur6" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
 <filter id="woodH" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.004 0.2" numOctaves="3" seed="8"/><feColorMatrix type="matrix" values="0 0 0 0 .30  0 0 0 0 .16  0 0 0 0 .08  0 0 0 1.6 -.55"/></filter>

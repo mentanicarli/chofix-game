@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="118 514 224 160" data-out="hall-table.svgf" data-scale="1.6">
+<!--
+  Столик (этап 12.3(0)). Рамка = TABLE_BOX в world.ts (118,514,224,160), точка пола SEAT_PIVOT (230,652), столешница: эллипс cx 230, cy 548, rx 96, ry 24 (4:1).
+  Конструкция: одна колонна на круглом основании. Порядок слоёв снизу вверх: тень на полу, основание (бок, верх), колонна (нижний конец стоит НА верхнем эллипсе основания),
+  фланец, тень под столешницей на колонне, столешница (бок, верх). Верхний конец колонны спрятан ЗА боком столешницы.
+  Класс «крупные»: контур 3,5 px на экране (стол растёт вместе с гостем в GUEST_K раз, поэтому в исходнике 3,5 / 1,6 = 2,19), дрожание только wobbleA (scale 3,5).
+-->
+<g filter="url(#wobbleA)" stroke="{{INK}}" stroke-width="{{L}}" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="236" cy="657" rx="80" ry="12" fill="{{SHADOW}}" fill-opacity=".28" stroke="none" filter="url(#blur6)"/>
+<path d="M174 646V653A56 13 0 0 0 286 653V646Z" fill="{{WOOD_SH}}"/>
+<ellipse cx="230" cy="646" rx="56" ry="13" fill="{{WOOD}}"/>
+<path d="M190 643Q204 637 222 638" fill="none" stroke="{{HILITE}}" stroke-opacity=".6" stroke-width="{{D}}"/>
+<path d="M222 566V646A8 2.2 0 0 0 238 646V566Z" fill="{{WOOD}}"/>
+<path d="M232 566H238V646A8 2.2 0 0 1 232 648Z" fill="{{WOOD_SH}}" stroke="none"/>
+<path d="M219 639V642A11 2.6 0 0 0 241 642V639Z" fill="{{WOOD_SH}}"/>
+<ellipse cx="230" cy="639" rx="11" ry="2.6" fill="{{WOOD_HI}}"/>
+<path d="M222 566H238V588H222Z" fill="{{SHADOW}}" fill-opacity=".3" stroke="none"/>
+<path d="M134 548V556A96 24 0 0 0 326 556V548Z" fill="{{WOOD_SH}}"/>
+<ellipse cx="230" cy="548" rx="96" ry="24" fill="{{TOP}}"/>
+<path d="M170 540Q202 530 240 532" fill="none" stroke="{{HILITE}}" stroke-opacity=".7" stroke-width="{{D}}"/>
+<path d="M192 557Q230 566 270 557" fill="none" stroke="{{WOOD_SH}}" stroke-opacity=".4" stroke-width="{{D}}"/>
+</g>
+</svg>
