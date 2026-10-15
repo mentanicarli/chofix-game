@@ -34,8 +34,8 @@
 .tkMore { font-family: inherit; font-weight: 800; font-size: 14px; width: 30px; height: 30px; border-radius: 10px; border: 2.5px solid var(--ink); background: #F3E4CB; color: var(--ink); cursor: pointer; padding: 0; }
 .tkDrop { position: absolute; left: 0; top: calc(100% + 8px); width: max-content; max-width: 640px; display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 10px; border-radius: 16px; background: #FFFDF6; border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); z-index: 2; }
 .tkBtns button.on { background: #E8B04A; }
-/* коуч в «воздухе» столешницы между группами плиток (контракт раскладки, этап 12.3(2)): x 472–800, y 520–620; подстоечные блоки заняли нижнюю полосу */
-#bCoach { position: absolute; left: 472px; bottom: 100px; width: 328px; display: flex; gap: 8px; align-items: center; padding: 6px 8px 6px 8px; border-radius: 20px; background: var(--chip); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); z-index: 3; }
+/* коуч в «воздухе» столешницы между группами плиток (контракт раскладки, этап 12.3(2)): x 472–772, y 520–620; подстоечные блоки заняли нижнюю полосу */
+#bCoach { position: absolute; left: 472px; bottom: 100px; width: 300px; display: flex; gap: 8px; align-items: center; padding: 6px 8px 6px 8px; border-radius: 20px; background: var(--chip); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); z-index: 3; }
 #bCoach[hidden] { display: none; }
 #bCoach .av { flex: none; width: 34px; height: 34px; border-radius: 50%; background: #93A684; border: 3px solid var(--ink); display: grid; place-items: center; font: 800 20px/1 Nunito, sans-serif; font-style: normal; }
 #bCoach b { display: none; } /* имя «Макс» стоит в аватаре; строка с именем съедала высоту (этап 12.2) */
