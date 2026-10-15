@@ -48,7 +48,7 @@ function animActors(dt) {
     c.ty += ((c.leaving ? 14 : 0) - c.ty) * (1 - Math.exp(-dt * 5));
     /* подскоки: сам прыжок (с растяжением и сжатием) считает гость */
     if (c.hopT > 0) { c.act.hop(c.hopT > .5 ? 1 : .55); c.hopT = 0; }
-    c.act.update(dt, c.px, c.ty);
+    c.act.update(dt, c.px, c.ty); c.act.showTags(D.customers[0] === c); /* теги заказа только у первого в очереди (строгая очередь) */
     if (!c.arrived && !c.leaving && dist < 6) { c.arrived = true; c.act.showBubble(true); WORLD.baristaReact(); play('door', .5); }
     /* реплика живёт 5 секунд именно в зале: в баре или на паузе время не идёт, ушёл в бар — покажется снова */
     if (c.arrived && !c.leaving && !c.sayDone && !paused) {

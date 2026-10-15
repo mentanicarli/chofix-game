@@ -44,6 +44,9 @@ export interface ActorOpts {
 /** верх головы по причёскам (см. art.ts hair): у пучка выше, у шапки и кудрей чуть ниже обычного */
 const HEAD_TOP: Readonly<Record<string, number>> = { bun: 379, curly: 384, beanie: 390, grey: 402 };
 
+/** пузырь заказа чуть меньше (карточка 128 px → 115): при шаге очереди 130 px соседние пузыри не заходят друг на друга */
+const BUBBLE_SCALE = 0.9;
+
 export type SeatPhase = 'walk' | 'sit' | 'seated' | 'rise';
 
 const iconCache = new Map<string, Promise<Texture>>();
@@ -135,6 +138,8 @@ export class Actor {
   private eyesShut = false;
   private shakeT = 0;
   private readonly bubble = new Container();
+  /** теги заказа («крепкий», сироп…) над пузырём: показываем только первому в очереди, чтобы теги соседей не накладывались (подробности всегда в билете) */
+  private readonly tagsC = new Container();
   private bubbleOn = false;
   private bubbleK = 0;
   private readonly barG = new Graphics();
@@ -354,6 +359,10 @@ export class Actor {
       this.waveT = 1.1;
       this.sq.x = Math.max(this.sq.x, 0.07);
     }
+  }
+
+  showTags(on: boolean): void {
+    this.tagsC.visible = on;
   }
 
   hideBubbleNow(): void {
@@ -1102,7 +1111,7 @@ export class Actor {
     if (this.bubble.visible) {
       const u = this.bubbleK;
       const s = tgt ? 0.2 + 0.8 * u + Math.sin(u * Math.PI) * 0.12 : u;
-      this.bubble.scale.set(s / this.k);
+      this.bubble.scale.set((s * BUBBLE_SCALE) / this.k);
       this.bubble.alpha = Math.min(1, u * 3);
     }
   }
@@ -1117,13 +1126,14 @@ export class Actor {
     const ws = o.tags.map((t) => t.text.length * 7 + 16);
     const total = ws.reduce((x, y) => x + y, 0) + 6 * Math.max(0, o.tags.length - 1);
     let tx = -total / 2;
+    b.addChild(this.tagsC);
     o.tags.forEach((t, i) => {
       const w = ws[i] as number;
       const g = new Graphics().roundRect(tx, 296, w, 18, 9).fill(t.color).stroke({ width: 2, color: INK });
       const tt = new Text({ text: t.text, style: { fontFamily: 'Nunito, system-ui, sans-serif', fontSize: 11, fontWeight: '800', fill: '#FFF8EC' }, resolution: o.res });
       tt.anchor.set(0.5, 0.5);
       tt.position.set(tx + w / 2, 305.5);
-      b.addChild(g, tt);
+      this.tagsC.addChild(g, tt);
       tx += w + 6;
     });
     const card = new Graphics();

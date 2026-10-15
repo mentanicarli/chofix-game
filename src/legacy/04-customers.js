@@ -37,7 +37,7 @@ function showSay(c) {
   stage.appendChild(d); c.sayEl = d; c.sayVis = c.sayVis || 0; c.sayDur = sayDuration(c.order.line); placeSay(c); requestAnimationFrame(() => d.classList.add('show'));
 }
 /* Реплика над пузырём заказа, на оси головы гостя (хвостик пузыря на макушке: actor.bubbleTipY), не выходит за края сцены; говорит один гость за раз, чтобы реплики не накладывались */
-const SAY_STACK = 91 + 22; /* высота карточки пузыря с тегами и хвостик реплики */
+const SAY_STACK = 82 + 22; /* высота карточки пузыря с тегами, масштаб 0,9 и хвостик реплики */
 function placeSay(c) {
   const d = c.sayEl; if (!d) return;
   const half = Math.min(170, d.offsetWidth / 2 || 120), x = clamp(c.px, half + 16, 1280 - half - 16);

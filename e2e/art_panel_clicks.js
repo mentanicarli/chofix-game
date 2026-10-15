@@ -30,8 +30,9 @@ const rnd = (a, b) => a + Math.random() * (b - a);
     });
     const open = async (id, task) => {
       await p.evaluate(() => __dbg.resetBar()); await p.waitForTimeout(150);
-      await p.evaluate(({ id }) => { const M = window.__MENUAPI, c = __dbg.D.customers[0], dk = M.drinkById[id]; c.drink = id; c.order.key = id; c.order.id = id; c.order.name = dk.name; c.order.size = '0.6'; c.order.cold = /bumble|tonic|shake|boba|frappe|aero|protein/.test(id); c.order.food = null; c.pat = c.max = 1e9; __dbg.barOpen(c); }, { id });
+      await p.evaluate(({ id }) => { const M = window.__MENUAPI, c = __dbg.D.customers[0], dk = M.drinkById[id]; c.drink = id; c.order.key = id; c.order.id = id; c.order.name = dk.name; c.order.size = '0.6'; c.order.cold = /bumble|tonic|shake|boba|frappe|aero|protein/.test(id); c.order.food = null; c.syrup = null; c.pumps = 0; c.strong = false; c.pat = c.max = 1e9; __dbg.barOpen(c); }, { id }); /* без сиропа: иначе шаг «Сироп» блокирует открытие станции */
       await p.waitForTimeout(450); await PW.dismissCard(p);
+      await p.evaluate(task => { const B = __dbg.BR; for (const t of B.tasks) { if (t === task) break; B.done[t] = true; B.res[t] = 1; } }, task); /* предыдущие шаги выполнены */
       await p.evaluate(t => __dbg.zoneClick(t), task); await p.waitForTimeout(450);
     };
     const press = async (sel, holdMs) => {
@@ -54,7 +55,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
             await open(id, task);
             if (task === 'brew') { await press('[data-xtemp="80"]', 80); }
             if (bt.key === 'xdone' && id.includes('tea') || bt.key === 'xdone' && task === 'brew') { await press('[data-xstart]', 80); await p.waitForTimeout(rnd(300, 900)); }
-            if (bt.key === 'xdone' && task !== 'brew') { await p.mouse.move(0, 0); const r0 = await p.evaluate(() => { const e = document.querySelector('[data-xhold]').getBoundingClientRect(); return [e.left + e.width / 2, e.top + e.height / 2]; }); await p.mouse.move(r0[0], r0[1]); await p.mouse.down(); await p.waitForTimeout(rnd(300, 900)); await p.mouse.up(); }
+            if (bt.key === 'xdone' && task !== 'brew') { await p.mouse.move(0, 0); const r0 = await p.evaluate(() => { const e = document.querySelector('[data-xhold]').getBoundingClientRect(); return [e.left + e.width / 2, e.top + e.height / 2]; }); await p.mouse.move(r0[0], r0[1]); await p.mouse.down(); /* держим, пока не наберётся цель станции, иначе «Готово» честно откажет */ await p.waitForFunction(task => { const st = __dbg.BR.xs[task]; return !st || ('ml' in st ? st.ml >= st.target : st.t >= st.target); }, task, { timeout: 25000, polling: 30 }).catch(() => {}); await p.mouse.up(); }
           }
           const before = await p.evaluate(({ task }) => { const B = __dbg.BR, st = B.xs[task]; return { done: !!B.done[task], set: st && st.set, started: st && st.started, ml: st && st.ml }; }, { task });
           const holdMs = rnd(150, 400);
