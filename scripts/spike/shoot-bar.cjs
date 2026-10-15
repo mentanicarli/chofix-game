@@ -20,6 +20,7 @@ const pw = require('../../e2e/pw');
   await p.evaluate((eq) => { const G = window.__dbg.G; eq.forEach(k => G['eq_' + k] = true); G.milk = true; window.__dbg.applyUpgrades(); }, EQ);
   await p.evaluate(() => { const M = window.__MENUAPI, c = __dbg.D.customers[0], dk = M.drinkById['matcha_latte']; c.drink = 'matcha_latte'; c.order.key = 'matcha_latte'; c.order.id = 'matcha_latte'; c.order.name = dk.name; c.order.size = '0.3'; c.order.cold = false; c.order.food = null; c.syrup = null; c.pumps = 0; __dbg.D.customers.forEach(x => x.pat = x.max = 9999); __dbg.G.tutOff = true; if (window.__NOHINT) __dbg.G.hints = false; __dbg.barOpen(c); });
   await p.waitForTimeout(1500); await pw.dismissCard(p);
+  if (process.env.SLOT) await p.addStyleTag({ content: '#bTk{padding-left:' + (12 + +process.env.SLOT) + 'px !important;max-width:' + (840 - +process.env.SLOT) + 'px !important}' });
   const box = await p.evaluate(() => { const r = document.querySelector('#stage').getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; });
   await p.waitForTimeout(1200);
   const rect = async sels => p.evaluate((sels) => { const o = {}; const st = document.querySelector('#stage').getBoundingClientRect(); for (const s of sels) { const e = document.querySelector(s); if (e && !e.hidden) { const r = e.getBoundingClientRect(); if (r.width) o[s] = [Math.round(r.x - st.x), Math.round(r.y - st.y), Math.round(r.width), Math.round(r.height)]; } } return o; }, sels);

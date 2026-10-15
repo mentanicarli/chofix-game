@@ -186,7 +186,7 @@ const CSS = `
 `;
 const GHOST_TAG = `<div class="tag" style="left:578px;top:652px;background:rgba(255,248,236,.95)">льдогенератор: вариант владельца</div>`;
 const TINT = { day: 'rgb(255,252,246)', eve: 'rgb(244,186,140)' };
-const MM_POS = { A: [562, 12], B: [1096, 74], C: [14, 654] };
+const MM_POS = { A: [598, 12], B: [1096, 74], C: [14, 654] };
 const ARROW_Y = 524;
 
 function arrowsHtml(cur, open, opts) {
@@ -235,7 +235,7 @@ function overlapReport(cur, open, rects) {
   const arrows = []; const order = ['L', 'C', 'R'].filter(k => k === 'C' || open.includes(k)); const i = order.indexOf(cur);
   if (order[i - 1]) arrows.push(['стрелка «' + SEC[order[i - 1]].name + '»', [10, ARROW_Y, 178, 46 + 4]]);
   if (order[i + 1]) { const w = SEC[order[i + 1]].name.length * 9.2 + 76; arrows.push(['стрелка «' + SEC[order[i + 1]].name + '»', [1270 - w, ARROW_Y, w, 50]]); }
-  const mm = ['mini A', [562, 12, 168, 44]];
+  const mm = ['mini A', [598, 12, 168, 44]];
   const ui = [['билет #bTk', [24, 76, 870, 54]], ['коуч #bCoach', [472, 531, 322, 89]], ['тосты #bFloat', [484, 136, 380, 42]], ['HUD слева', [24, 20, 514, 46]], ['HUD справа', [1060, 20, 196, 50]], ['слот картинки (Н)', [28, 78, 50, 50]]];
   const zones = (cur === 'C' ? ZONES_C.map(z => ['зона ' + z[0], z.slice(1)]) : (ITEMS[cur] || []).map(z => ['зона ' + z.id, z.box.map((v, k) => k > 1 ? v : v)]).map(([n, b]) => [n, [b[0], b[1], b[2], b[3]]]));
   zones.push(['нижняя полоса y 626–720', [0, 626, 1280, 94]]);
@@ -253,14 +253,14 @@ function overlapReport(cur, open, rects) {
   const both = ['L', 'R'];
   // (а) секции, день и вечер
   for (const sec of ['L', 'C', 'R']) for (const eve of [false, true]) {
-    await render(b, { name: `a_${{ L: 'left', C: 'center', R: 'right' }[sec]}_${eve ? 'eve' : 'day'}`, sec, open: both, eve, hintSec: sec === 'C' ? 'L' : undefined, dotSec: sec === 'C' ? 'L' : undefined, ghostIce: true, pic: true, extra: sec === 'R' ? GHOST_TAG : '' });
+    await render(b, { name: `a_${{ L: 'left', C: 'center', R: 'right' }[sec]}_${eve ? 'eve' : 'day'}`, sec, open: both, eve, hintSec: sec === 'C' ? 'L' : undefined, dotSec: sec === 'C' ? 'L' : undefined, ghostIce: false, pic: true, extra: ''});
   }
   // (а) подписи габаритов
   for (const sec of ['L', 'R']) {
     let ex = '';
     for (const it of ITEMS[sec]) { const [x, y, w, h] = it.box; ex += `<div class="dim" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></div><div class="tag" style="left:${x}px;top:${Math.max(150, y - 30)}px">${it.n} · ${it.cm} см</div>`; }
     ex += `<div class="tag" style="left:20px;top:690px">шкала 4,64 px/см · контуры 3 px · палитра art-src</div>`;
-    await render(b, { name: `a_${sec === 'L' ? 'left' : 'right'}_scale`, sec, open: both, ui: null, arrows: false, mm: 'none', ghostIce: true, extra: ex + (sec === 'R' ? GHOST_TAG : '') });
+    await render(b, { name: `a_${sec === 'L' ? 'left' : 'right'}_scale`, sec, open: both, ui: null, arrows: false, mm: 'none', ghostIce: false, extra: ex });
   }
   // (б) стрелки, мини-карта
   await render(b, { name: 'b_arrows_center', sec: 'C', open: both, hintSec: 'L', dotSec: 'L' });
@@ -292,7 +292,7 @@ function overlapReport(cur, open, rects) {
   }
   // панорама: три секции подряд, швы и три положения камеры
   {
-    const secs = [sectionSvg('L', {}), `<img src="file://${SRCU}/base_center.png" width="1280" height="720">`, sectionSvg('R', { ghostIce: true })];
+    const secs = [sectionSvg('L', {}), `<img src="file://${SRCU}/base_center.png" width="1280" height="720">`, sectionSvg('R', { ghostIce: false })];
     const html = `<!doctype html><meta charset=utf-8><link rel=stylesheet href="https://fonts.googleapis.com/css2?family=Nunito"><style>${CSS}body{background:#fff}</style><div style="position:relative;width:1920px;height:440px;background:#F6EAD6;overflow:hidden"><div style="position:absolute;left:0;top:40px;width:3840px;height:720px;transform:scale(.5);transform-origin:0 0;display:flex">${secs.map(x => `<div style="width:1280px;height:720px;flex:none;position:relative">${x}</div>`).join('')}<div class="tint" style="background:${TINT.day}"></div></div>` +
       [0, 1, 2].map(k => `<div style="position:absolute;left:${k * 640}px;top:40px;width:640px;height:360px;outline:4px dashed ${C.TERRA};outline-offset:-4px"></div><div class="tag" style="left:${k * 640 + 12}px;top:8px;font-size:18px">${['Чайный бар', 'Кофейный бар', 'Холодный бар'][k]} · камера ${['слева', 'в центре', 'справа'][k] ? ['0', '1280', '2560'][k] : ''}</div>`).join('') +
       `<div class="tag" style="left:12px;top:408px">мир 3840 px; кромка столешницы и фасад тумбы сплошные; обои продолжаются без шва</div></div>`;
