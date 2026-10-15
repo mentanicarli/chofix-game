@@ -162,3 +162,6 @@ html.kbd .xp button:focus-visible { outline: 3px solid #E8B04A; outline-offset: 
 .sbxc.off { opacity: .45; cursor: not-allowed; }
 .sbxcustom { margin-top: 8px; padding-top: 6px; border-top: 2px dashed rgba(74,47,37,.25); }
 .sbxcustom summary { cursor: pointer; font-size: 15px; font-weight: 800; padding: 4px 0; }
+
+/* в баре кнопки справа сверху (пауза, звук) лежат выше слоя бара, иначе клик по ним попадает в сцену */
+#stage.inbar #hudR { z-index: 3; }

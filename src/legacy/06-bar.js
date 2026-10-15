@@ -173,7 +173,8 @@ function zoneClick(z) {
   if (z === 'syr1' || z === 'syr2' || z === 'syr3') z = 'syrup';
   const tz = MENUAPI.TASK_ZONE;
   if (z === 'pour' && MENUAPI.isMenuKey(BR.drink)) { const lt = BR.tasks.find(x => !d[x] && x !== 'pour' && tz[x] === 'pour'); if (lt && !blockMsg(lt)) z = lt; }
-  if (z === 'pour' && (BR.tasks.indexOf('pour') < 0 || !d.shot)) z = 'shot';
+  /* к группе отправляем, только если шот в рецепте есть и ещё не готов (у матчи, какао и т. п. шота нет) */
+  if (z === 'pour' && BR.tasks.indexOf('shot') >= 0 && (BR.tasks.indexOf('pour') < 0 || !d.shot)) z = 'shot';
   if (BR.tasks.indexOf(z) < 0) { const zt = BR.tasks.find(x => !d[x] && tz[x] === z); if (zt) z = zt; }
   const t = z;
   if (BR.tasks.indexOf(t) < 0 && !(z === 'pour' && BR.tasks.indexOf('pour') >= 0)) { barMsg(zoneNoNeed(z)); sndTap(); return; }
