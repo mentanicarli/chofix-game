@@ -2,11 +2,12 @@
    node e2e/bar_test2.js dist/artifact.html out/bar latte            — один заказ (размер 0,2 л)
    node e2e/bar_test2.js dist/artifact.html out/bar latte:0.4        — с размером
    node e2e/bar_test2.js dist/artifact.html out/bar espresso2,cappuccino:0.4,raf:0.2   — несколько заказов подряд в одном прогоне
+   latte_sakura:0.4:cold — третий параметр «cold» заказывает холодный вариант напитка с механикой «оба» (Н2-2).
    Ключи механики: espresso, espresso2 (двойной), americano, icedamericano, cappuccino, icedcappuccino, latte, icedlatte, flatwhite, raf, vanillaraf, rafhalva.
    Цели берутся из самой игры (BR.rc: шоты, молоко, вода, лёд, зона пара), поэтому сценарий не зависит от размера. */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 const PANEL = new Set(['juice', 'tonic', 'powder', 'boba', 'topping', 'whisk', 'blend', 'shake', 'foam', 'whip', 'layer']);
-const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink, size] = s.split(':'); return { drink, size: size || '0.2' }; });
+const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink, size, temp] = s.split(':'); return { drink, size: size || '0.2', cold: temp === 'cold' }; });
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, endDay, barOpen, spawn };');
   const tmp = path.resolve(process.argv[2]).replace('.html', '.dbg.html'); fs.writeFileSync(tmp, src);
@@ -24,14 +25,14 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
   const done = async () => { const [x, y] = await ic(353, 384); await p.mouse.click(x, y); await p.waitForTimeout(250); };
   const hold = async (fn, arg) => { const [x, y] = await ic(155, 384); await p.mouse.move(x, y); await p.mouse.down(); await waitFor(fn, arg); await p.mouse.up(); };
 
-  const make = async (drink, size, tag) => {
+  const make = async (drink, size, tag, wantCold) => {
     await p.evaluate(() => { const d = window.__dbg; if (!d.D.customers.length) d.spawn(); });
     await waitFor(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, 60000);
-    await p.evaluate(({ d, size }) => {
-      const M = window.__MENUAPI, dk = M.drinkOfKey(d), cold = /^iced/.test(d) || M.drinkById[dk.id].temp === 'cold', c = window.__dbg.D.customers[0];
+    await p.evaluate(({ d, size, wantCold }) => {
+      const M = window.__MENUAPI, dk = M.drinkOfKey(d), cold = wantCold || /^iced/.test(d) || M.drinkById[dk.id].temp === 'cold', c = window.__dbg.D.customers[0];
       c.drink = d; c.order.key = d; c.order.id = dk.id; c.order.name = M.drinkById[dk.id].name; c.order.size = size; c.order.cold = cold; c.order.food = null;
       c.order.shots = M.legacyRecipe(d, size, cold).shots; c.strong = false; c.syrup = d === 'vanillaraf' ? 'vanilla' : null; c.pumps = 2; c.pat = c.max = 999;
-    }, { d: drink, size });
+    }, { d: drink, size, wantCold });
     await p.evaluate(() => { window.__dbg.G.hints = true; });
     await p.keyboard.press('Space'); await p.waitForTimeout(600); await require('./pw').dismissCard(p);
     const info = await p.evaluate(() => { const B = window.__dbg.BR; return { drink: B.drink, shots: B.shots, tasks: B.exp.join(','), rc: JSON.stringify(B.rc) }; });
@@ -116,6 +117,6 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
     console.log(tag, 'served', served0, '->', await p.evaluate(() => window.__dbg.D.stats.served), 'money', await p.evaluate(() => window.__dbg.G.money));
     await p.waitForTimeout(1500);
   };
-  for (let i = 0; i < specs.length; i++) await make(specs[i].drink, specs[i].size, `${i + 1}_${specs[i].drink}_${specs[i].size}`);
+  for (let i = 0; i < specs.length; i++) await make(specs[i].drink, specs[i].size, `${i + 1}_${specs[i].drink}_${specs[i].size}`, specs[i].cold);
   console.log(errs.length ? errs.join('\n') : 'NO_ERRORS'); await b.close();
 })().catch(e => { console.error(e); process.exit(1); });

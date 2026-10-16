@@ -114,12 +114,14 @@ export function iceCubes(spec: DrinkSpec, g: GlassGeom): IceCube[] {
 const ICE_EDGE = mixColor(col('DUSTY'), col('HILITE'), 0.12);
 const ICE_AIR = '#DCEBEA';
 
-function iceSvg(cubes: readonly IceCube[], sw: (px: number) => number): string {
+function iceSvg(cubes: readonly IceCube[], sw: (px: number) => number, specks?: string): string {
   const body = (c: IceCube, fill: string, fo: number, edge: boolean): string => {
     const h = f2(c.s / 2);
     const hi = !edge || !c.hl ? '' : `<path d="M${f2(c.hl.dx * c.s)} ${f2(c.hl.dy * c.s)}h${f2(c.hl.len * c.s)}" stroke="${col('HILITE')}" stroke-opacity=".9" stroke-width="${f2(sw(2))}" stroke-linecap="round" fill="none"/>`;
     const strokeAttr = edge ? ` stroke="${ICE_EDGE}" stroke-opacity=".9" stroke-width="${f2(sw(2))}"` : '';
-    return `<g transform="translate(${f2(c.x)} ${f2(c.y)}) rotate(${f2(c.rot)})"><rect x="${-h}" y="${-h}" width="${f2(c.s)}" height="${f2(c.s)}" rx="${f2(c.s * 0.14)}" fill="${fill}" fill-opacity="${fo}"${strokeAttr}/>${hi}</g>`;
+    /* крапинки специй во льду (пряная тыква): две-три точки в части кубиков, положение от размера и наклона, без Math.random */
+    const sp = !specks || !edge || Math.round(c.rot * 10) % 3 === 0 ? '' : [[-0.18, -0.12], [0.14, 0.1], [-0.02, 0.26]].map(([dx, dy], i) => `<circle cx="${f2((dx as number) * c.s)}" cy="${f2((dy as number) * c.s)}" r="${f2(c.s * (0.045 + 0.01 * i))}" fill="${specks}" fill-opacity=".85"/>`).join('');
+    return `<g transform="translate(${f2(c.x)} ${f2(c.y)}) rotate(${f2(c.rot)})"><rect x="${-h}" y="${-h}" width="${f2(c.s)}" height="${f2(c.s)}" rx="${f2(c.s * 0.14)}" fill="${fill}" fill-opacity="${fo}"${strokeAttr}/>${sp}${hi}</g>`;
   };
   /* два слоя глубины: задние светлее, прозрачнее и без контура, передние с контуром 2 px */
   return cubes.filter((c) => c.back).map((c) => body(c, '#EEF6F5', 0.16, false)).join('') + cubes.filter((c) => !c.back).map((c) => body(c, ICE_AIR, 0.24, true)).join('');
@@ -173,6 +175,8 @@ function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: bo
   let acc = g.yBot;
   const tops: number[] = [];
   let o = '';
+  const rnd = mulberry32(iceSeed(spec) ^ 0x9e3779b9);
+  const halfAt = (y: number): number => glassHalfWidth(g, Math.min(y, g.yb)) - 5 * g.k;
   layers.forEach((ly, i) => {
     const h = liqH * ly.frac;
     const yt = acc - h;
@@ -187,9 +191,26 @@ function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: bo
       const bh = liqH * 0.07;
       o += `<path d="${layerPoly(edgePoints(W, yt - bh, A, i * 1.7 + 1), yt + A + 1, W)}" fill="${mixColor(ly.color, next, 0.5)}"/>`;
     }
+    if (!compact && ly.tone === 'clear' && h > 14 * g.k) {
+      /* прозрачная жидкость (чай, тоник, американо): светлая полоса вдоль левой стенки */
+      const x0 = -halfAt(yt + h * 0.5) + 3 * g.k;
+      o += `<path d="M${f2(x0)} ${f2(yt + h * 0.12)}l${f2(5.5 * g.k)} 0l${f2(-1.5 * g.k)} ${f2(h * 0.62)}l${f2(-4 * g.k)} 0Z" fill="#fff" fill-opacity=".2"/>`;
+    }
+    if (ly.tone === 'cloudy') {
+      /* мутный тон: молочная вуаль и ягодная взвесь (светлые и тёмные крапинки), на компактном только вуаль */
+      o += `<path d="${layerPoly(topEdge, acc + 1, W)}" fill="#fff" fill-opacity="${compact ? 0.14 : 0.2}"/>`;
+      if (!compact) {
+        const n = Math.round(10 + h / 3);
+        for (let j = 0; j < n; j++) {
+          const y = yt + 2 + rnd() * Math.max(2, h - 4);
+          const x = (rnd() * 2 - 1) * halfAt(y);
+          o += `<circle cx="${f2(x)}" cy="${f2(y)}" r="${f2((0.9 + rnd() * 1.3) * g.k)}" fill="${j % 3 ? shade(ly.color, 0.35) : light(ly.color, 0.5)}" fill-opacity=".8"/>`;
+        }
+      }
+    }
     acc = yt;
   });
-  if (spec.detail === 'swirl' && !compact && layers.length > 1) {
+  if ((spec.detail === 'swirl' || spec.detail === 'tonic_bubbles') && !compact && layers.length > 1) {
     const from = (tops[0] as number);
     const c2 = (layers[layers.length - 1] as Layer).color;
     const d = liqH * 0.17;
@@ -198,6 +219,28 @@ function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: bo
       const w = 3.4 * g.k;
       const dd = d * sc;
       o += `<path d="M${f2(x - w)} ${f2(from - 3)}C${f2(x - w * 0.9)} ${f2(from + dd * 0.6)} ${f2(x - w * 0.3)} ${f2(from + dd)} ${f2(x)} ${f2(from + dd)}C${f2(x + w * 0.3)} ${f2(from + dd)} ${f2(x + w * 0.9)} ${f2(from + dd * 0.6)} ${f2(x + w)} ${f2(from - 3)}Z" fill="${c2}"/>`;
+    }
+  }
+  if (spec.detail === 'tonic_bubbles') {
+    /* пузырьки тоника поднимаются в нижнем (светлом) слое; на компактном три точки */
+    const base = layers[0] as Layer;
+    const top0 = tops[0] as number;
+    const n = compact ? 4 : 16;
+    for (let j = 0; j < n; j++) {
+      const y = top0 + 3 * g.k + rnd() * Math.max(2, g.yBot - top0 - 8 * g.k);
+      const x = (rnd() * 2 - 1) * halfAt(y);
+      const r = compact ? sw(1.4) : (0.9 + rnd() * 1.6) * g.k;
+      o += `<circle cx="${f2(x)}" cy="${f2(y)}" r="${f2(r)}" fill="#fff" fill-opacity="${compact ? 0.85 : 0.45}" stroke="${shade(base.color, 0.3)}" stroke-opacity=".7" stroke-width="${sw(0.9)}"/>`;
+    }
+  }
+  if (spec.top.specks && spec.detail === 'spice_specks') {
+    /* крапинки специй в молочном слое (пряная тыква); на компактном четыре крупные точки */
+    const n = compact ? 4 : 14;
+    const lo = tops[tops.length - 1] as number;
+    for (let j = 0; j < n; j++) {
+      const y = lo + 4 * g.k + rnd() * Math.max(2, (g.yBot - lo) * 0.7);
+      const x = (rnd() * 2 - 1) * halfAt(y);
+      o += `<circle cx="${f2(x)}" cy="${f2(y)}" r="${f2(compact ? sw(2.2) : (1 + rnd() * 0.8) * g.k)}" fill="${spec.top.specks}" fill-opacity=".85"/>`;
     }
   }
   void sw;
@@ -353,7 +396,7 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     if (!compact && surfaceTop.art === 'heart') liquid += heartSvg(0, liq.yTop, rxS, ryS, col('PAPER'));
     if (!compact && surfaceTop.art === 'tulip') liquid += tulipSvg(0, liq.yTop, rxS, ryS, col('PAPER'));
     if (!compact && surfaceTop.specks) liquid += specksSvg(rxS, ryS, liq.yTop, surfaceTop.specks);
-    if (!o.noIce && spec.ice.rows > 0) ice += compact ? iceLatticeSvg(spec, g, sw) : iceSvg(iceCubes(spec, g), sw);
+    if (!o.noIce && spec.ice.rows > 0) ice += compact ? iceLatticeSvg(spec, g, sw) : iceSvg(iceCubes(spec, g), sw, spec.top.specks);
     if (spec.bottom === 'boba') {
       const n = compact ? 4 : 7;
       for (let i = 0; i < n; i++) ice += `<circle cx="${f2((-0.8 + (1.6 * i) / (n - 1)) * (g.Wb - 8 * g.k))}" cy="${f2(g.yb - 8 * g.k - (i % 2) * 4 * g.k)}" r="${f2(5.2 * g.k)}" fill="#3A2A24" stroke="${INK}" stroke-width=".8"/>`;

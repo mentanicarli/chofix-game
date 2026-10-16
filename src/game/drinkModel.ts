@@ -36,6 +36,8 @@ export interface Layer {
   tone?: 'clear' | 'cloudy';
   /** цветная основа на дне (сироп латте): в компактном уровне занимает `COMPACT_BASE_FRAC` высоты наполнения */
   base?: boolean;
+  /** цвет полосы в компактном уровне, если цвета слоя на 49 × 42 не хватает (насыщенный сироп у холодных латте с таро) */
+  compactColor?: string;
 }
 /** Верх керамики в компактном уровне (билет, пузырь): другой цвет, кольцо, центр и точки, чтобы напитки различались в слоте 49 × 42. Полный уровень не меняется. */
 export interface CompactTop {
@@ -60,17 +62,18 @@ export interface TopSpec {
 export const COMPACT_BASE_FRAC = 0.18;
 /** Слои для рисования в компактном уровне: цветная основа (сироп) занимает `COMPACT_BASE_FRAC`, остальные слои делят остаток по прежним долям; сумма 1. */
 export function compactLayers(spec: Pick<DrinkSpec, 'liquid'>): Layer[] {
+  const tint = (l: Layer): Layer => (l.compactColor ? { ...l, color: l.compactColor } : { ...l });
   const first = spec.liquid[0];
-  if (!first?.base || spec.liquid.length < 2) return spec.liquid.map((l) => ({ ...l }));
+  if (!first?.base || spec.liquid.length < 2) return spec.liquid.map(tint);
   const rest = spec.liquid.slice(1);
   const sum = rest.reduce((a, l) => a + l.frac, 0);
   const k = (1 - COMPACT_BASE_FRAC) / sum;
   let acc = COMPACT_BASE_FRAC;
-  const out: Layer[] = [{ ...first, frac: COMPACT_BASE_FRAC }];
+  const out: Layer[] = [{ ...tint(first), frac: COMPACT_BASE_FRAC }];
   rest.forEach((l, i) => {
     const frac = i === rest.length - 1 ? Math.round((1 - acc) * 1e6) / 1e6 : Math.round(l.frac * k * 1e4) / 1e4;
     acc += frac;
-    out.push({ ...l, frac });
+    out.push({ ...tint(l), frac });
   });
   return out;
 }
@@ -121,6 +124,36 @@ export function compactTopDelta(a: TopSpec, b: TopSpec): number {
   const x = compactTopLab(a);
   const y = compactTopLab(b);
   return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+}
+/** Цвет жидкости стакана в компактном уровне на высоте t (0 — дно, 1 — поверхность) в виде Lab. */
+function compactLiquidAt(spec: Pick<DrinkSpec, 'liquid'>, t: number): [number, number, number] {
+  const layers = compactLayers(spec);
+  let acc = 0;
+  for (const l of layers) {
+    acc += l.frac;
+    if (t <= acc + 1e-9) return labOf(l.color);
+  }
+  return labOf((layers[layers.length - 1] as Layer).color);
+}
+/** Число срезов по высоте при сравнении двух стаканов в компактном уровне. */
+export const COMPACT_SLICES = 16;
+/**
+ * Различимость двух стаканов в компактном уровне (билет 49 × 42, пузырь 38 × 41): стопки цвета сравниваются по срезам снизу вверх.
+ * `max` — наибольшее ΔE76 среди срезов (есть ли вообще место, где напитки отличаются), `mean` — среднее по срезам (насколько они похожи в целом).
+ * Лёд на обоих одинаковый и в сравнение не входит.
+ */
+export function compactGlassDelta(a: Pick<DrinkSpec, 'liquid'>, b: Pick<DrinkSpec, 'liquid'>): { max: number; mean: number } {
+  let max = 0;
+  let sum = 0;
+  for (let i = 0; i < COMPACT_SLICES; i++) {
+    const t = (i + 0.5) / COMPACT_SLICES;
+    const x = compactLiquidAt(a, t);
+    const y = compactLiquidAt(b, t);
+    const e = Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+    max = Math.max(max, e);
+    sum += e;
+  }
+  return { max, mean: sum / COMPACT_SLICES };
 }
 export interface DrinkSpec {
   id: string;
@@ -199,6 +232,12 @@ const MILK = '#F3E7D0';
 const CREAM = '#E9D2B2';
 const CREAM_GOLD = '#E9D29A';
 const CREMA = '#C99B6E';
+/** Насыщенный цвет полосы сиропа в компактном уровне холодных латте и пряной тыквы (слабые цвета спецификации на 49 × 42 сливаются). */
+const COLD_SYRUP_COMPACT: Readonly<Record<string, string>> = {
+  latte_sakura: '#EE8E7C', latte_banana: '#F6D23E', latte_lemon: '#F3EA5E', latte_coconut: '#FBF4E8', cappuccino_pumpkin: '#E0A24C'
+};
+/** Холодные раф с ванилью и сливочной халвой: оттенок жидкости (у рафа сливочный), чтобы три рафа различались и в стакане. */
+const COLD_RAF_TINT: Readonly<Record<string, string>> = { vanilla_raf: '#F1E19C', raf_halva: '#E2BC68' };
 const SYRUP_COLOR: Readonly<Record<string, string>> = {
   latte_sakura: '#F0B3A0', latte_banana: '#F2DA8A', latte_lemon: '#F3E6A8', latte_coconut: '#F3E6C8', cappuccino_pumpkin: '#E0A24C'
 };
@@ -250,7 +289,7 @@ export const iceCount = (g: IceGrid): number => g.rows * g.cols;
 
 /* ---------- слои ---------- */
 
-interface RawLayer { color: string; vol: number; edge?: Edge; tone?: 'clear' | 'cloudy'; base?: boolean }
+interface RawLayer { color: string; vol: number; edge?: Edge; tone?: 'clear' | 'cloudy'; base?: boolean; compactColor?: string }
 /** Доли из объёмов: сумма ровно 1 (последняя доля добирает округление), нулевые слои пропускаются. */
 function toLayers(raw: readonly RawLayer[]): Layer[] {
   const live = raw.filter((l) => l.vol > 0);
@@ -263,6 +302,7 @@ function toLayers(raw: readonly RawLayer[]): Layer[] {
     const out: Layer = { color: l.color, frac, edge: i === 0 ? 'sharp' : (l.edge ?? 'sharp') };
     if (l.tone) out.tone = l.tone;
     if (l.base) out.base = true;
+    if (l.compactColor) out.compactColor = l.compactColor;
     return out;
   });
 }
@@ -349,19 +389,21 @@ function build(d: Drink, r: Recipe, group: ModelGroup): Body {
       const base = d.id === 'cocoa' ? pal.powder
         : d.id === 'chicory_latte' ? mixColor(pal.powder, MILK, 0.5)
         : d.family === 'matcha' || d.id === 'matcha_coconut' ? mixColor(pal.matcha, MILK, 0.55)
-        : d.family === 'raf' ? (d.id === 'raf_halva' ? CREAM_GOLD : CREAM)
+        : d.family === 'raf' ? (COLD_RAF_TINT[d.id] ?? CREAM)
         : MIXC;
       const milkVol = r.milk ?? r.drinkMl;
       const coldFoam = r.coldX ? milkVol * r.coldX : 0;
       const raw: RawLayer[] = [];
-      if (syrup) raw.push({ color: syrup, vol: syrupMl });
+      if (syrup) raw.push({ color: syrup, vol: syrupMl, base: true, compactColor: COLD_SYRUP_COMPACT[d.id] });
       if (coffee && d.family !== 'raf') raw.push({ color: ESP, vol: shotMl, edge: 'step' });
       raw.push({ color: base, vol: milkVol, edge: 'step' });
       const foamColor = cap ? pal.foam : FOAM;
       if (coldFoam + cap > 0) raw.push({ color: foamColor, vol: coldFoam + cap });
       const taro = d.id === 'latte_sakura' || d.id === 'latte_lemon' || d.id === 'latte_coconut' || d.id === 'matcha_coconut';
       const detail: Detail | null = taro ? 'taro_cap' : d.id === 'cappuccino_pumpkin' ? 'spice_specks' : null;
-      return { liquid: toLayers(raw), top: { color: coldFoam + cap > 0 ? foamColor : base }, detail };
+      const top: TopSpec = { color: coldFoam + cap > 0 ? foamColor : base };
+      if (d.id === 'cappuccino_pumpkin') top.specks = '#7A4A38';
+      return { liquid: toLayers(raw), top, detail };
     }
     case 'C3': {
       const tonic = d.family === 'tonic';
@@ -467,6 +509,10 @@ export const HOT_MODEL_IDS: ReadonlySet<string> = new Set([
   'vanilla_raf', 'cocoa', 'raf', 'raf_halva', 'tea_sencha', 'tea_assam', 'tea_hibiscus', 'tea_buckwheat', 'tea_currant',
   'latte', 'latte_sakura', 'latte_banana', 'latte_lemon', 'latte_coconut', 'matcha_latte', 'chicory_latte', 'matcha_coconut'
 ]);
+/** Холодные группы Н2-2: прозрачные (C1), молочно-кофейные (C2) и два слоя (C3). Их холодные варианты рисуются моделью (21 новый вид и три готовых). */
+export const COLD_MODEL_GROUPS: ReadonlySet<ModelGroup> = new Set<ModelGroup>(['C1', 'C2', 'C3']);
+/** Рисуется ли холодный вариант напитка моделью (группы C1–C3). */
+export const isColdModel = (d: Drink): boolean => (d.temp === 'hot' ? false : COLD_MODEL_GROUPS.has(groupOf(d, true)));
 /** Подпись под моделью в книге и окне «Новый напиток», когда одной картинки мало (решение владельца: горячий бамбл выглядит как американано, отличие только подписью). */
 export const MODEL_TAGS: Readonly<Record<string, string>> = { hot_bumble: 'с соком' };
 /** Ссылка на модель для заказа или null, если напиток (в этом варианте) ещё рисуется по-старому или такого размера и варианта у него нет. */
@@ -475,7 +521,7 @@ export function pilotRef(id: string, size: string, cold: boolean): ModelRef | nu
   if (!d) return null;
   /* у напитков только холодных (бамбл) заказ может нести cold = false: вариант определяет сам напиток */
   const c = d.temp === 'cold' ? true : d.temp === 'hot' ? false : cold;
-  if (!PILOT_IDS.has(id) && !(!c && HOT_MODEL_IDS.has(id))) return null;
+  if (!PILOT_IDS.has(id) && !(!c && HOT_MODEL_IDS.has(id)) && !(c && isColdModel(d))) return null;
   const sz = size as Size;
   return sizesOf(id, c).includes(sz) ? { id, size: sz, cold: c } : null;
 }

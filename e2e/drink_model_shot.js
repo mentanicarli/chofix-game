@@ -7,9 +7,10 @@ const out = path.resolve(process.argv[3] || 'docs/art/drinks/h1-3'); fs.mkdirSyn
 const parts = (process.argv[4] || 'bar,ticket,bubble,book,card,ice').split(','); const on = k => parts.includes(k);
 const SIZES = process.env.SIZES ? JSON.parse(process.env.SIZES) : [[1280, 720], [1024, 600]];
 /* H21=1: кадры Н2-1 (горячие напитки: эспрессо, флэт уайт, чай, латте сакура; книга и окно для двух чаёв и двух латте) */
-const H21 = !!process.env.H21;
-const BUBBLES = H21 ? [{ drink: 'espresso', size: '0.2', cold: false }, { drink: 'tea_hibiscus', size: '0.4', cold: false }, { drink: 'latte_sakura', size: '0.4', cold: false }] : [{ drink: 'latte', size: '0.3', cold: false }, { drink: 'orange_bumble', size: '0.6', cold: true }, { drink: 'cappuccino', size: '0.2', cold: true }];
-const BOOK_IDS = H21 ? ['tea_sencha', 'tea_currant', 'latte_sakura', 'latte_banana', 'hot_bumble'] : ['latte', 'cappuccino', 'orange_bumble'];
+const H22 = !!process.env.H22; /* H22=1: кадры Н2-2 (холодные: смородиновый чай, латте лимонная меренга, эспрессо-тоник) */
+const H21 = !!process.env.H21 || H22;
+const BUBBLES = H22 ? [{ drink: 'tea_currant', size: '0.4', cold: true }, { drink: 'latte_lemon', size: '0.4', cold: true }, { drink: 'espresso_tonic', size: '0.3', cold: true }] : H21 ? [{ drink: 'espresso', size: '0.2', cold: false }, { drink: 'tea_hibiscus', size: '0.4', cold: false }, { drink: 'latte_sakura', size: '0.4', cold: false }] : [{ drink: 'latte', size: '0.3', cold: false }, { drink: 'orange_bumble', size: '0.6', cold: true }, { drink: 'cappuccino', size: '0.2', cold: true }];
+const BOOK_IDS = H22 ? ['tea_currant', 'latte_lemon', 'espresso_tonic'] : H21 ? ['tea_sencha', 'tea_currant', 'latte_sakura', 'latte_banana', 'hot_bumble'] : ['latte', 'cappuccino', 'orange_bumble'];
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { MENUAPI: window.__MENUAPI, get G() { return G; }, get D() { return D; }, get BR() { return BR; }, SBX, WORLD, spawn, tickDay, barOpen, barShow, applyUpgrades, zoneClick, barPaint, showBook, bookRefresh, showDrinkCard, closeDrinkCard, get bookSel() { return bookSel; }, set bookSel(v) { bookSel = v; }, resetBar() { try { barShow(false); } catch (e) { /* нет бара */ } BR = null; } };');
   if (!src.includes('window.__dbg')) { console.error('нужна отладочная сборка'); process.exit(2); }
@@ -45,7 +46,7 @@ const BOOK_IDS = H21 ? ['tea_sencha', 'tea_currant', 'latte_sakura', 'latte_bana
       await p.waitForTimeout(500); await PW.dismissCard(p);
     };
     const level = async (f) => { await p.evaluate((f) => { const B = __dbg.BR, rc = B.rc; B.cup.es = f > 0.15 ? (rc.shots || 0) * 30 : 0; if (rc.water) B.cup.water = rc.water * f; if (rc.milk) { B.cup.milk = rc.milk * f; B.cup.foam = f > 0.9 ? rc.foam || 0 : 0; } if (rc.ice) B.cup.ice = rc.ice * f; B.cup.level = f; }, f); await p.waitForTimeout(900); };
-    const cases = H21 ? [['espresso', '0.2', false, 'espresso'], ['flatwhite', '0.2', false, 'flat_white'], ['tea_sencha', '0.4', false, 'tea_sencha'], ['latte_sakura', '0.4', false, 'latte_sakura'], ['hot_bumble', '0.3', false, 'hot_bumble']] : [['latte', '0.3', false, 'latte_hot'], ['cappuccino', '0.4', true, 'cappuccino_cold'], ['orange_bumble', '0.3', true, 'bumble_0.3'], ['orange_bumble', '0.6', true, 'bumble_0.6'], ['espresso', '0.2', false, 'espresso_old_art']];
+    const cases = H22 ? [['americano', '0.4', true, 'americano_cold'], ['latte_sakura', '0.4', true, 'latte_sakura_cold'], ['matcha_bumble', '0.6', true, 'matcha_bumble'], ['espresso_tonic', '0.3', true, 'espresso_tonic'], ['tea_currant', '0.4', true, 'tea_currant_cold'], ['cappuccino_pumpkin', '0.4', true, 'pumpkin_cold']] : H21 ? [['espresso', '0.2', false, 'espresso'], ['flatwhite', '0.2', false, 'flat_white'], ['tea_sencha', '0.4', false, 'tea_sencha'], ['latte_sakura', '0.4', false, 'latte_sakura'], ['hot_bumble', '0.3', false, 'hot_bumble']] : [['latte', '0.3', false, 'latte_hot'], ['cappuccino', '0.4', true, 'cappuccino_cold'], ['orange_bumble', '0.3', true, 'bumble_0.3'], ['orange_bumble', '0.6', true, 'bumble_0.6'], ['espresso', '0.2', false, 'espresso_old_art']];
     for (const [id, size, cold, name] of cases) {
       if (!(on('bar') || on('ticket') || on('ice'))) break;
       await order(id, size, cold); await level(1); if (H21) { await p.evaluate(() => { __dbg.BR.ready = true; }); await p.waitForTimeout(500); }
@@ -60,7 +61,7 @@ const BOOK_IDS = H21 ? ['tea_sencha', 'tea_currant', 'latte_sakura', 'latte_bana
     }
     await p.evaluate(() => __dbg.resetBar());
     if (on('card')) {
-      for (const [id, size, cold, name] of (H21 ? [['tea_sencha', '0.4', false, 'tea_sencha'], ['tea_hibiscus', '0.4', false, 'tea_hibiscus'], ['latte_sakura', '0.4', false, 'latte_sakura'], ['latte', '0.3', false, 'latte'], ['hot_bumble', '0.3', false, 'hot_bumble']] : [['latte', '0.4', false, 'latte'], ['orange_bumble', '0.6', true, 'bumble']])) {
+      for (const [id, size, cold, name] of (H22 ? [['tea_currant', '0.4', true, 'tea_currant'], ['latte_lemon', '0.3', true, 'latte_lemon'], ['espresso_tonic', '0.3', true, 'espresso_tonic']] : H21 ? [['tea_sencha', '0.4', false, 'tea_sencha'], ['tea_hibiscus', '0.4', false, 'tea_hibiscus'], ['latte_sakura', '0.4', false, 'latte_sakura'], ['latte', '0.3', false, 'latte'], ['hot_bumble', '0.3', false, 'hot_bumble']] : [['latte', '0.4', false, 'latte'], ['orange_bumble', '0.6', true, 'bumble']])) {
         await p.evaluate(({ id, size, cold }) => { __dbg.barShow(true); const card = __dbg.MENUAPI.newDrinkCard(id, [], undefined, size, cold); __dbg.showDrinkCard(card, null, { id, size, cold }); }, { id, size, cold });
         await p.waitForTimeout(500);
         await p.screenshot({ path: `${out}/card_${name}_${tag}.png`, timeout: 120000 });
@@ -69,7 +70,7 @@ const BOOK_IDS = H21 ? ['tea_sencha', 'tea_currant', 'latte_sakura', 'latte_bana
       await p.evaluate(() => __dbg.barShow(false));
     }
     if (on('book')) {
-      await p.evaluate((H21) => { __dbg.G.rank = 9; __dbg.bookSel = H21 ? { tea_sencha: { size: '0.4', cold: false }, tea_currant: { size: '0.4', cold: false }, latte_sakura: { size: '0.4', cold: false } } : { orange_bumble: { size: '0.6', cold: true }, latte: { size: '0.4', cold: false }, cappuccino: { size: '0.3', cold: true } }; __dbg.showBook('hud'); }, H21);
+      await p.evaluate(([H21, H22]) => { __dbg.G.rank = 9; __dbg.bookSel = H22 ? { tea_currant: { size: '0.4', cold: true }, latte_lemon: { size: '0.3', cold: true }, espresso_tonic: { size: '0.3', cold: true } } : H21 ? { tea_sencha: { size: '0.4', cold: false }, tea_currant: { size: '0.4', cold: false }, latte_sakura: { size: '0.4', cold: false } } : { orange_bumble: { size: '0.6', cold: true }, latte: { size: '0.4', cold: false }, cappuccino: { size: '0.3', cold: true } }; __dbg.showBook('hud'); }, [H21, H22]);
       await p.waitForTimeout(800);
       for (const id of BOOK_IDS) {
         /* карточка прижимается к верху списка, снимок всего окна книги (иначе липкая шапка закрывает верх карточки) */

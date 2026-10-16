@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { allSpecs, specOf } from '../src/game/drinkModel';
 import { MODEL_TEX_CAP, TexCache, modelTexKey, type Destroyable } from '../src/render/world/texCache';
-import { HOT_MODEL_IDS } from '../src/game/drinkModel';
+import { COLD_MODEL_GROUPS, HOT_MODEL_IDS } from '../src/game/drinkModel';
 import { drinkArtSvg, drinkParts } from '../src/render/world/drinkModel';
 import { bookHTML } from '../src/ui/book';
 
@@ -94,6 +94,23 @@ describe('Н2-1: 24 горячих вида в кэше', () => {
         expect(p.bbox.x1 - p.bbox.x0, sp.id).toBeGreaterThan(20);
       }
     }
+  });
+});
+
+describe('Н2-2: холодные C1–C3 в кэше', () => {
+  test('24 холодных вида × размеры × уровни × разрешения: ключи уникальны, живых текстур ровно 40', () => {
+    Fake.live = 0;
+    const c = new TexCache<Fake>();
+    const cold = allSpecs().filter((s) => s.cold && COLD_MODEL_GROUPS.has(s.group));
+    expect(new Set(cold.map((s) => s.id)).size).toBe(24);
+    const keys: string[] = [];
+    for (const sp of cold) for (const lod of ['full', 'compact'] as const) for (const res of [1, 2]) keys.push(modelTexKey(sp, lod, res));
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const k of keys) c.set(k, new Fake());
+    expect(c.size).toBe(40);
+    expect(Fake.live).toBe(40);
+    c.clear();
+    expect(Fake.live).toBe(0);
   });
 });
 
