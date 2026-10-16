@@ -7,7 +7,7 @@
  * В баре слой liquid рисуется вживую (налив), остальные — текстурами.
  */
 import PAL from '../../../art-src/palette.json';
-import { HEIGHT_CAP, mixColor, type DrinkSpec, type Layer, type Lod, type VesselSpec } from '../../game/drinkModel';
+import { HEIGHT_CAP, compactLayers, mixColor, type DrinkSpec, type Layer, type Lod, type VesselSpec } from '../../game/drinkModel';
 
 const COLORS = PAL.colors as Record<string, string>;
 const col = (name: string): string => COLORS[name] as string;
@@ -165,7 +165,7 @@ const layerPoly = (top: string, yBot: number, W: number): string => `M${top}L${f
 
 /** Слои спецификации стакана от yBot вверх до уровня fill; границы sharp / step / wavy; языки в бамбле. Только полный уровень умеет step и wavy. */
 function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: boolean, sw: (px: number) => number): { svg: string; yTop: number } {
-  const layers = spec.liquid;
+  const layers = compact ? compactLayers(spec) : spec.liquid;
   const span = g.yBot - g.yTop;
   const yTopLiq = g.yBot - span * fill;
   const liqH = g.yBot - yTopLiq;
@@ -340,7 +340,7 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     const fill = spec.cold ? 0.96 : 0.88;
     const seat = seatOf(g, o.level);
     if (o.saucer || compact) {
-      back += seatSvg(seat, compact, sw, 3);
+      back += seatSvg(seat, compact, sw, compact ? 2 : 3);
       grow(-seat.saucer.rx, seat.saucer.cy - seat.saucer.ry, seat.saucer.rx, seat.saucer.cy + seat.saucer.ry + 2);
     } else back += contactOnly(seat);
     back += `<path d="${glassPath(g)}" fill="${PAL.glass.fill}" fill-opacity="${PAL.glass.alpha}"/>`;
@@ -383,8 +383,25 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     const rxS = (W - 6 * k) * (0.88 + 0.12 * lvl);
     const ryS = (ryR - 3.5 * ky) * (0.9 + 0.1 * lvl);
     const cyS = -H + (3 + (1 - lvl) * 9) * ky;
-    liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS)}" ry="${f2(ryS)}" fill="${surfaceTop.ring ?? surfaceTop.color}"/>`;
-    if (surfaceTop.ring) liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS * 0.82)}" ry="${f2(ryS * 0.8)}" fill="${surfaceTop.color}"/>`;
+    const ct = compact ? surfaceTop.compact : undefined;
+    if (ct) {
+      /* компактный верх: кольцо, поле, тёмный центр, крупные точки (радиус не меньше 2 px) */
+      const fr = ct.ring ? (ct.ringFrac ?? 0.25) : 0;
+      const cf = ct.coreFrac ?? 0.45;
+      liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS)}" ry="${f2(ryS)}" fill="${ct.ring ?? ct.color}"/>`;
+      if (ct.ring) liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS * (1 - fr))}" ry="${f2(ryS * (1 - fr))}" fill="${ct.color}"/>`;
+      if (ct.core) liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS * cf)}" ry="${f2(ryS * cf)}" fill="${ct.core}"/>`;
+      if (ct.dots) {
+        for (let i = 0; i < ct.dots.n; i++) {
+          const a = i * 2.4 + 0.5;
+          const q = 0.5 * (0.5 + (i % 2) * 0.5);
+          liquid += `<circle cx="${f2(Math.cos(a) * rxS * q)}" cy="${f2(cyS + Math.sin(a) * ryS * q)}" r="${f2(sw(2.2))}" fill="${ct.dots.color}"/>`;
+        }
+      }
+    } else {
+      liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS)}" ry="${f2(ryS)}" fill="${surfaceTop.ring ?? surfaceTop.color}"/>`;
+      if (surfaceTop.ring) liquid += `<ellipse cx="0" cy="${f2(cyS)}" rx="${f2(rxS * 0.82)}" ry="${f2(ryS * 0.8)}" fill="${surfaceTop.color}"/>`;
+    }
     if (!compact && surfaceTop.art === 'heart') liquid += heartSvg(0, cyS, rxS, ryS, col('PAPER'));
     if (!compact && surfaceTop.art === 'tulip') liquid += tulipSvg(0, cyS, rxS, ryS, col('PAPER'));
     if (!compact && surfaceTop.specks) liquid += specksSvg(rxS, ryS, cyS, surfaceTop.specks);

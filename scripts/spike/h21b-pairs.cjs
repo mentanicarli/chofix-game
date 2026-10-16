@@ -1,0 +1,7 @@
+// Пары напитков в слоте билета 49 × 42 (×3): различимость верха в компактном уровне (Н2-1б). Сначала node scripts/spike/h21-sheet.cjs (собирает бандл).
+// node scripts/spike/h21b-pairs.cjs
+const { chromium } = require('../../e2e/node_modules/playwright'); const M = require('../../out/h21/h12.cjs');
+const ids=[['americano','0.4'],['hot_bumble','0.3'],['vanilla_raf','0.4'],['raf','0.4'],['cocoa','0.4'],['raf_halva','0.4'],['cappuccino','0.4'],['cappuccino_pumpkin','0.4'],['flat_white','0.2'],['tea_assam','0.4'],['tea_currant','0.4'],['tea_sencha','0.4'],['tea_buckwheat','0.2'],['latte_sakura','0.4'],['latte_lemon','0.4'],['latte_coconut','0.4'],['matcha_coconut','0.4'],['latte_banana','0.4']];
+const c = ([id, z]) => { const w=49,h=42; return `<div style="text-align:center;font:600 10px sans-serif"><div style="width:${w*3}px;height:${h*3}px;background:#FFFDF6;border-radius:8px;overflow:hidden"><div style="transform:scale(3);transform-origin:0 0;width:${w}px;height:${h}px;display:flex;align-items:center;justify-content:center">${M.drinkIconSvg(M.specOf(id, z, false), w, h).svg}</div></div>${id}</div>`; };
+(async()=>{ const b=await chromium.launch(); const p=await b.newPage({viewport:{width:1700,height:320}});
+await p.setContent(`<body style="margin:0;background:#F6E9D2;display:grid;grid-template-columns:repeat(9,1fr);gap:8px;padding:8px">${ids.map(c).join('')}`); await p.screenshot({path:'docs/art/drinks/h2-1b/pairs_ticket_49x42_x3.png'}); await b.close(); })();

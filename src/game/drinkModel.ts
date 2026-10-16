@@ -34,12 +34,93 @@ export interface Layer {
   /** граница с предыдущим (нижним) слоем */
   edge: Edge;
   tone?: 'clear' | 'cloudy';
+  /** цветная основа на дне (сироп латте): в компактном уровне занимает `COMPACT_BASE_FRAC` высоты наполнения */
+  base?: boolean;
+}
+/** Верх керамики в компактном уровне (билет, пузырь): другой цвет, кольцо, центр и точки, чтобы напитки различались в слоте 49 × 42. Полный уровень не меняется. */
+export interface CompactTop {
+  color: string;
+  ring?: string;
+  /** ширина кольца, доля радиуса овала (0–1) */
+  ringFrac?: number;
+  /** тёмный центр-овал: цвет и доля радиуса */
+  core?: string;
+  coreFrac?: number;
+  /** крупные точки специй (радиус не меньше 2 px) */
+  dots?: { color: string; n: number };
 }
 export interface TopSpec {
   color: string;
   ring?: string;
   art?: 'heart' | 'tulip';
   specks?: string;
+  compact?: CompactTop;
+}
+/** Доля высоты наполнения, которую в компактном уровне занимает цветная основа латте со стаканом. */
+export const COMPACT_BASE_FRAC = 0.18;
+/** Слои для рисования в компактном уровне: цветная основа (сироп) занимает `COMPACT_BASE_FRAC`, остальные слои делят остаток по прежним долям; сумма 1. */
+export function compactLayers(spec: Pick<DrinkSpec, 'liquid'>): Layer[] {
+  const first = spec.liquid[0];
+  if (!first?.base || spec.liquid.length < 2) return spec.liquid.map((l) => ({ ...l }));
+  const rest = spec.liquid.slice(1);
+  const sum = rest.reduce((a, l) => a + l.frac, 0);
+  const k = (1 - COMPACT_BASE_FRAC) / sum;
+  let acc = COMPACT_BASE_FRAC;
+  const out: Layer[] = [{ ...first, frac: COMPACT_BASE_FRAC }];
+  rest.forEach((l, i) => {
+    const frac = i === rest.length - 1 ? Math.round((1 - acc) * 1e6) / 1e6 : Math.round(l.frac * k * 1e4) / 1e4;
+    acc += frac;
+    out.push({ ...l, frac });
+  });
+  return out;
+}
+
+/* ---------- различимость верха в компактном уровне ---------- */
+
+const rgb = (c: string): [number, number, number] => hex(c) as [number, number, number];
+/** CIE Lab (D65) из #rrggbb. */
+export function labOf(c: string): [number, number, number] {
+  const lin = rgb(c).map((v) => {
+    const x = v / 255;
+    return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const X = (0.4124 * lin[0] + 0.3576 * lin[1] + 0.1805 * lin[2]) / 0.95047;
+  const Y = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+  const Z = (0.0193 * lin[0] + 0.1192 * lin[1] + 0.9505 * lin[2]) / 1.08883;
+  const f = (t: number): number => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
+  return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
+}
+/** Расстояние между двумя цветами в Lab (ΔE76). */
+export function deltaE(a: string, b: string): number {
+  const x = labOf(a);
+  const y = labOf(b);
+  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+}
+/** Средний цвет верха керамики в компактном уровне по площади (кольцо, центр, поле, точки), в Lab. */
+export function compactTopLab(top: TopSpec): [number, number, number] {
+  const c: CompactTop = top.compact ?? { color: top.ring ?? top.color };
+  const parts: [string, number][] = [];
+  const ringF = c.ring ? (c.ringFrac ?? 0.25) : 0;
+  const ringA = 1 - (1 - ringF) ** 2;
+  const coreA = c.core ? (c.coreFrac ?? 0.45) ** 2 : 0;
+  const dotsA = c.dots ? Math.min(0.2, c.dots.n * 0.03) : 0;
+  if (c.ring && ringA) parts.push([c.ring, ringA]);
+  if (c.core) parts.push([c.core, coreA]);
+  if (c.dots) parts.push([c.dots.color, dotsA]);
+  parts.push([c.color, Math.max(0.05, 1 - ringA - coreA - dotsA)]);
+  const tot = parts.reduce((a, p) => a + p[1], 0);
+  const lab: [number, number, number] = [0, 0, 0];
+  for (const [col, w] of parts) {
+    const l = labOf(col);
+    for (let i = 0; i < 3; i++) lab[i] = (lab[i] as number) + ((l[i] as number) * w) / tot;
+  }
+  return lab;
+}
+/** Расстояние между верхами двух напитков в Lab (ΔE76) в компактном уровне. */
+export function compactTopDelta(a: TopSpec, b: TopSpec): number {
+  const x = compactTopLab(a);
+  const y = compactTopLab(b);
+  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
 }
 export interface DrinkSpec {
   id: string;
@@ -169,7 +250,7 @@ export const iceCount = (g: IceGrid): number => g.rows * g.cols;
 
 /* ---------- слои ---------- */
 
-interface RawLayer { color: string; vol: number; edge?: Edge; tone?: 'clear' | 'cloudy' }
+interface RawLayer { color: string; vol: number; edge?: Edge; tone?: 'clear' | 'cloudy'; base?: boolean }
 /** Доли из объёмов: сумма ровно 1 (последняя доля добирает округление), нулевые слои пропускаются. */
 function toLayers(raw: readonly RawLayer[]): Layer[] {
   const live = raw.filter((l) => l.vol > 0);
@@ -181,6 +262,7 @@ function toLayers(raw: readonly RawLayer[]): Layer[] {
     acc += frac;
     const out: Layer = { color: l.color, frac, edge: i === 0 ? 'sharp' : (l.edge ?? 'sharp') };
     if (l.tone) out.tone = l.tone;
+    if (l.base) out.base = true;
     return out;
   });
 }
@@ -208,8 +290,11 @@ function build(d: Drink, r: Recipe, group: ModelGroup): Body {
     case 'H4': {
       const liquid = toLayers([{ color: COF, vol: shotMl }, { color: MIXC, vol: r.milk ?? 0, edge: 'step' }, { color: FOAM, vol: foamVol }]);
       const top: TopSpec = group === 'H3' ? { color: FOAM, ring: MIXC, art: 'heart' } : { color: FOAM, ring: MIXC, art: 'tulip' };
+      /* компактный верх: у капучино кольцо #C99B6E, у флэт уайт гладкая светлая поверхность без кольца, у тыквы тёплая пена и крупные точки */
+      top.compact = group === 'H4' ? { color: '#FBF1DC' } : { color: FOAM, ring: MIXC, ringFrac: 0.3 };
       if (d.id === 'cappuccino_pumpkin') {
         top.specks = '#7A4A38';
+        top.compact = { color: '#EBB98A', ring: MIXC, ringFrac: 0.3, dots: { color: '#7A4A38', n: 4 } };
         return { liquid, top, detail: 'spice_specks' };
       }
       return { liquid, top, detail: null };
@@ -218,7 +303,13 @@ function build(d: Drink, r: Recipe, group: ModelGroup): Body {
       const color = d.id === 'cocoa' ? pal.powder : d.id === 'raf_halva' ? CREAM_GOLD : CREAM;
       /* какао и халва отличаются от рафа цветным кольцом по краю пены, иначе под одной пеной их не различить */
       const ring = d.id === 'cocoa' ? pal.powder : d.id === 'raf_halva' ? CREAM_GOLD : undefined;
-      return { liquid: toLayers([{ color, vol: r.drinkMl }]), top: ring ? { color: FOAM, ring } : { color: FOAM }, detail: null };
+      const top: TopSpec = ring ? { color: FOAM, ring } : { color: FOAM };
+      /* компактный верх: какао — тёмное кольцо и тёмный центр, халва — золотая пена и кольцо, ванильный раф ярче рафа, раф кремовый */
+      top.compact = d.id === 'cocoa' ? { color: '#B58A68', ring: '#6B4331', ringFrac: 0.32, core: '#6B4331', coreFrac: 0.45 }
+        : d.id === 'raf_halva' ? { color: CREAM_GOLD, ring: '#C9A24A', ringFrac: 0.28 }
+        : d.id === 'vanilla_raf' ? { color: '#F7E8A4' }
+        : { color: FOAM };
+      return { liquid: toLayers([{ color, vol: r.drinkMl }]), top, detail: null };
     }
     case 'H6': {
       const juice = r.juice ?? 0;
@@ -231,7 +322,7 @@ function build(d: Drink, r: Recipe, group: ModelGroup): Body {
       const isLatte = d.id === 'latte';
       const capColor = isLatte ? FOAM : pal.foam;
       const raw: RawLayer[] = [];
-      if (syrup) raw.push({ color: syrup, vol: syrupMl });
+      if (syrup) raw.push({ color: syrup, vol: syrupMl, base: true });
       raw.push({ color: MILK, vol: r.milk ?? 0, edge: 'step' }, { color: COF, vol: shotMl, edge: 'step' }, { color: capColor, vol: isLatte ? foamVol : foamVol + cap, edge: 'sharp' });
       const top: TopSpec = isLatte ? { color: '#D9B98F', art: 'heart' } : { color: capColor, ring: MIXC };
       const taro = d.id === 'latte_sakura' || d.id === 'latte_lemon' || d.id === 'latte_coconut';

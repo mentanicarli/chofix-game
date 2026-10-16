@@ -63,6 +63,14 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
         await waitFor(() => window.__dbg.BR.shot.ml >= window.__dbg.BR.tgtMl - .8 || window.__dbg.BR.shot.st !== 'run', null, 40000);
         await zone('stop'); await p.waitForTimeout(400);
         console.log(tag, 'шот', shotN, await st());
+      } else if (t === 'brew') {
+        /* чай: нужная температура воды, залить, дождаться времени, «Вынуть» */
+        await zone('tea'); await p.waitForSelector('#xPanel [data-xtemp]', { timeout: 10000 }); await p.waitForTimeout(250);
+        const T = await p.evaluate(() => window.__dbg.BR.xs.brew.temp); await p.click(`#xPanel [data-xtemp="${T}"]`); await p.waitForTimeout(200);
+        await p.click('#xPanel [data-xstart]'); await p.waitForTimeout(500);
+        await waitFor(() => { const b = window.__dbg.BR.xs.brew; return b.t >= b.minutes - 0.05; }, null, 60000);
+        await p.screenshot({ path: `${out}_${tag}_6brew.png` }); await p.click('#xPanel [data-xdone]'); await p.waitForTimeout(400);
+        if (!(await p.evaluate(() => !!window.__dbg.BR.done.brew))) throw new Error('заварка не засчитана');
       } else if (PANEL.has(t)) {
         /* станции нового ядра (сок, слои и т. п.): открыть зону, держать кнопку «Лить» до цели, «Готово» */
         await zone(await p.evaluate(tt => window.__MENUAPI.TASK_ZONE[tt], t)); await p.waitForSelector('#xPanel [data-xhold]', { timeout: 10000 }); await p.waitForTimeout(250);

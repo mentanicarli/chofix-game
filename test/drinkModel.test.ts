@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { DRINKS } from '../src/game/menu';
 import {
-  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, HOT_MODEL_IDS, MODEL_TAGS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
-  sizesOf, specOf, variantsOf, vesselDims, vesselOf, type ModelGroup
+  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, HOT_MODEL_IDS, COMPACT_BASE_FRAC, compactLayers, compactTopDelta, deltaE, MODEL_TAGS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
+  sizesOf, specOf, variantsOf, vesselDims, vesselOf, type DrinkSpec, type Layer, type ModelGroup, type TopSpec
 } from '../src/game/drinkModel';
+import { drinkIconSvg, drinkParts, geomOf } from '../src/render/world/drinkModel';
 import { cupScale } from '../src/game/volumes';
 
 const GLASS_LATTES = ['latte', 'latte_sakura', 'latte_banana', 'latte_lemon', 'latte_coconut', 'matcha_latte', 'matcha_coconut', 'chicory_latte'];
@@ -267,5 +268,65 @@ describe('группы и цвета', () => {
     expect(mixColor('#000000', '#FFFFFF', 0)).toBe('#000000');
     expect(mixColor('#000000', '#FFFFFF', 1)).toBe('#FFFFFF');
     expect(mixColor('#000000', '#FFFFFF', 0.5)).toBe('#808080');
+  });
+});
+
+describe('Н2-1б: различимость в компактном уровне', () => {
+  const topOf = (id: string): TopSpec => (allSpecs().find((x) => x.id === id && !x.cold) as DrinkSpec).top;
+  /** ΔE76 ≈ 2,3 едва заметна, до 5 пара похожа; порог 7,5 подобран по самой близкой паре (раф и флэт уайт ≈ 7,9). */
+  const MIN_DELTA_E = 7.5;
+  test('верх какао, рафа, ванильного рафа, халвы, капучино, тыквы и флэт уайт: попарное расстояние в Lab не меньше порога', () => {
+    const ids = ['cocoa', 'raf', 'vanilla_raf', 'raf_halva', 'cappuccino', 'cappuccino_pumpkin', 'flat_white'];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        expect(compactTopDelta(topOf(ids[i] as string), topOf(ids[j] as string)), `${ids[i]} / ${ids[j]}`).toBeGreaterThanOrEqual(MIN_DELTA_E);
+      }
+    }
+  });
+  test('какао: тёмное кольцо #6B4331 не уже 3 px в слоте 49 × 42 и тёмный центр; тыква: 3–4 крупные точки не меньше 2 px', () => {
+    const cocoa = specOf('cocoa', '0.2', false);
+    expect(cocoa.top.compact?.ring).toBe('#6B4331');
+    expect(cocoa.top.compact?.core).toBe('#6B4331');
+    const g = geomOf(cocoa.vessel);
+    if (g.kind !== 'ceramic') throw new Error('не керамика');
+    const icon = drinkIconSvg(cocoa, 49, 42);
+    const rxPx = (g.W - 6 * g.k) * (0.88 + 0.12 * 0.92) * icon.s;
+    expect((cocoa.top.compact?.ringFrac ?? 0) * rxPx).toBeGreaterThanOrEqual(3);
+    const pump = specOf('cappuccino_pumpkin', '0.4', false);
+    const dots = pump.top.compact?.dots;
+    expect(dots?.color).toBe('#7A4A38');
+    expect(dots?.n).toBeGreaterThanOrEqual(3);
+    expect(dots?.n).toBeLessThanOrEqual(4);
+    const pi = drinkIconSvg(pump, 49, 42);
+    const radii = [...pi.svg.matchAll(/<circle [^>]*r="([\d.]+)"[^>]*fill="#7A4A38"/g)].map((m) => Number(m[1]));
+    expect(radii.length).toBe(dots?.n);
+    for (const r of radii) expect(r * pi.s).toBeGreaterThanOrEqual(2 - 0.01);
+    expect(specOf('raf_halva', '0.4', false).top.compact).toMatchObject({ color: '#E9D29A' });
+    expect(specOf('cappuccino', '0.2', false).top.compact?.ring).toBe('#C99B6E');
+    expect(specOf('flat_white', '0.2', false).top.compact?.ring).toBeUndefined();
+  });
+  test('латте со стаканом: цветная основа в компактном уровне 18 % наполнения, сумма долей 1, основы трёх лиловых различаются', () => {
+    const bases: string[] = [];
+    for (const id of ['latte_sakura', 'latte_lemon', 'latte_coconut', 'latte_banana']) {
+      const sp = specOf(id, '0.4', false);
+      const cl = compactLayers(sp);
+      expect(cl[0]?.frac, id).toBeCloseTo(COMPACT_BASE_FRAC, 6);
+      expect(cl.reduce((a, l) => a + l.frac, 0), id).toBeCloseTo(1, 6);
+      expect(cl.length).toBe(sp.liquid.length);
+      bases.push((cl[0] as Layer).color);
+    }
+    for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) expect(deltaE(bases[i] as string, bases[j] as string), `${i}/${j}`).toBeGreaterThanOrEqual(7.5);
+    /* без основы (обычное латте) слои не меняются */
+    const latte = specOf('latte', '0.4', false);
+    expect(compactLayers(latte)).toEqual(latte.liquid.map((l) => ({ ...l })));
+    /* полный уровень не тронут */
+    expect(specOf('latte_sakura', '0.4', false).liquid[0]?.frac).toBeLessThan(0.1);
+  });
+  test('блюдце под стаканом в компактном уровне: контур 2 px, как у керамики', () => {
+    const glassCompact = drinkParts(specOf('latte', '0.4', false), { level: 'compact', s: 1, saucer: true });
+    const ceramicCompact = drinkParts(specOf('cappuccino', '0.4', false), { level: 'compact', s: 1, saucer: true });
+    const outline = (back: string): string | undefined => /<ellipse[^>]*fill="#[0-9A-Fa-f]{6}" stroke="#[0-9A-Fa-f]{6}" stroke-width="([\d.]+)"/.exec(back)?.[1];
+    expect(outline(glassCompact.back)).toBe('2');
+    expect(outline(ceramicCompact.back)).toBe('2');
   });
 });

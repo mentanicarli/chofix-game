@@ -49,7 +49,7 @@ const BOOK_IDS = H21 ? ['tea_sencha', 'tea_currant', 'latte_sakura', 'latte_bana
     for (const [id, size, cold, name] of cases) {
       if (!(on('bar') || on('ticket') || on('ice'))) break;
       await order(id, size, cold); await level(1); if (H21) { await p.evaluate(() => { __dbg.BR.ready = true; }); await p.waitForTimeout(500); }
-      if (on('bar')) await p.screenshot({ path: `${out}/bar_${name}_${tag}.png`, timeout: 120000 });
+      if (on("bar")) await p.screenshot({ path: `${out}/${H21 ? "barready" : "bar"}_${name}_${tag}.png`, timeout: 120000 });
       if (on('ticket')) { const tk = p.locator('#bTk'); if (await tk.count()) await tk.screenshot({ path: `${out}/ticket_${name}_${tag}.png`, timeout: 120000 }); }
       if (on('ice') && id === 'orange_bumble' && W === 1280 && dsf === 2) {
         await p.evaluate(() => document.querySelectorAll('#hud,#bTk,#bCoach,#toast,#bFloat,#bGoal,#tint').forEach(e => { e.style.visibility = 'hidden'; }));
