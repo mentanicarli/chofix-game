@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { DRINKS } from '../src/game/menu';
 import {
-  COMPACT_MAX_BANDS, DEMITAS_K, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIceDots, groupOf, iceFor, layersFor, lodFor, mixColor,
+  COMPACT_MAX_BANDS, DEMITAS_K, ICE_CUBE, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
   sizesOf, specOf, variantsOf, vesselDims, vesselOf, type ModelGroup
 } from '../src/game/drinkModel';
 import { cupScale } from '../src/game/volumes';
@@ -61,16 +61,29 @@ describe('описания всех напитков', () => {
       if (s.cold) expect(s.vessel.material).toBe('glass');
     }
   });
-  test('лёд: не больше 5 кубиков, только у холодных, 4 до 0,3 л и 5 с 0,4 л', () => {
+  test('лёд: у горячих нет, у холодных 9–12 кубиков сеткой (3 ряда, 3 или 4 столбца), у блендерных нет', () => {
     for (const s of specs) {
-      expect(s.ice, `${s.id} ${s.size}`).toBeLessThanOrEqual(5);
-      if (!s.cold) expect(s.ice).toBe(0);
-      if (s.ice) expect(s.ice).toBe(s.vessel.ml <= 300 ? 4 : 5);
+      const n = iceCount(s.ice);
+      if (!s.cold || s.group === 'C5') expect(n, `${s.id} ${s.size} ${s.cold}`).toBe(0);
+      else {
+        expect(n, `${s.id} ${s.size}`).toBeGreaterThanOrEqual(9);
+        expect(n, `${s.id} ${s.size}`).toBeLessThanOrEqual(12);
+        expect(s.ice.rows).toBe(3);
+        expect([3, 4]).toContain(s.ice.cols);
+      }
     }
-    expect(iceFor('H3', 200)).toBe(0);
-    expect(iceFor('C2', 300)).toBe(4);
-    expect(iceFor('C2', 400)).toBe(5);
-    expect(iceFor('C5', 600)).toBe(0);
+  });
+  test('лёд: число столбцов растёт с размером стакана, кубик один и тот же', () => {
+    expect(ICE_CUBE).toBe(28);
+    const cols = (id: string, size: '0.3' | '0.4' | '0.6'): number => specOf(id, size, true).ice.cols;
+    expect(cols('orange_bumble', '0.3')).toBe(3);
+    expect(cols('orange_bumble', '0.4')).toBe(4);
+    expect(cols('orange_bumble', '0.6')).toBe(4);
+    expect(iceCount(specOf('orange_bumble', '0.3', true).ice)).toBe(9);
+    expect(iceCount(specOf('orange_bumble', '0.6', true).ice)).toBe(12);
+    expect(iceGridFor('C2', specOf('latte', '0.3', true).vessel)).toEqual(specOf('latte', '0.3', true).ice);
+    expect(iceGridFor('H3', specOf('cappuccino', '0.2', false).vessel)).toEqual({ rows: 0, cols: 0 });
+    expect(iceGridFor('C5', specOf('milkshake_vanilla', '0.4', true).vessel)).toEqual({ rows: 0, cols: 0 });
   });
   test('цвета в формате #rrggbb', () => {
     for (const s of specs) {
@@ -90,7 +103,7 @@ describe('описания всех напитков', () => {
     expect(specOf('americano', '0.3', true).group).toBe('C1');
     expect(specOf('cappuccino_pumpkin', '0.3', true).detail).toBe('spice_specks');
     expect(specOf('aerocano', '0.3', true).detail).toBe('caramel_stripes');
-    expect(specOf('milkshake_vanilla', '0.4', true).ice).toBe(0);
+    expect(iceCount(specOf('milkshake_vanilla', '0.4', true).ice)).toBe(0);
   });
   test('таро: сиреневая пена #B9A3D4 у четырёх латте с таро', () => {
     for (const id of ['latte_sakura', 'latte_lemon', 'latte_coconut', 'matcha_coconut']) {
@@ -165,11 +178,22 @@ describe('уровни детализации', () => {
       expect(layersFor(s, 'full')).toEqual(s.liquid);
     }
   });
-  test('лёд в компактном уровне: три блика-точки или ничего', () => {
-    expect(compactIceDots(specOf('orange_bumble', '0.3', true))).toBe(3);
-    expect(compactIceDots(specOf('latte', '0.2', false))).toBe(0);
-    expect(compactIceDots(specOf('milkshake_vanilla', '0.4', true))).toBe(0);
+  test('лёд в компактном уровне: решётка 3–4 ряда и две блика-точки, отдельных кубиков нет; без льда ничего', () => {
+    const c = compactIce(specOf('orange_bumble', '0.3', true));
+    expect(c).toEqual({ rows: 4, cols: 3, dots: 2 });
+    expect(compactIce(specOf('latte', '0.2', false))).toBeNull();
+    expect(compactIce(specOf('milkshake_vanilla', '0.4', true))).toBeNull();
+    for (const s of allSpecs()) {
+      const ci = compactIce(s);
+      if (ci) {
+        expect(ci.rows).toBeGreaterThanOrEqual(3);
+        expect(ci.rows).toBeLessThanOrEqual(4);
+        expect(ci.dots).toBeGreaterThanOrEqual(2);
+        expect(ci.dots).toBeLessThanOrEqual(3);
+      }
+    }
   });
+
 });
 
 describe('группы и цвета', () => {

@@ -17,6 +17,8 @@ export type Detail = 'swirl' | 'tonic_bubbles' | 'caramel_stripes' | 'spice_spec
 /** Группы моделей: H — горячие, C — холодные (docs/art/drinks/table.md). */
 export type ModelGroup = 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6' | 'H7' | 'H8' | 'C1' | 'C2' | 'C3' | 'C4' | 'C5' | 'C6';
 export type Lod = 'full' | 'compact';
+/** Сетка льда: кубики одного размера плотно от дна до верха стакана. */
+export interface IceGrid { rows: number; cols: number }
 
 export interface VesselSpec {
   material: Material;
@@ -48,8 +50,8 @@ export interface DrinkSpec {
   /** снизу вверх */
   liquid: Layer[];
   top: TopSpec;
-  /** кубиков льда в полном уровне: 0, 4 (до 0,3 л) или 5 (с 0,4 л) */
-  ice: 0 | 4 | 5;
+  /** лёд в полном уровне: сетка кубиков (ряды × столбцы), у горячих и блендерных напитков 0 × 0 */
+  ice: IceGrid;
   bottom: 'boba' | null;
   detail: Detail | null;
   tags: string[];
@@ -152,8 +154,26 @@ export function groupOf(d: Drink, cold: boolean): ModelGroup {
   return 'C2';
 }
 const ICE_GROUPS: ReadonlySet<ModelGroup> = new Set(['C1', 'C2', 'C3', 'C4', 'C6']);
-/** Число кубиков льда в полном уровне: 4 до 0,3 л, 5 с 0,4 л; у горячих и у блендерных напитков льда не видно. */
-export const iceFor = (group: ModelGroup, cupMl: number): 0 | 4 | 5 => (!ICE_GROUPS.has(group) ? 0 : cupMl <= 300 ? 4 : 5);
+/** Лёд заполняет стакан равномерно (правило 16.10.2026, Н1-1б): кубик одного размера на любом стакане, число рядов по высоте, столбцов по ширине. */
+export const ICE_CUBE = 28;
+/** Шаг рядов и столбцов в долях стороны кубика: кубики слегка перекрываются. */
+export const ICE_ROW_PITCH = 0.85;
+export const ICE_COL_PITCH = 0.95;
+/** Доля высоты стакана, занятая льдом от дна (верхний ряд выступает над жидкостью). */
+export const ICE_FILL_SHARE = 0.9;
+/** Наклон кубиков, градусы (±). */
+export const ICE_ROT_MAX = 12;
+export const NO_ICE: IceGrid = { rows: 0, cols: 0 };
+/** Сетка льда стакана: ряды по высоте силуэта (с потолком `HEIGHT_CAP`), столбцы по средней внутренней ширине. У групп без льда — 0 × 0. */
+export function iceGridFor(group: ModelGroup, vessel: VesselSpec): IceGrid {
+  if (!ICE_GROUPS.has(group) || vessel.material !== 'glass') return NO_ICE;
+  const g = GEOMETRY.glass;
+  const rows = Math.max(2, Math.round((ICE_FILL_SHARE * vesselDims(vessel).height) / (ICE_ROW_PITCH * ICE_CUBE)));
+  const innerWidth = ((g.width + g.bottom) / 2) * vessel.k - 6;
+  const cols = Math.max(2, Math.round(innerWidth / (ICE_COL_PITCH * ICE_CUBE)));
+  return { rows, cols };
+}
+export const iceCount = (g: IceGrid): number => g.rows * g.cols;
 
 /* ---------- слои ---------- */
 
@@ -294,15 +314,16 @@ export function specOf(drinkId: string, size: Size, cold: boolean): DrinkSpec {
   const body = build(d, r, group);
   const material = vesselOf(drinkId, cold);
   const k = material === 'demitas' ? (DEMITAS_K[drinkId] as number) : cupScale(r.cupMl);
+  const vessel: VesselSpec = { material, ml: r.cupMl, k };
   return {
     id: drinkId,
     size,
     cold,
     group,
-    vessel: { material, ml: r.cupMl, k },
+    vessel,
     liquid: body.liquid,
     top: body.top,
-    ice: iceFor(group, r.cupMl),
+    ice: iceGridFor(group, vessel),
     bottom: body.bottom ?? null,
     detail: body.detail,
     tags: d.id === 'boba_raspberry' ? ['functional'] : []
@@ -342,5 +363,9 @@ export function layersFor(spec: DrinkSpec, lod: Lod): Layer[] {
   last.frac = Math.round((last.frac + (1 - acc)) * 1e6) / 1e6;
   return out;
 }
-/** Лёд в компактном уровне: три светлых блика-точки, если лёд есть, иначе ничего. */
-export const compactIceDots = (spec: DrinkSpec): 0 | 3 => (spec.ice > 0 ? 3 : 0);
+/** Лёд в компактном уровне: отдельных кубиков нет, вместо них лёгкая прозрачная решётка мелких квадратов (3–4 ряда, столбцов как в полном) и две блика-точки. */
+export interface CompactIce { rows: number; cols: number; dots: number }
+export function compactIce(spec: DrinkSpec): CompactIce | null {
+  if (spec.ice.rows <= 0) return null;
+  return { rows: Math.min(4, spec.ice.rows + 1), cols: spec.ice.cols, dots: 2 };
+}
