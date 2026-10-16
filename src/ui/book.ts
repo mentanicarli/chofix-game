@@ -97,7 +97,7 @@ function exactBlock(d: Drink, c: RecipeCard): string {
 
 function card(
   d: Drink, rank: number, eq: Readonly<Record<string, boolean>>, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string,
-  sel: Partial<BookPick> | undefined, exactOpen: boolean
+  sel: Partial<BookPick> | undefined, exactOpen: boolean, art?: BookArt
 ): string {
   const open = d.rank <= rank;
   if (!open)
@@ -108,6 +108,7 @@ function card(
   const pick = pickVariant(d, sel);
   const c = recipeCard(d.id, pick.size, pick.cold);
   const t = drinkText(d.id);
+  const model = art?.(d.id, pick.size, pick.cold);
   const human = t ? stepsForShots(t.steps, c?.shots ?? 1) : (c?.steps.map((x) => x.label) ?? []);
   const ice = t && c?.cold ? t.ice : [];
   const ex = c
@@ -116,7 +117,7 @@ function card(
   const list = (xs: readonly string[]): string => `<ol class="bkSteps bkHuman">${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`;
   return `<div class="bk${made && !miss.length ? '' : ' soon'}" data-drink="${esc(d.id)}"><div class="bkTop"><b>${esc(d.name)}</b><em>${esc(FAM[d.family] || '')}</em></div>
 <div class="bkSub">${TEMP[d.temp]} · ранг ${d.rank} «${esc(rankInfo(d.rank).title)}»</div>
-<div class="imgSlot bkImg" data-img="${esc(d.id)}" hidden></div>
+${model ? `<div class="bkModel" aria-hidden="true">${model}</div>` : ''}<div class="imgSlot bkImg" data-img="${esc(d.id)}" hidden></div>
 ${t ? `<p class="bkWhat">${esc(t.what)}</p>` : ''}<p class="bkIng">Ингредиенты: ${esc(d.ing.join(', '))}</p>${pickBlock(d, pick)}
 <h5 class="bkH">Как готовится</h5>${list(human)}${ice.length ? `<h5 class="bkH">Если со льдом</h5>${list(ice)}` : ''}${t ? `<p class="bkDiff"><b>Чем отличается.</b> ${esc(t.differs)}</p>` : ''}${ex}${need}${hintBlock(d, tut)}</div>`;
 }
@@ -135,7 +136,7 @@ function hintBlock(d: Drink, tut: string): string {
 }
 function tabDrinks(
   rank: number, eq: Readonly<Record<string, boolean>>, fam: string, costs: Readonly<Record<string, number>>, avail: Readonly<Record<string, boolean>>, tut: string,
-  sel: Readonly<Record<string, Partial<BookPick>>>, exact: readonly string[]
+  sel: Readonly<Record<string, Partial<BookPick>>>, exact: readonly string[], art?: BookArt
 ): string {
   const all = [...DRINKS].sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, 'ru'));
   const present = Array.from(new Set(all.filter((d) => d.rank <= rank).map((d) => d.family)));
@@ -149,7 +150,7 @@ function tabDrinks(
     .map((d) => {
       const head = d.rank !== last ? `<h4 class="bkRank">Ранг ${d.rank}: ${esc(rankInfo(d.rank).title)}${d.rank > rank ? ' <small>(ещё закрыто)</small>' : ''}</h4>` : '';
       last = d.rank;
-      return head + card(d, rank, eq, costs, avail, tut, sel[d.id], exact.includes(d.id));
+      return head + card(d, rank, eq, costs, avail, tut, sel[d.id], exact.includes(d.id), art);
     })
     .join('');
   return `<div class="bkChips">${chips}</div><div class="bkGrid">${cards}</div>`;
@@ -202,6 +203,8 @@ function tabExtra(rank: number): string {
   );
 }
 
+/** Модель напитка для карточки книги: SVG полного уровня для (напиток, размер, холодный) или null, если напиток ещё рисуется по-старому. */
+export type BookArt = (id: string, size: Size, cold: boolean) => string | null;
 export interface BookState { rank: number; tab: BookTab | string; eq?: Readonly<Record<string, boolean>>; fam?: string;
   /** цены оборудования в магазине: id → ₽ */
   costs?: Readonly<Record<string, number>>;
@@ -213,6 +216,8 @@ export interface BookState { rank: number; tab: BookTab | string; eq?: Readonly<
   sel?: Readonly<Record<string, Partial<BookPick>>>;
   /** напитки, у которых раскрыт блок «Точные цифры» (по умолчанию закрыт) */
   exact?: readonly string[];
+  /** рисует модель напитка (Н1-3); без неё карточка без картинки */
+  art?: BookArt;
 }
 export function bookHTML(state: BookState): string {
   const { rank, tab } = state;
@@ -224,7 +229,7 @@ export function bookHTML(state: BookState): string {
     tab === 'food' ? tabFood(rank)
     : tab === 'extra' ? tabExtra(rank)
     : tab === 'guide' ? tabGuide()
-    : tabDrinks(rank, eq, state.fam ?? 'all', state.costs ?? {}, state.avail ?? {}, state.tut ?? '', state.sel ?? {}, state.exact ?? []);
+    : tabDrinks(rank, eq, state.fam ?? 'all', state.costs ?? {}, state.avail ?? {}, state.tut ?? '', state.sel ?? {}, state.exact ?? [], state.art);
   const total = DRINKS.length;
   const open = DRINKS.filter((d) => d.rank <= rank).length;
   return `<div class="book"><div class="bookHead"><div><h2>Книга рецептов</h2><span>Ранг ${rank} из ${MAX_RANK}: ${esc(rankInfo(rank).title)} · напитков открыто ${open} из ${total}</span></div>

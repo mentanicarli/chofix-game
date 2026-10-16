@@ -76,9 +76,11 @@ function showOver() {
   scr.hidden = false;
 }
 let bookTab = 'drinks', bookBack = null, bookFam = 'all', bookTut = '', bookSel = {}, bookExact = [];
+/* модель напитка в карточке книги (только пилот Н1-2; остальные без картинки до Н2), масштаб один на все размеры, чтобы их можно было сравнить */
+const bookArt = (id, size, cold) => { const r = MENUAPI.pilotRef(id, size, cold); return r ? WORLD.drinkArt(r, 1.15) : null; };
 function showBook(back) {
   if (back) bookBack = back;
-  scr.innerHTML = bookHTML({ rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, sel: bookSel, exact: bookExact, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), avail: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), MENUAPI.isShopItemAvailable(i, shopState())])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
+  scr.innerHTML = bookHTML({ art: bookArt, rank: G.rank, tab: bookTab, fam: bookFam, tut: bookTut, sel: bookSel, exact: bookExact, costs: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), i.cost])), avail: Object.fromEntries(SHOP.map(i => [i.id.replace(/^eq_/, ''), MENUAPI.isShopItemAvailable(i, shopState())])), eq: { milk: !!G.milk, ...Object.fromEntries(MENUAPI.EQUIPMENT.map(e => [e.id, !!G['eq_' + e.id]])) } }); scr.hidden = false;
 }
 /* перерисовать книгу, не сбросив прокрутку списка (переключатели размера, «Точные цифры») */
 function bookRefresh() { const bb = scr.querySelector('.bookBody'), y = bb ? bb.scrollTop : 0; showBook(); const nb = scr.querySelector('.bookBody'); if (nb) nb.scrollTop = y; }

@@ -398,3 +398,23 @@ export function drinkIconPx(spec: DrinkSpec, W: number, H: number): { inner: str
   const { all } = drinkPx(spec, { level: 'compact', s, steamMark: true });
   return { inner: all.inner, box: all.box, s };
 }
+
+const artMemo = new Map<string, string>();
+/**
+ * Полный уровень для DOM (книга рецептов, окно «Новый напиток»): масштаб `s` px на единицу модели, блюдце и пар. Размеры сравнимы между собой, потому что `s` один на карточку.
+ * Строки запоминаются (до 40 штук, самая старая вытесняется): книга перерисовывается целиком при каждом клике.
+ */
+export function drinkArtSvg(spec: DrinkSpec, s: number): { svg: string; w: number; h: number } {
+  const key = `${spec.id}|${spec.size}|${spec.cold ? 'cold' : 'hot'}|${s}`;
+  const hit = artMemo.get(key);
+  if (hit !== undefined) {
+    artMemo.delete(key);
+    artMemo.set(key, hit);
+    const m = /width="(\d+)" height="(\d+)"/.exec(hit);
+    return { svg: hit, w: Number(m?.[1] ?? 0), h: Number(m?.[2] ?? 0) };
+  }
+  const o = drinkSvg(spec, { level: 'full', s, saucer: true, steamMark: true });
+  artMemo.set(key, o.svg);
+  if (artMemo.size > 40) artMemo.delete(artMemo.keys().next().value as string);
+  return o;
+}

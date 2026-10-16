@@ -206,3 +206,7 @@ html.kbd .book :focus-visible { outline: 3px solid #E8B04A; outline-offset: 2px;
 .gTerm { padding: 7px 12px; border: 2px solid var(--ink); border-radius: 12px; background: #FFF9EE; font-size: 13px; line-height: 1.35; }
 .gTerm summary { cursor: pointer; font-weight: 800; font-size: 15px; }
 .gTerm p { margin: 6px 0 2px; font-weight: 600; }
+
+/* Н1-3: модель напитка в карточке книги (полный уровень, один масштаб на все размеры) */
+.bkModel { display: flex; align-items: flex-end; justify-content: center; height: 160px; margin: 4px 0 2px; }
+.bkModel svg { display: block; max-width: 100%; height: auto; overflow: visible; }

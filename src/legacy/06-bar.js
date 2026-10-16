@@ -52,7 +52,7 @@ function barOpen(c) {
   const intro = c.order && !tutOffNow() ? MENUAPI.orderIntro(c.order.id, G.tutorialSeen, { shots: rc.shots || 1, foam: rc.foam, size: c.order.size, cold: !!c.order.cold }) : [];
   if (intro.length) {
     const again = () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); };
-    const it = intro[0]; if (it.kind === 'why') showWhy(it.key, again); else showDrinkCard(it.card, again); return;
+    const it = intro[0]; if (it.kind === 'why') showWhy(it.key, again); else showDrinkCard(it.card, again, c.order); return;
   }
   const d = c.drink, exp = MENUAPI.buildTasks(d, { cold: !!(c.order && c.order.cold), syrup: !!c.syrup, shots: rc.shots });
   if (c.order && c.order.food) exp.push('food');
@@ -80,9 +80,11 @@ function openModal(html, next) {
   const b = dcEl.querySelector('[data-cardok]'); if (b) b.focus({ preventScroll: true });
 }
 const dcList = xs => `<ol>${xs.map(s => `<li>${escH(s)}</li>`).join('')}</ol>`;
-function showDrinkCard(card, next) {
+function showDrinkCard(card, next, order) {
   markSeen(card.key);
-  openModal(`<div class="dcard" role="dialog" aria-label="Новый напиток"><span class="tutTag">Новый напиток</span><h3>${escH(card.name)}</h3><div class="imgSlot dcImg" hidden></div>${card.what ? `<p class="dcWhat">${escH(card.what)}</p>` : ''}${dcList(card.steps)}${card.ice.length ? `<h4>Если со льдом</h4>${dcList(card.ice)}` : ''}${card.differs ? `<p class="tip"><b>Чем отличается.</b> ${escH(card.differs)}</p>` : ''}<button type="button" class="dcExactBtn" data-dcexact="1" aria-expanded="false">Точные цифры</button><div class="dcExact" hidden><ul>${card.exact.map(s => `<li>${escH(s)}</li>`).join('')}</ul></div><button type="button" class="big" data-cardok="1">Понятно</button></div>`, next);
+  /* модель напитка полного уровня, крупнее, чем в книге (только пилот Н1-2) */
+  const ref = order && MENUAPI.pilotRef(order.id, order.size, !!order.cold), art = ref && WORLD.drinkArt(ref, 1.4);
+  openModal(`<div class="dcard" role="dialog" aria-label="Новый напиток"><span class="tutTag">Новый напиток</span><h3>${escH(card.name)}</h3>${art ? `<div class="dcModel" aria-hidden="true">${art}</div>` : ''}<div class="imgSlot dcImg" hidden></div>${card.what ? `<p class="dcWhat">${escH(card.what)}</p>` : ''}${dcList(card.steps)}${card.ice.length ? `<h4>Если со льдом</h4>${dcList(card.ice)}` : ''}${card.differs ? `<p class="tip"><b>Чем отличается.</b> ${escH(card.differs)}</p>` : ''}<button type="button" class="dcExactBtn" data-dcexact="1" aria-expanded="false">Точные цифры</button><div class="dcExact" hidden><ul>${card.exact.map(s => `<li>${escH(s)}</li>`).join('')}</ul></div><button type="button" class="big" data-cardok="1">Понятно</button></div>`, next);
 }
 /* «Зачем это нужно»: один раз при первом упоминании станции или механики (ключи why:* в tutorialSeen) */
 function showWhy(key, next) {

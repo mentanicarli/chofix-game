@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
 import PARTS from '../../assets/art/bar-parts.json';
 import { raster } from './svg';
+import { TexCache, modelTexKey } from './texCache';
 import { BAR_UNIT, drinkPx, geomOf, glassHalfWidth, type CeramicGeom, type GlassGeom } from './drinkModel';
 import { specOf, type DrinkSpec, type ModelRef } from '../../game/drinkModel';
 import { GLASS_FILL, STROKE, pc } from './style';
@@ -70,6 +71,14 @@ const hexNum = (c: string): number => {
 /** потолок масштаба чашки по высоте: обод остаётся ниже носика группы (y ≈ 372) */
 const CUP_MAX_KY = 1.12;
 
+/** Четыре слоя модели одного ключа; `destroy` освобождает видеопамять при вытеснении из кэша. */
+class ModelTex {
+  constructor(readonly back: Texture, readonly liquid: Texture, readonly ice: Texture | null, readonly front: Texture, readonly box: { x: number; y: number; w: number; h: number }) {}
+  destroy(): void {
+    for (const t of [this.back, this.liquid, this.ice, this.front]) t?.destroy(true);
+  }
+}
+
 export class BarScene {
   readonly root = new Container();
   private tex = new Map<string, Texture>();
@@ -121,7 +130,8 @@ export class BarScene {
   private mLiveKey = '';
   private mUnit = 1;
   private mDone = new Sprite();
-  private mTex = new Map<string, { back: Texture; liquid: Texture; ice: Texture | null; front: Texture; box: { x: number; y: number; w: number; h: number } }>();
+  /** Текстуры слоёв модели: LRU на 40 ключей (напиток, размер, уровень, режим, разрешение), вытесненное уничтожается. */
+  private mTex = new TexCache<ModelTex>();
   private mLoading = new Set<string>();
   private lastKey = '';
   private lastHop = -1;
@@ -365,7 +375,7 @@ export class BarScene {
 
   /** Текстуры слоёв модели (блюдце и корпус, лёд, контур) для ключа; грузятся асинхронно, пока их нет, чашка не показывается. */
   private ensureModelTex(key: string, spec: DrinkSpec): boolean {
-    if (this.mTex.has(key)) return true;
+    if (this.mTex.get(key)) return true;
     if (this.mLoading.has(key)) return false;
     this.mLoading.add(key);
     const u = BAR_UNIT[spec.vessel.material];
@@ -373,7 +383,7 @@ export class BarScene {
     const box = px.all.box;
     const mk = (name: 'back' | 'liquid' | 'ice' | 'front'): Promise<Texture> => raster(px.layer(name).inner, box, this.res);
     void Promise.all([mk('back'), mk('liquid'), px.parts.ice ? mk('ice') : Promise.resolve(null), mk('front')]).then(([back, liquid, ice, front]) => {
-      this.mTex.set(key, { back, liquid, ice, front, box });
+      this.mTex.set(key, new ModelTex(back, liquid, ice, front, box), this.mKey);
       this.mLoading.delete(key);
     });
     return false;
@@ -384,7 +394,7 @@ export class BarScene {
    * Масштаб ×2,5 (`BAR_UNIT`); высота ограничена потолком `HEIGHT_CAP` внутри геометрии. Возвращает false, пока текстуры не готовы.
    */
   private paintModel(f: BarFrame, spec: DrinkSpec): boolean {
-    const key = `${spec.id}|${spec.size}|${spec.cold ? 1 : 0}`;
+    const key = modelTexKey(spec, 'full', this.res);
     if (!this.ensureModelTex(key, spec)) return false;
     const t = this.mTex.get(key);
     if (!t) return false;

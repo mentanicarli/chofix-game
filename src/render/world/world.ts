@@ -18,7 +18,7 @@ import LAMP2 from '../../assets/art/lamp-2.svgf?raw';
 import { Actor, Limb, type ActorOpts } from './actor';
 import { Ribbon, frameSprite } from './ribbon';
 import { BarScene, type BarFrame, type BarUpgrades } from './bar';
-import { drinkIconSvg } from './drinkModel';
+import { drinkArtSvg, drinkIconSvg } from './drinkModel';
 import { specOf, type ModelRef } from '../../game/drinkModel';
 import { BARISTA_ARM_LEN, BARISTA_K, BARISTA_PIVOT, GUEST_K, SEAT_PIVOT, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
 import { Spring, Spring2, damp, ik2 } from './anim';
@@ -682,6 +682,15 @@ export class World {
   drinkIcon(ref: ModelRef, w: number, h: number): string | null {
     try {
       return drinkIconSvg(specOf(ref.id, ref.size, ref.cold), w, h).svg;
+    } catch {
+      return null;
+    }
+  }
+
+  /** SVG модели напитка полного уровня для книги рецептов и окна «Новый напиток»; `s` — px на единицу модели; null — напиток не из пилота. */
+  drinkArt(ref: ModelRef, s: number): string | null {
+    try {
+      return drinkArtSvg(specOf(ref.id, ref.size, ref.cold), s).svg;
     } catch {
       return null;
     }

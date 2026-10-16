@@ -206,3 +206,7 @@ html.kbd .xp button:focus-visible { outline: 3px solid #E8B04A; outline-offset: 
 .dcExact[hidden] { display: none; }
 .dcExact ul { margin: 0; padding-left: 18px; font-size: 13px; font-weight: 700; line-height: 1.35; }
 html.kbd .dcard :focus-visible { outline: 3px solid #E8B04A; outline-offset: 2px; }
+
+/* Н1-3: модель напитка в окне «Новый напиток» (полный уровень, крупнее, чем в книге) */
+.dcard .dcModel { display: flex; align-items: flex-end; justify-content: center; margin: 0 0 8px; }
+.dcard .dcModel svg { display: block; max-width: 100%; height: auto; overflow: visible; }

@@ -5,6 +5,7 @@ import { Ribbon, frameSprite } from './ribbon';
 import { rasterAtlas, raster, type Atlas } from './svg';
 import { strokeAt } from './style';
 import { drinkIconPx } from './drinkModel';
+import { TexCache, modelTexKey } from './texCache';
 import { specOf, type ModelRef } from '../../game/drinkModel';
 
 const INK = 0x4a2f25;
@@ -55,6 +56,15 @@ const BUBBLE_SCALE = 0.9;
 export type SeatPhase = 'walk' | 'sit' | 'seated' | 'rise';
 
 const iconCache = new Map<string, Promise<Texture>>();
+/** Иконки моделей в пузырях заказа (компактный уровень): LRU на 40 ключей. */
+class IconTex {
+  constructor(readonly tex: Texture) {}
+  destroy(): void {
+    this.tex.destroy(true);
+  }
+}
+const modelIcons = new TexCache<IconTex>();
+const modelIconPending = new Map<string, Promise<IconTex>>();
 /* пузырь заказа (Н1-2): слот картинки слева ≈ 38 × 41 px на экране (42 × 45 единиц пузыря), справа полоса терпения и название */
 const SLOT = { cx: -41, cy: 347, w: 42, h: 45 };
 const PAT_X = -12;
@@ -1169,9 +1179,23 @@ export class Actor {
     const spec = o.model ? this.modelSpecOf(o.model) : null;
     if (spec) {
       const px = drinkIconPx(spec, SLOT.w, SLOT.h);
-      void raster(px.inner, px.box, 2 * 1).then((t) => {
+      const key = modelTexKey(spec, 'compact', 2);
+      let pr = modelIconPending.get(key);
+      const hit = modelIcons.get(key);
+      if (hit) pr = Promise.resolve(hit);
+      else if (!pr) {
+        /* общий кэш иконок пузырей: одна текстура на ключ, а не на каждого гостя; вытесненное уничтожается */
+        pr = raster(px.inner, px.box, 2).then((t) => {
+          const e = new IconTex(t);
+          modelIcons.set(key, e);
+          modelIconPending.delete(key);
+          return e;
+        });
+        modelIconPending.set(key, pr);
+      }
+      void pr.then((e) => {
         if (!this.alive) return;
-        ic.texture = t;
+        ic.texture = e.tex;
         ic.width = px.box.w;
         ic.height = px.box.h;
         ic.position.set(SLOT.cx - px.box.w / 2, SLOT.cy - px.box.h / 2);
