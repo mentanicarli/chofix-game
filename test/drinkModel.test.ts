@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { DRINKS } from '../src/game/menu';
 import {
-  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, HOT_MODEL_IDS, COMPACT_BASE_FRAC, compactLayers, compactTopDelta, deltaE, MODEL_TAGS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
+  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, HOT_MODEL_IDS, COMPACT_BASE_FRAC, compactLayers, compactTopDelta, deltaE, MODEL_TAGS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, LOD_COMPACT_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
   sizesOf, specOf, variantsOf, vesselDims, vesselOf, type DrinkSpec, type Layer, type ModelGroup, type TopSpec
 } from '../src/game/drinkModel';
 import { drinkIconSvg, drinkParts, geomOf } from '../src/render/world/drinkModel';
@@ -227,12 +227,15 @@ describe('силуэт', () => {
 });
 
 describe('уровни детализации', () => {
-  test('lodFor на границах: 56 px и выше — полный', () => {
+  test('lodFor на границах: от 56 px полный, от 28 до 56 компактный, ниже 28 tiny; мусор даёт компактный', () => {
     expect(LOD_FULL_MIN_PX).toBe(56);
+    expect(LOD_COMPACT_MIN_PX).toBe(28);
     expect(lodFor(56)).toBe('full');
     expect(lodFor(55.99)).toBe('compact');
     expect(lodFor(300)).toBe('full');
-    expect(lodFor(0)).toBe('compact');
+    expect(lodFor(28)).toBe('compact');
+    expect(lodFor(27.99)).toBe('tiny');
+    expect(lodFor(0)).toBe('tiny');
     expect(lodFor(-1)).toBe('compact');
     expect(lodFor(Number.NaN)).toBe('compact');
   });

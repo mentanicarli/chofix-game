@@ -83,13 +83,4 @@ const sndTap = () => play('ui_tap-light', .7);
 
 /* ---------- внешность гостей: рисует модуль мира ---------- */
 const ART = { look: lookFor };
-const ICON = {
-  latte: `<path d="M-13 -8H13L10 12Q0 17 -10 12Z" fill="#FFF8EC"/><ellipse cx="0" cy="-8" rx="13" ry="3.6" fill="#C99B6E"/><path d="M-6 -8q6 -4 12 0" fill="none" stroke="#FFF8EC" stroke-width="2"/><path d="M13 -4Q21 -4 20 3Q19 8 11 7" fill="none"/>`,
-  espresso: `<path d="M-11 -6H11L8 12Q0 16 -8 12Z" fill="#FFF8EC"/><ellipse cx="0" cy="-6" rx="11" ry="3" fill="#5A3A2A"/><path d="M11 -2Q19 -2 18 5Q17 10 9 9" fill="none"/>`,
-  americano: `<path d="M-10 -12H10L8 12Q0 16 -8 12Z" fill="#FFF8EC"/><ellipse cx="0" cy="-12" rx="10" ry="3" fill="#8A5B3A"/><path d="M-8 2q4 -3 8 0t8 0" fill="none" stroke-width="2"/>`,
-  icedamericano: `<path d="M-10 -14H10L8 12Q0 16 -8 12Z" fill="#E8F3F4"/><ellipse cx="0" cy="-14" rx="10" ry="3" fill="#8A5B3A"/><rect x="-6" y="-9" width="6" height="6" rx="1.5" fill="#FFFFFF" fill-opacity=".85" transform="rotate(-12 -3 -6)"/><rect x="1" y="-4" width="6" height="6" rx="1.5" fill="#FFFFFF" fill-opacity=".85" transform="rotate(10 4 -1)"/>`,
-  cappuccino: `<path d="M-13 -6H13L9 12Q0 16 -9 12Z" fill="#FFF8EC"/><ellipse cx="0" cy="-6" rx="13" ry="3.5" fill="#F1DFC2"/><circle cx="0" cy="-6" r="2.4" fill="#B07A4F" stroke="none"/><path d="M13 -2Q21 -2 20 5Q19 10 10 9" fill="none"/>`
-};
-const iconOf = key => { if (ICON[key]) return ICON[key]; const d = MENUAPI.drinkById[key]; const top = MENUAPI.topColorOf(key), cold = d && (d.temp === 'cold' || ['shake', 'boba', 'bumble', 'tonic', 'aero', 'protein'].includes(d.family));
-  if (cold) return `<path d="M-10 -14H10L8 12Q0 16 -8 12Z" fill="#E8F3F4"/><rect x="-8.5" y="-6" width="17" height="17" fill="${top}" stroke="none"/><path d="M-10 -14H10L8 12Q0 16 -8 12Z" fill="none"/><ellipse cx="0" cy="-14" rx="10" ry="3" fill="${top}"/><path d="M5 -22L8 -8" stroke="#C4694A" stroke-width="3"/>`;
-  return `<path d="M-13 -8H13L10 12Q0 17 -10 12Z" fill="#FFF8EC"/><ellipse cx="0" cy="-8" rx="13" ry="3.6" fill="${top}"/><path d="M13 -4Q21 -4 20 3Q19 8 11 7" fill="none"/>`; };
+

@@ -19,10 +19,11 @@ import { Actor, Limb, type ActorOpts } from './actor';
 import { Ribbon, frameSprite } from './ribbon';
 import { BarScene, type BarFrame, type BarUpgrades } from './bar';
 import { drinkArtSvg, drinkIconSvg } from './drinkModel';
-import { specOf, type ModelRef } from '../../game/drinkModel';
+import { allSpecs, specOf, type ModelRef } from '../../game/drinkModel';
 import { BARISTA_ARM_LEN, BARISTA_K, BARISTA_PIVOT, GUEST_K, SEAT_PIVOT, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
 import { Spring, Spring2, damp, ik2 } from './anim';
 import { Fx } from './fx';
+import { cupTexture } from './cupTex';
 import { bakePaper, canvasTexture, raster, rasterAtlas } from './svg';
 
 export { lookFor, type Look };
@@ -63,7 +64,7 @@ const num = (c: number[]) => ((c[0] as number) << 16) | ((c[1] as number) << 8) 
 
 export interface BaristaPose { arm: number; arm2: number; nod: number; bob: number }
 /** k — масштаб модели чашки по объёму напитка (cupScale из src/game/volumes.ts) */
-export interface HeldCup { k?: number; top: string; art: 'heart' | 'leaf' | null; aq: number; star: boolean }
+export interface HeldCup { k?: number; top: string; art: 'heart' | 'leaf' | null; aq: number; star: boolean; /** модель напитка: чашка в руке рисуется ею (Н2-4), без неё остаётся простая чашка */ model?: ModelRef | null }
 export interface MenuRow { name: string; price: number | string }
 
 /** Мир зала на Pixi: небо, стена, лампы, барист, гости, частицы, свет и бумажная фактура поверх. */
@@ -91,6 +92,8 @@ export class World {
   private readonly saucer = new Sprite();
   private readonly chair = new Sprite();
   private sitter: Actor | null = null;
+  /** напитки, которые пьют сидящие гости: все виды из спецификации */
+  private readonly decor = allSpecs();
   /* маски гостя за ноутбуком: тело ниже кромки крышки и сбоку от неё скрыто */
   private readonly seatMaskA = new Graphics();
   private readonly seatMaskB = new Graphics();
@@ -140,6 +143,9 @@ export class World {
   private cupArt = new Graphics();
   private cupStar = new Graphics();
   private cupG = new Container();
+  /** чашка в руке баристы, нарисованная моделью напитка (Н2-4) */
+  private cupSpr = new Sprite();
+  private heldModel: ModelRef | null = null;
   private rowsKey = '';
   private headSprite!: Sprite;
   private readonly faces: Partial<Record<BaristaFace, Texture>> = {};
@@ -161,6 +167,7 @@ export class World {
   async init(canvas: HTMLCanvasElement, res: number): Promise<void> {
     this.res = res;
     this.texRes = clamp(res, 1, 2);
+    this.fx.res = this.texRes;
     const app = new Application();
     await app.init({ canvas, width: W, height: H, resolution: res, autoDensity: true, backgroundColor: 0xf6ead6, antialias: true, autoStart: false, preference: 'webgl' });
     app.ticker.stop();
@@ -491,7 +498,8 @@ export class World {
     cupG.position.set(797, 362);
     cupG.scale.set(1.5);
     cupG.addChild(cup, this.cupTop, this.cupArt);
-    this.cupC.addChild(cupG, this.cupStar);
+    this.cupSpr.visible = false;
+    this.cupC.addChild(cupG, this.cupSpr, this.cupStar);
     /* руки: ленты из атласа с суставами; чашка едет за левой кистью */
     const atlas = await rasterAtlas(baristaCells(), Math.ceil(this.texRes * BARISTA_K), wrapCell);
     const us = [0.5, 9, 21, 30, 33, 36, 45, 57].map((x) => x / BARISTA_ARM_LEN);
@@ -620,6 +628,7 @@ export class World {
   setHeld(h: HeldCup | null): void {
     if (!this.ready) return;
     this.cupC.visible = !!h;
+    this.heldModel = h?.model ?? null;
     if (!h) return;
     this.cupG.scale.set(1.5 * (h.k ?? 1));
     this.cupTop.clear().ellipse(797, 350, 11, 3.5).fill(h.top).stroke({ width: 2, color: INK });
@@ -630,6 +639,18 @@ export class World {
     }
     this.cupStar.clear();
     if (h.star) this.cupStar.path(new GraphicsPath('M810 332l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z')).fill('#E8B04A').stroke({ width: 1.6, color: INK, join: 'round' });
+  }
+
+  /** Каждый кадр: чашка в руке баристы рисуется моделью напитка, как только текстура готова (обращение освежает LRU, пока чашка в руке). */
+  private syncHeldCup(): void {
+    const t = this.heldModel && this.cupC.visible ? cupTexture(this.heldModel, 'barista', this.texRes) : null;
+    this.cupSpr.visible = !!t;
+    this.cupG.visible = !t;
+    if (!t) return;
+    this.cupSpr.texture = t.tex;
+    this.cupSpr.position.set(797 + t.box.x, 371 + t.box.y);
+    this.cupSpr.width = t.box.w;
+    this.cupSpr.height = t.box.h;
   }
 
   addActor(o: Omit<ActorOpts, 'res' | 'shadow'>): Actor {
@@ -731,8 +752,6 @@ export class World {
       const kind = ['student', 'student', 'regular', 'hurry'][Math.floor(Math.random() * 4)] as string;
       const a = new Actor({
         look: lookFor(kind),
-        icon: '',
-        iconKey: '',
         title: '',
         tags: [],
         x: -100,
@@ -743,8 +762,10 @@ export class World {
         steam: (x, y) => this.fx.add({ x, y: y - 9, vx: (Math.random() - 0.5) * 6, vy: -(16 + Math.random() * 8), r: 2.5, grow: 8, a: 0.5, life: 2.2 })
       });
       a.root.eventMode = 'none';
-      /* у каждого сидящего своя чашка: от эспрессо (0,77) до большой на 0,6 л (1,44) */
-      a.holdCup('#5A3A2A', [0.77, 0.84, 1, 1, 1.14, 1.26, 1.44][Math.floor(Math.random() * 7)] as number);
+      /* у каждого сидящего свой напиток (Н2-4): любой из 56 видов и размеров, от эспрессо (демитас) до 0,6 л; k модели нужен маске стола */
+      const pick = this.decor[Math.floor(Math.random() * this.decor.length)];
+      if (pick) a.holdCup('#5A3A2A', pick.vessel.k, { id: pick.id, size: pick.size, cold: pick.cold });
+      else a.holdCup('#5A3A2A', 1);
       this.sitC.addChild(a.root);
       this.sitter = a;
       this.sitX = -100;
@@ -814,7 +835,7 @@ export class World {
       R(g, 0, 490, 164, 56);
       R(g, x1, 490, W - x1, 56);
       /* окно под чашку растёт вместе с чашкой от её центра (280, 535): целая, с ручкой справа */
-      if (cup) R(g, 280 - 10 * kc, 535 - 11 * kc, 26 * kc, 11 + 11 * kc);
+      if (cup) R(g, 280 - 10 * kc, 531 - 12 * kc, 26 * kc, 15 + 12 * kc);
       g.fill(0xffffff);
     };
     draw(this.seatMaskA, 284, false);
@@ -857,6 +878,7 @@ export class World {
     if (!this.ready) return;
     this.now += dt;
     this.stepBar(dt);
+    this.syncHeldCup();
     const now = this.now;
     this.lamps.forEach((l, i) => (l.rotation = (1.1 * Math.sin(now * 0.8 + i * 1.9) * Math.PI) / 180));
     this.clouds.x = (now * 3.2) % 400;

@@ -7,6 +7,8 @@ import FRONT from '../art-src/bar/counter-front.svg?raw';
 import NOSE from '../art-src/bar/counter-nose.svg?raw';
 import { specOf } from '../src/game/drinkModel';
 import { BAR_UNIT, geomOf } from '../src/render/world/drinkModel';
+import { CUP_TOP_PX, cupUnit } from '../src/render/world/cupPlan';
+import { cupScale } from '../src/game/volumes';
 
 /* Этап 12.3(2): соотношения размеров по шкале docs/art/scale.md. Бар: 4,64 px/см (кофемашина 75 см = 348 px). Допуск у фона 0,75–1,25. */
 const S_BAR = 4.64;
@@ -112,5 +114,36 @@ describe('шкала: чашка-модель в баре ×2,5', () => {
   });
   test('чашка 0,6 л не шире ниши группы кофемашины (около 280 px) и не закрывает группу', () => {
     expect(widthPx('cappuccino', '0.6', true)).toBeLessThan(280);
+  });
+});
+
+/* Н2-4: чашка в зале (docs/art/scale.md): масштаб задаётся константами CUP_TOP_PX, логика выбора уровня от них не зависит. Зал 1,91 px/см, обод 0,2 л 8 см = 15 px. */
+describe('шкала: чашка в зале', () => {
+  const HALL_CM = 1.91;
+  test('ширина обода 0,2 л в руке баристы, у гостя и в полёте относительно реальных 8 см', () => {
+    const real = 8 * HALL_CM;
+    expect(CUP_TOP_PX.barista / real).toBeGreaterThanOrEqual(2.0);
+    expect(CUP_TOP_PX.barista / real).toBeLessThanOrEqual(2.4);
+    expect(CUP_TOP_PX.guest / real).toBeGreaterThanOrEqual(1.8);
+    expect(CUP_TOP_PX.guest / real).toBeLessThanOrEqual(2.0);
+    expect(CUP_TOP_PX.fly / real).toBeGreaterThanOrEqual(1.3);
+    expect(CUP_TOP_PX.fly / real).toBeLessThanOrEqual(1.6);
+  });
+  test('ширина чашки на экране = ширина обода × k (стакан 0,2 л в руке баристы 33 px, 0,6 л ×1,44)', () => {
+    const w = (place: 'barista' | 'guest' | 'fly', id: string, size: '0.2' | '0.4' | '0.6', cold: boolean): number => {
+      const sp = specOf(id, size, cold);
+      const g = geomOf(sp.vessel);
+      return (g.kind === 'glass' ? 2 * g.Wt : 2 * g.W) * cupUnit(place, sp.vessel.material);
+    };
+    expect(w('barista', 'latte', '0.2', false)).toBeCloseTo(33, 5);
+    expect(w('barista', 'cappuccino', '0.2', false)).toBeCloseTo(33, 5);
+    expect(w('barista', 'latte', '0.6', false)).toBeCloseTo(33 * cupScale(600), 5);
+    expect(w('guest', 'latte', '0.4', false)).toBeCloseTo(28.8 * cupScale(400), 5);
+  });
+  test('чашка в руке не крупнее, чем в баре: 0,6 л в руке баристы уже обода на баре', () => {
+    const g = geomOf(specOf('latte', '0.6', false).vessel);
+    expect(g.kind).toBe('glass');
+    const top = g.kind === 'glass' ? 2 * g.Wt : 0;
+    expect(top * cupUnit('barista', 'glass')).toBeLessThan(top * BAR_UNIT.glass);
   });
 });

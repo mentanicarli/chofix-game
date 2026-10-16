@@ -109,7 +109,7 @@ function tickSky(dt) {
 }
 
 /* ---------- эффекты подачи: летящая чашка, сердечки, искры ---------- */
-function cupFly(x1, y1, x2, y2, topCol, k) { FX.add({ life: .42, kind: 'cup', x0: x1, y0: y1, tx: x2, ty: y2, col: topCol, cs: k || 1 }); }
+function cupFly(x1, y1, x2, y2, topCol, k, model) { FX.add({ life: .42, kind: 'cup', x0: x1, y0: y1, tx: x2, ty: y2, col: topCol, cs: k || 1, model: model || null }); }
 function loveBurst(x, y, n, col) {
   for (let i = 0; i < n; i++) FX.add({ t: -i * .09, life: 1.25 + Math.random() * .3, kind: 'heart', x: x + rnd(-16, 16), y, vx: rnd(-8, 8), vy: -rnd(34, 52), r: rnd(6, 9), col: col || '232,120,120', g: 0 });
 }

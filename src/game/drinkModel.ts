@@ -16,7 +16,8 @@ export type Edge = 'sharp' | 'step' | 'wavy';
 export type Detail = 'swirl' | 'tonic_bubbles' | 'caramel_stripes' | 'spice_specks' | 'taro_cap' | 'cloudy' | 'caramel_sauce' | 'matte' | 'whip_cap';
 /** Группы моделей: H — горячие, C — холодные (docs/art/drinks/table.md). */
 export type ModelGroup = 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6' | 'H7' | 'H8' | 'C1' | 'C2' | 'C3' | 'C4' | 'C5' | 'C6';
-export type Lod = 'full' | 'compact';
+/** Уровни детализации: полный (бар, книга), компактный (билет, пузырь, крупная чашка в зале), tiny (чашка в руке, на столе и в полёте: силуэт, цвет жидкости и верха). */
+export type Lod = 'full' | 'compact' | 'tiny';
 /** Сетка льда: кубики одного размера плотно от дна до верха стакана. */
 export interface IceGrid { rows: number; cols: number }
 
@@ -478,7 +479,9 @@ export function allSpecs(): DrinkSpec[] {
 
 /** Полный уровень — от 56 px высоты модели на экране (бар, книга, окно «Новый напиток»), ниже компактный (билет, пузырь, чашка в руке). */
 export const LOD_FULL_MIN_PX = 56;
-export const lodFor = (heightPx: number): Lod => (heightPx >= LOD_FULL_MIN_PX ? 'full' : 'compact');
+/** Ниже этой высоты (px на экране) рисуется tiny: решётка льда и полосы слоёв на таком размере только шумят (Н2-4). */
+export const LOD_COMPACT_MIN_PX = 28;
+export const lodFor = (heightPx: number): Lod => (heightPx >= LOD_FULL_MIN_PX ? 'full' : heightPx >= LOD_COMPACT_MIN_PX || !(heightPx >= 0) ? 'compact' : 'tiny');
 /** В компактном уровне не больше трёх полос цвета. */
 export const COMPACT_MAX_BANDS = 3;
 /** Слои для уровня: в компактном соседние слои сливаются до трёх полос (низ, середина, верх), границы прямые; сумма долей остаётся 1. */
@@ -499,6 +502,15 @@ export function layersFor(spec: DrinkSpec, lod: Lod): Layer[] {
   const last = out[out.length - 1] as Layer;
   last.frac = Math.round((last.frac + (1 - acc)) * 1e6) / 1e6;
   return out;
+}
+/**
+ * Спецификация для уровня tiny (чашка в руке, на столе, в полёте; 12–30 px): один цвет жидкости (самый большой слой), цвет верха, без льда, шариков и деталей.
+ * Посуда и размер те же, что у полной модели.
+ */
+export function tinyOf(spec: DrinkSpec): DrinkSpec {
+  const main = spec.liquid.reduce((a, l) => (l.frac > a.frac ? l : a));
+  const topColor = spec.top.compact?.color ?? spec.top.color;
+  return { ...spec, liquid: [{ color: main.color, frac: 1, edge: 'sharp' }], top: { color: topColor }, ice: NO_ICE, bottom: null, detail: null };
 }
 /** Лёд в компактном уровне: отдельных кубиков нет, вместо них лёгкая прозрачная решётка мелких квадратов (3–4 ряда, столбцов как в полном) и две блика-точки. */
 export interface CompactIce { rows: number; cols: number; dots: number }
@@ -525,6 +537,32 @@ export const COLD_MODEL_GROUPS: ReadonlySet<ModelGroup> = new Set<ModelGroup>(['
 export const isColdModel = (d: Drink): boolean => (d.temp === 'hot' ? false : COLD_MODEL_GROUPS.has(groupOf(d, true)));
 /** Подпись под моделью в книге и окне «Новый напиток», когда одной картинки мало (решение владельца: горячий бамбл выглядит как американано, отличие только подписью). */
 export const MODEL_TAGS: Readonly<Record<string, string>> = { hot_bumble: 'с соком', boba_raspberry: 'функциональный' };
+/**
+ * Ссылка на модель, которая есть всегда: если заказ (напиток, размер, вариант) нельзя нарисовать как есть, берётся ближайший допустимый размер того же напитка,
+ * для неизвестного напитка — латте (заглушка, чтобы чашка в любом месте была нарисована моделью, а не старой иконкой).
+ */
+export function modelRefOf(id: string, size: string, cold: boolean): ModelRef {
+  const hit = pilotRef(id, size, cold);
+  if (hit) return hit;
+  const d = drinkById[id] ?? drinkById.latte;
+  if (!d) throw new Error('нет ни напитка, ни латте-заглушки');
+  const want = Number(size);
+  for (const c of [d.temp === 'cold' ? true : d.temp === 'hot' ? false : cold, !cold]) {
+    const list = sizesOf(d.id, c);
+    if (!list.length) continue;
+    const best = list.reduce((a, b) => (Math.abs(Number(b) - want) < Math.abs(Number(a) - want) ? b : a));
+    return { id: d.id, size: best, cold: c };
+  }
+  return { id: 'latte', size: '0.3' as Size, cold: false };
+}
+/** Цвет верха напитка для запасной простой чашки, пока текстура модели рисуется (вместо старого `topColorOf`). */
+export function modelTopColor(ref: ModelRef): string {
+  try {
+    return specOf(ref.id, ref.size, ref.cold).top.color;
+  } catch {
+    return '#5A3A2A';
+  }
+}
 /** Ссылка на модель для заказа или null, если напиток (в этом варианте) ещё рисуется по-старому или такого размера и варианта у него нет. */
 export function pilotRef(id: string, size: string, cold: boolean): ModelRef | null {
   const d = drinkById[id];

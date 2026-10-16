@@ -3,7 +3,7 @@ import { allSpecs } from '../src/game/drinkModel';
 import { BAR_UNIT, SEAT_MIN_WIDE, bottomArc, drinkParts, geomOf, seatOf, type Ell } from '../src/render/world/drinkModel';
 
 const norm = (e: Ell, x: number, y: number): number => ((x - e.cx) / e.rx) ** 2 + ((y - e.cy) / e.ry) ** 2;
-const LODS = ['full', 'compact'] as const;
+const LODS = ['full', 'compact', 'tiny'] as const;
 
 describe('посадка посуды на блюдце (Н1-3б)', () => {
   test('для каждого напитка × размера × варианта × уровня донышко лежит в углублении, углубление в блюдце: зазор 0', () => {

@@ -71,6 +71,6 @@ function renderCup() {
   const c = D && D.cup;
   if (!c) { WORLD.setHeld(null); return; }
   const d = drinkOf(c), q = cupQ(c);
-  WORLD.setHeld({ k: c.k || 1, top: MENUAPI.isMenuKey(d) ? MENUAPI.topColorOf(d) : d === 'cappuccino' ? '#F1DFC2' : d === 'americano' ? '#8A5B3A' : '#5A3A2A', art: c.art || null, aq: c.aq || 0, star: q === 2 });
+  WORLD.setHeld({ k: c.k || 1, model: c.ref || null, top: c.ref ? MENUAPI.modelTopColor(c.ref) : '#5A3A2A', art: c.art || null, aq: c.aq || 0, star: q === 2 });
 }
 

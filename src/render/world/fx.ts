@@ -1,4 +1,6 @@
 import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import type { ModelRef } from '../../game/drinkModel';
+import { cupTexture } from './cupTex';
 import { canvasTexture } from './svg';
 
 const INK = '#4A2F25';
@@ -12,8 +14,12 @@ export interface Particle {
   x0?: number; y0?: number; tx?: number; ty?: number; arc?: number;
   /** масштаб летящей чашки (по объёму напитка) */
   cs?: number;
+  /** модель напитка: летящая чашка рисуется ею (Н2-4), без неё остаётся простая чашка */
+  model?: ModelRef | null;
   /** внутреннее: спрайт частицы */
   _s?: Sprite | Graphics;
+  /** внутреннее: спрайт чашки-модели */
+  _m?: Container;
 }
 type P = Required<Pick<Particle, 'life'>> & Particle & { t: number; x: number; y: number; vx: number; vy: number; g: number; r: number; grow: number; a: number; col: string; kind: string };
 
@@ -88,6 +94,8 @@ export class Fx {
 
   /** Лёгкая графика: частицы не создаются. */
   enabled = true;
+  /** плотность текстур мира (для чашек-моделей) */
+  res = 1;
 
   add(o: Particle): void {
     if (!this.enabled) return;
@@ -109,6 +117,10 @@ export class Fx {
     if (p._s) {
       p._s.destroy();
       p._s = undefined;
+    }
+    if (p._m) {
+      p._m.destroy();
+      p._m = undefined;
     }
   }
 
@@ -157,7 +169,29 @@ export class Fx {
           this.root.addChild(g);
           p._s = g;
         }
-        g.position.set(p.x0! + (p.tx! - p.x0!) * u, p.y0! + (p.ty! - p.y0!) * u - Math.sin(u * Math.PI) * 64);
+        const cx = p.x0! + (p.tx! - p.x0!) * u;
+        const cy = p.y0! + (p.ty! - p.y0!) * u - Math.sin(u * Math.PI) * 64;
+        const ct = p.model ? cupTexture(p.model, 'fly', this.res) : null;
+        g.visible = !ct;
+        if (ct) {
+          /* чашка-модель: размер уже включает масштаб напитка, поэтому cs не применяется */
+          let m = p._m;
+          if (!m) {
+            m = new Container();
+            m.addChild(new Sprite(ct.tex));
+            this.root.addChild(m);
+            p._m = m;
+          }
+          const sp = m.children[0] as Sprite;
+          sp.texture = ct.tex;
+          sp.position.set(ct.box.x, ct.box.y);
+          sp.width = ct.box.w;
+          sp.height = ct.box.h;
+          m.position.set(cx, cy);
+          m.rotation = (u - 0.4) * 0.7;
+          continue;
+        }
+        g.position.set(cx, cy);
         g.rotation = (u - 0.4) * 0.7;
         g.scale.set(p.cs ?? 1);
         continue;

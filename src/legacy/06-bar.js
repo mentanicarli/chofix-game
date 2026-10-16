@@ -152,7 +152,7 @@ function barBell() {
   if (!BR.ready) { const nt = BR.tasks.find(t => !BR.done[t]); barMsg('Ещё не готово: ' + TASK_NAME[nt].toLowerCase(), true); play('ui_error-soft-thud', .4); return; }
   const s = quality(), q = MENUAPI.levelOf(s), c = BR.c, d = BR.drink, rc = BR.rc;
   play('bell', .9);
-  D.cup = { steps: [], drink: d, q: [q], s, forId: c.id, k: rc.cupK || 1, art: rc.art ? c.art : null, aq: BR.res.pour == null ? .5 : BR.res.pour };
+  D.cup = { steps: [], drink: d, q: [q], s, forId: c.id, k: rc.cupK || 1, ref: c.order ? MENUAPI.modelRefOf(c.order.id, c.order.size, !!c.order.cold) : null, art: rc.art ? c.art : null, aq: BR.res.pour == null ? .5 : BR.res.pour };
   closeInset(); BR = null; stopLoops(); stage.classList.remove('inbar'); renderCup(); frontHintUpd();
   setTimeout(() => { if (G && G.phase === 'day' && c.act && c.act.alive && !c.leaving) serve(c); else if (D) { D.cup = null; renderCup(); } }, 380);
 }

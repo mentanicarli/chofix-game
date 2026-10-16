@@ -229,24 +229,6 @@ export const paletteOf = (key: string): Palette => ({ ...DEFAULT_PAL, ...(PAL[ke
 
 export const isNewKeyEngine = isMenuKey;
 
-/** Цвет верхнего слоя напитка (для чашки в руке и иконки). */
-export function topColorOf(key: string): string {
-  const d = isMenuKey(key) ? drinkById[key] : undefined;
-  const p = paletteOf(key);
-  if (!d) return '#5A3A2A';
-  const has = (s: string) => d.steps.some((x) => x.st === s);
-  if (has('foam')) return p.foam;
-  if (has('blend') || has('shake')) return p.blend;
-  if (has('steam')) return '#F1DFC2';
-  if (has('layer')) return p.juice;
-  if (has('whisk')) return p.matcha;
-  if (has('brew')) return p.tea;
-  if (has('juice')) return p.juice;
-  if (has('tonic')) return p.tonic;
-  if (has('powder')) return p.powder;
-  return '#5A3A2A';
-}
-
 /** Подпись шага для билета и книги: «Шот 1/2», «Сливки» у рафа, остальное — TASK_NAME. */
 export function stepLabels(tasks: readonly string[], drinkId = ''): string[] {
   const total: Record<string, number> = {};

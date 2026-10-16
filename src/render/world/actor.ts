@@ -6,6 +6,7 @@ import { rasterAtlas, raster, type Atlas } from './svg';
 import { strokeAt } from './style';
 import { drinkIconPx } from './drinkModel';
 import { TexCache, modelTexKey } from './texCache';
+import { cupTexture } from './cupTex';
 import { specOf, type ModelRef } from '../../game/drinkModel';
 
 const INK = 0x4a2f25;
@@ -26,13 +27,8 @@ type Pt = { x: number; y: number };
 
 export interface ActorOpts {
   look: Look;
-  /** Разметка иконки напитка для пузыря заказа (рисуется вокруг точки 0,0). */
-  icon: string;
-  iconKey: string;
-  /** напиток из пилота Н1-2: в слоте пузыря рисуется модель (компактный уровень) вместо иконки */
+  /** модель напитка: в слоте пузыря рисуется компактный уровень (Н2-4: все 56 видов, иконок ICON больше нет) */
   model?: ModelRef | null;
-  /** масштаб иконки чашки в пузыре по объёму напитка */
-  iconK?: number;
   title: string;
   tags: { text: string; color: string }[];
   x: number;
@@ -55,7 +51,6 @@ const BUBBLE_SCALE = 0.9;
 
 export type SeatPhase = 'walk' | 'sit' | 'seated' | 'rise';
 
-const iconCache = new Map<string, Promise<Texture>>();
 /** Иконки моделей в пузырях заказа (компактный уровень): LRU на 40 ключей. */
 class IconTex {
   constructor(readonly tex: Texture) {}
@@ -146,6 +141,9 @@ export class Actor {
   private readonly cup = new Container();
   private cupTop = new Graphics();
   private cupBody = new Graphics();
+  /** чашка в руке и на столе, нарисованная моделью напитка (Н2-4); пока текстура не готова, рисуется простая чашка */
+  private cupSpr = new Sprite();
+  private cupModel: ModelRef | null = null;
   private cupState: 'none' | 'hand' | 'table' = 'none';
   private cupScale = new Spring(0, 14, 0.45);
   /** масштаб модели чашки по объёму напитка: умножается на рост гостя (чашка живёт внутри его контейнера) */
@@ -427,8 +425,9 @@ export class Actor {
   }
 
   /** Чашка оказалась в руке: рука подносит её к груди, гость радуется. */
-  takeCup(top: string, k = 1): void {
+  takeCup(top: string, k = 1, model: ModelRef | null = null): void {
     this.cupK = k;
+    this.cupModel = model;
     this.drawCup(top);
     this.cupState = 'hand';
     this.cup.visible = true;
@@ -440,8 +439,9 @@ export class Actor {
   }
 
   /** Гость идёт с чашкой (пришёл в зал с кофе). */
-  holdCup(top: string, k = 1): void {
+  holdCup(top: string, k = 1, model: ModelRef | null = null): void {
     this.cupK = k;
+    this.cupModel = model;
     this.drawCup(top);
     this.cupState = 'hand';
     this.cup.visible = true;
@@ -457,7 +457,8 @@ export class Actor {
 
   private buildCup(): void {
     this.cup.visible = false;
-    this.cup.addChild(this.cupBody, this.cupTop);
+    this.cupSpr.visible = false;
+    this.cup.addChild(this.cupBody, this.cupTop, this.cupSpr);
     this.drawCup('#5A3A2A');
   }
 
@@ -599,7 +600,7 @@ export class Actor {
     this.cupHolder.addChild(this.cup);
     this.cup.position.set(T.x, T.y);
     this.cup.rotation = 0;
-    this.cup.scale.set(this.cupK);
+    this.cup.scale.set(this.cupSpr.visible ? 1 : this.cupK);
     this.carry = false;
   }
 
@@ -1078,11 +1079,27 @@ export class Actor {
     }
   }
 
+  /** Чашка-модель (Н2-4): рисуется без блюдца, размер напитка уже в модели; обращение к кэшу освежает LRU, пока чашка в руке или на столе. */
+  private syncCupModel(): void {
+    const res = this.o.scale ? this.o.res : this.o.res / GUEST_K;
+    const t = this.cupModel ? cupTexture(this.cupModel, 'guest', res) : null;
+    this.cupSpr.visible = !!t;
+    this.cupBody.visible = !t;
+    this.cupTop.visible = !t;
+    if (!t) return;
+    /* текстура нарисована в px экрана; чашка живёт в координатах гостя, поэтому делим на рост гостя */
+    this.cupSpr.texture = t.tex;
+    this.cupSpr.position.set(t.box.x / GUEST_K, t.box.y / GUEST_K + 11);
+    this.cupSpr.width = t.box.w / GUEST_K;
+    this.cupSpr.height = t.box.h / GUEST_K;
+  }
+
   /** Чашка: появление, пар. */
   private cupLife(dt: number): void {
     if (this.cupState === 'none') return;
     const k = this.cupScale.step(dt, 1);
-    this.cup.scale.set(clamp(k, 0.3, 1.25) * this.cupK);
+    this.syncCupModel();
+    this.cup.scale.set(clamp(k, 0.3, 1.25) * (this.cupSpr.visible ? 1 : this.cupK));
     this.steamT += dt;
     if (this.steamT > 0.2 && this.o.steam && this.alive) {
       this.steamT = 0;
@@ -1202,18 +1219,7 @@ export class Actor {
       });
       return;
     }
-    ic.anchor.set(0.5);
-    ic.position.set(SLOT.cx, SLOT.cy);
-    let p = iconCache.get(o.iconKey);
-    if (!p) {
-      p = raster(`<g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${o.icon}</g>`, { x: -30, y: -30, w: 60, h: 60 }, 2);
-      iconCache.set(o.iconKey, p);
-    }
-    void p.then((t) => {
-      if (!this.alive) return;
-      ic.texture = t;
-      ic.width = ic.height = 60 * (o.iconK ?? 1);
-    });
+    /* напиток без модели (не должно случаться: legacy берёт modelRefOf) — слот остаётся пустым */
   }
 
   private modelSpecOf(m: ModelRef): ReturnType<typeof specOf> | null {
