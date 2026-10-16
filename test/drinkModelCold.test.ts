@@ -13,7 +13,7 @@ const cold = (id: string): DrinkSpec[] => allSpecs().filter((x) => x.id === id &
 
 describe('Н2-2: холодные C1–C3 (24 вида)', () => {
   test('посуда стекло, слои с суммой 1, лёд по размеру (3 × 3 до 0,4 л, 4 × 3 с 0,6 л), размеры только допустимые', () => {
-    expect([...COLD_MODEL_GROUPS].sort()).toEqual(['C1', 'C2', 'C3']);
+    expect([...COLD_MODEL_GROUPS].sort()).toEqual(['C1', 'C2', 'C3', 'C4', 'C5', 'C6']);
     let n = 0;
     for (const [g, ids] of Object.entries(COLD_GROUPS)) {
       for (const id of ids) {

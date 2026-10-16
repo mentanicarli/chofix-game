@@ -13,7 +13,7 @@ export type Material = 'glass' | 'ceramic' | 'demitas';
 /** Граница слоёв: прямая, ступенчатая (полоса среднего тона без градиента) или волнистая с языками. */
 export type Edge = 'sharp' | 'step' | 'wavy';
 /** Особая деталь рисунка (одна на напиток). «Функциональность» бабл ти малина-лимон сюда не входит: она в `tags`. */
-export type Detail = 'swirl' | 'tonic_bubbles' | 'caramel_stripes' | 'spice_specks' | 'taro_cap' | 'cloudy' | 'caramel_sauce';
+export type Detail = 'swirl' | 'tonic_bubbles' | 'caramel_stripes' | 'spice_specks' | 'taro_cap' | 'cloudy' | 'caramel_sauce' | 'matte' | 'whip_cap';
 /** Группы моделей: H — горячие, C — холодные (docs/art/drinks/table.md). */
 export type ModelGroup = 'H1' | 'H2' | 'H3' | 'H4' | 'H5' | 'H6' | 'H7' | 'H8' | 'C1' | 'C2' | 'C3' | 'C4' | 'C5' | 'C6';
 export type Lod = 'full' | 'compact';
@@ -421,8 +421,18 @@ function build(d: Drink, r: Recipe, group: ModelGroup): Body {
     case 'C5': {
       const proteins = d.family === 'protein';
       const color = proteins ? pal.powder : pal.blend;
-      const detail: Detail | null = d.id === 'frappe_caramel' ? 'caramel_sauce' : d.id === 'protein_water' ? 'cloudy' : null;
-      return { liquid: toLayers([d.id === 'protein_water' ? { color, vol: r.drinkMl, tone: 'cloudy' } : { color, vol: r.drinkMl }]), top: { color: d.id === 'frappe_caramel' ? pal.topping : color }, detail };
+      const detail: Detail | null = d.id === 'frappe_caramel' ? 'caramel_sauce' : d.id === 'protein_water' ? 'cloudy' : d.id === 'protein_milk' ? 'matte' : null;
+      /* протеин на воде светлее и холоднее (полупрозрачный), на молоке матовый кремовый; ванильный милкшейк со взбитой шапкой над краем (деталь whip_cap) */
+      if (d.id === 'protein_water') {
+        const water = mixColor(color, '#CFE3E8', 0.8);
+        return { liquid: toLayers([{ color: water, vol: r.drinkMl, tone: 'cloudy' }]), top: { color: water }, detail };
+      }
+      if (d.id === 'milkshake_vanilla') {
+        return { liquid: toLayers([{ color, vol: r.drinkMl }]), top: { color }, detail: 'whip_cap' };
+      }
+      /* протеин на молоке: матовый серо-бежевый, чтобы отличаться от ванильного милкшейка */
+      const own = d.id === 'protein_milk' ? '#D6CAB6' : color;
+      return { liquid: toLayers([{ color: own, vol: r.drinkMl }]), top: { color: d.id === 'frappe_caramel' ? pal.topping : own }, detail };
     }
     case 'C6': {
       const liquidColor = mixColor(pal.tea, pal.topping, 0.6);
@@ -509,12 +519,12 @@ export const HOT_MODEL_IDS: ReadonlySet<string> = new Set([
   'vanilla_raf', 'cocoa', 'raf', 'raf_halva', 'tea_sencha', 'tea_assam', 'tea_hibiscus', 'tea_buckwheat', 'tea_currant',
   'latte', 'latte_sakura', 'latte_banana', 'latte_lemon', 'latte_coconut', 'matcha_latte', 'chicory_latte', 'matcha_coconut'
 ]);
-/** Холодные группы Н2-2: прозрачные (C1), молочно-кофейные (C2) и два слоя (C3). Их холодные варианты рисуются моделью (21 новый вид и три готовых). */
-export const COLD_MODEL_GROUPS: ReadonlySet<ModelGroup> = new Set<ModelGroup>(['C1', 'C2', 'C3']);
+/** Холодные группы Н2-2 и Н2-3: прозрачные (C1), молочно-кофейные (C2), два слоя (C3), аэрокано (C4), густые (C5) и бабл ти (C6). Их холодные варианты рисуются моделью. */
+export const COLD_MODEL_GROUPS: ReadonlySet<ModelGroup> = new Set<ModelGroup>(['C1', 'C2', 'C3', 'C4', 'C5', 'C6']);
 /** Рисуется ли холодный вариант напитка моделью (группы C1–C3). */
 export const isColdModel = (d: Drink): boolean => (d.temp === 'hot' ? false : COLD_MODEL_GROUPS.has(groupOf(d, true)));
 /** Подпись под моделью в книге и окне «Новый напиток», когда одной картинки мало (решение владельца: горячий бамбл выглядит как американано, отличие только подписью). */
-export const MODEL_TAGS: Readonly<Record<string, string>> = { hot_bumble: 'с соком' };
+export const MODEL_TAGS: Readonly<Record<string, string>> = { hot_bumble: 'с соком', boba_raspberry: 'функциональный' };
 /** Ссылка на модель для заказа или null, если напиток (в этом варианте) ещё рисуется по-старому или такого размера и варианта у него нет. */
 export function pilotRef(id: string, size: string, cold: boolean): ModelRef | null {
   const d = drinkById[id];

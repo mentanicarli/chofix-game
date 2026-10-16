@@ -97,12 +97,12 @@ describe('Н2-1: 24 горячих вида в кэше', () => {
   });
 });
 
-describe('Н2-2: холодные C1–C3 в кэше', () => {
-  test('24 холодных вида × размеры × уровни × разрешения: ключи уникальны, живых текстур ровно 40', () => {
+describe('Н2-2, Н2-3: холодные C1–C6 в кэше', () => {
+  test('32 холодных вида × размеры × уровни × разрешения: ключи уникальны, живых текстур ровно 40', () => {
     Fake.live = 0;
     const c = new TexCache<Fake>();
     const cold = allSpecs().filter((s) => s.cold && COLD_MODEL_GROUPS.has(s.group));
-    expect(new Set(cold.map((s) => s.id)).size).toBe(24);
+    expect(new Set(cold.map((s) => s.id)).size).toBe(32); /* C1–C6 */
     const keys: string[] = [];
     for (const sp of cold) for (const lod of ['full', 'compact'] as const) for (const res of [1, 2]) keys.push(modelTexKey(sp, lod, res));
     expect(new Set(keys).size).toBe(keys.length);

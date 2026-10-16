@@ -165,6 +165,44 @@ function edgePoints(W: number, y: number, A: number, ph: number, step = 4): stri
 }
 const layerPoly = (top: string, yBot: number, W: number): string => `M${top}L${f2(W)} ${f2(yBot)}L${f2(-W)} ${f2(yBot)}Z`;
 
+const CARAMEL = '#B7773F';
+/** Карамельные полосы стекают от обода по стенке: две-три полосы разной длины (seeded), на компактном две тонкие. */
+function dripsSvg(g: GlassGeom, compact: boolean, rnd: () => number, sw: (px: number) => number): string {
+  const n = compact ? 2 : 3;
+  let o = '';
+  for (let i = 0; i < n; i++) {
+    const ux = -0.62 + (1.24 * (i + 0.2 + rnd() * 0.6)) / n;
+    const len = (0.28 + rnd() * 0.34) * g.H;
+    const y0 = -g.H + 2;
+    const x = ux * (glassHalfWidth(g, y0 + len) - 4);
+    const w = compact ? sw(2.6) : (3.6 + rnd() * 1.6) * g.k;
+    o += `<path d="M${f2(x)} ${f2(y0)}L${f2(x)} ${f2(y0 + len)}" stroke="${CARAMEL}" stroke-width="${f2(w)}" stroke-linecap="round" stroke-opacity=".92" fill="none"/>`;
+    o += `<circle cx="${f2(x)}" cy="${f2(y0 + len + w * 0.15)}" r="${f2(w * 0.62)}" fill="${CARAMEL}" fill-opacity=".92"/>`;
+  }
+  return o;
+}
+/** Карамельная зигзаг-полоса по верху напитка (аэрокано, фраппе). */
+function sauceTopSvg(cy: number, rx: number, ry: number, sw: (px: number) => number): string {
+  const pts = [-0.8, -0.45, -0.1, 0.25, 0.6, 0.85].map((u, i) => `${f2(u * rx)} ${f2(cy + (i % 2 ? 0.45 : -0.4) * ry)}`);
+  return `<path d="M${pts.join('L')}" stroke="${CARAMEL}" stroke-width="${sw(2.6)}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+}
+/** Шарики тапиоки на дне: 6–10 штук разного размера, два ряда вразнобой (seeded), на компактном 3–4 точки. */
+function bobaSvg(spec: DrinkSpec, g: GlassGeom, compact: boolean, sw: (px: number) => number): string {
+  const rnd = mulberry32(hashSeed(`boba|${spec.id}|${spec.size}`));
+  const n = compact ? 3 + Math.round(rnd()) : 6 + Math.floor(rnd() * 5);
+  let o = '';
+  for (let i = 0; i < n; i++) {
+    const row = compact ? 0 : i % 2;
+    const r = (compact ? 5.2 : 4.2 + rnd() * 2.2) * g.k;
+    const y = g.yb - r - 2 - row * 7 * g.ky - rnd() * 2.5;
+    const half = glassHalfWidth(g, y) - r - 4;
+    const x = Math.max(-half, Math.min(half, (-1 + (2 * (i + 0.5 + (rnd() - 0.5) * 0.7)) / n) * half));
+    o += `<circle cx="${f2(x)}" cy="${f2(y)}" r="${f2(r)}" fill="#3A2A24" stroke="${INK}" stroke-width="${sw(1)}"/>`;
+    if (!compact) o += `<circle cx="${f2(x - r * 0.35)}" cy="${f2(y - r * 0.35)}" r="${f2(r * 0.22)}" fill="#fff" fill-opacity=".45"/>`;
+  }
+  return o;
+}
+
 /** Слои спецификации стакана от yBot вверх до уровня fill; границы sharp / step / wavy; языки в бамбле. Только полный уровень умеет step и wavy. */
 function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: boolean, sw: (px: number) => number): { svg: string; yTop: number } {
   const layers = compact ? compactLayers(spec) : spec.liquid;
@@ -199,7 +237,7 @@ function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: bo
     if (ly.tone === 'cloudy') {
       /* мутный тон: молочная вуаль и ягодная взвесь (светлые и тёмные крапинки), на компактном только вуаль */
       o += `<path d="${layerPoly(topEdge, acc + 1, W)}" fill="#fff" fill-opacity="${compact ? 0.14 : 0.2}"/>`;
-      if (!compact) {
+      if (!compact && spec.group === 'C1') {
         const n = Math.round(10 + h / 3);
         for (let j = 0; j < n; j++) {
           const y = yt + 2 + rnd() * Math.max(2, h - 4);
@@ -243,6 +281,7 @@ function glassLiquidSvg(spec: DrinkSpec, g: GlassGeom, fill: number, compact: bo
       o += `<circle cx="${f2(x)}" cy="${f2(y)}" r="${f2(compact ? sw(2.2) : (1 + rnd() * 0.8) * g.k)}" fill="${spec.top.specks}" fill-opacity=".85"/>`;
     }
   }
+  if (spec.detail === 'caramel_stripes' || spec.detail === 'caramel_sauce') o += dripsSvg(g, compact, rnd, sw);
   void sw;
   return { svg: o, yTop: yTopLiq };
 }
@@ -396,17 +435,23 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     if (!compact && surfaceTop.art === 'heart') liquid += heartSvg(0, liq.yTop, rxS, ryS, col('PAPER'));
     if (!compact && surfaceTop.art === 'tulip') liquid += tulipSvg(0, liq.yTop, rxS, ryS, col('PAPER'));
     if (!compact && surfaceTop.specks) liquid += specksSvg(rxS, ryS, liq.yTop, surfaceTop.specks);
-    if (!o.noIce && spec.ice.rows > 0) ice += compact ? iceLatticeSvg(spec, g, sw) : iceSvg(iceCubes(spec, g), sw, spec.top.specks);
-    if (spec.bottom === 'boba') {
-      const n = compact ? 4 : 7;
-      for (let i = 0; i < n; i++) ice += `<circle cx="${f2((-0.8 + (1.6 * i) / (n - 1)) * (g.Wb - 8 * g.k))}" cy="${f2(g.yb - 8 * g.k - (i % 2) * 4 * g.k)}" r="${f2(5.2 * g.k)}" fill="#3A2A24" stroke="${INK}" stroke-width=".8"/>`;
+    if (spec.detail === 'whip_cap') {
+      /* взбитая шапка милкшейка: три бугра над краем, контур, завиток */
+      const h = 20 * g.ky;
+      const y = liq.yTop;
+      const rx = rxS * 0.88;
+      liquid += `<path d="M${f2(-rx)} ${f2(y)}Q${f2(-rx * 1.08)} ${f2(y - h * 0.55)} ${f2(-rx * 0.5)} ${f2(y - h * 0.72)}Q${f2(-rx * 0.35)} ${f2(y - h * 1.2)} 0 ${f2(y - h)}Q${f2(rx * 0.35)} ${f2(y - h * 1.2)} ${f2(rx * 0.5)} ${f2(y - h * 0.72)}Q${f2(rx * 1.08)} ${f2(y - h * 0.55)} ${f2(rx)} ${f2(y)}Z" fill="#FFFFFF" stroke="${INK}" stroke-width="${sw(2.2)}" stroke-linejoin="round"/>`;
+      if (!compact) liquid += `<path d="M${f2(-rx * 0.45)} ${f2(y - h * 0.3)}Q0 ${f2(y - h * 0.55)} ${f2(rx * 0.45)} ${f2(y - h * 0.3)}" fill="none" stroke="${shade('#F3E6C8', 0.25)}" stroke-width="${sw(1.6)}" stroke-linecap="round"/>`;
     }
+    if (!compact && (spec.detail === 'caramel_stripes' || spec.detail === 'caramel_sauce')) liquid += sauceTopSvg(liq.yTop, rxS, ryS, sw);
+    if (!o.noIce && spec.ice.rows > 0) ice += compact ? iceLatticeSvg(spec, g, sw) : iceSvg(iceCubes(spec, g), sw, spec.top.specks);
+    if (spec.bottom === 'boba') liquid += bobaSvg(spec, g, compact, sw);
     front += `<path d="M${f2(g.Wt * 0.5)} ${f2(-g.H)}L${f2(g.Wt)} ${f2(-g.H)}L${f2(g.Wb)} ${f2(g.yb)}L${f2(g.Wb * 0.55)} ${f2(g.yb)}Z" fill="${col('SHADOW')}" opacity=".09"/>`;
     front += `<path d="M${f2(-g.Wb)} ${f2(g.yb - 4 * g.ky)}L${f2(g.Wb)} ${f2(g.yb - 4 * g.ky)}L${f2(g.Wb)} ${f2(g.yb)}Q0 ${f2(g.bulge)} ${f2(-g.Wb)} ${f2(g.yb)}Z" fill="${col('GLASS_DP')}" fill-opacity=".55"/>`;
     front += `<path d="M${f2(-g.Wt)} ${f2(-g.H)}L${f2(-g.Wb)} ${f2(g.yb)}Q0 ${f2(g.bulge)} ${f2(g.Wb)} ${f2(g.yb)}L${f2(g.Wt)} ${f2(-g.H)}" fill="none" stroke="${INK}" stroke-width="${sw(M)}" stroke-linejoin="round" stroke-linecap="round"/>`;
     front += `<ellipse cx="0" cy="${f2(-g.H)}" rx="${f2(g.Wt)}" ry="${f2(g.ry)}" fill="none" stroke="${INK}" stroke-width="${sw(D)}"/>`;
-    if (!compact) front += `<path d="M${f2(-g.Wt * 0.8)} ${f2(-g.H * 0.8)}L${f2(-g.Wb * 0.85)} ${f2(-g.H * 0.2)}" stroke="#fff" stroke-opacity=".7" stroke-width="${sw(3)}" stroke-linecap="round"/>`;
-    grow(-g.Wt, -g.H - g.ry - 1, g.Wt, g.bulge + 8 * g.ky);
+    if (!compact && spec.detail !== 'matte') front += `<path d="M${f2(-g.Wt * 0.8)} ${f2(-g.H * 0.8)}L${f2(-g.Wb * 0.85)} ${f2(-g.H * 0.2)}" stroke="#fff" stroke-opacity=".7" stroke-width="${sw(3)}" stroke-linecap="round"/>`;
+    grow(-g.Wt, -g.H - g.ry - 1 - (spec.detail === 'whip_cap' ? 24 * g.ky : 0), g.Wt, g.bulge + 8 * g.ky);
     if (spec.ice.rows > 0) grow(-g.Wt, -g.H - g.ry - 14 * g.ky, g.Wt, 0);
   } else if (g.kind === 'ceramic') {
     const { W, Wb, H, yb, ryR, reach, k, ky } = g;

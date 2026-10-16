@@ -93,11 +93,11 @@ describe('описания всех напитков', () => {
     expect(pilotRef('latte', '0.2', true)).toBeNull();
     expect(pilotRef('orange_bumble', '0.3', false)).toEqual({ id: 'orange_bumble', size: '0.3', cold: true });
     expect(pilotRef('orange_bumble', '0.2', true)).toBeNull();
-    expect(pilotRef('milkshake_vanilla', '0.4', true)).toBeNull();
+    expect(pilotRef('milkshake_vanilla', '0.4', true)).toEqual({ id: 'milkshake_vanilla', size: '0.4', cold: true }); /* Н2-3 */
     expect(pilotRef('tea_sencha', '0.4', true)).toEqual({ id: 'tea_sencha', size: '0.4', cold: true }); /* Н2-2 */
     expect(pilotRef('tea_sencha', '0.2', true)).toBeNull();
-    expect(pilotRef('aerocano', '0.3', true)).toBeNull(); /* C4–C6 ждут Н2-3 */
-    expect(pilotRef('boba_guava', '0.4', true)).toBeNull();
+    expect(pilotRef('aerocano', '0.3', true)).toEqual({ id: 'aerocano', size: '0.3', cold: true });
+    expect(pilotRef('boba_guava', '0.4', true)).toEqual({ id: 'boba_guava', size: '0.4', cold: true });
     expect(pilotRef('tea_sencha', '0.4', false)).toEqual({ id: 'tea_sencha', size: '0.4', cold: false });
   });
   test('Н2-1: 24 горячих вида на модели (H1–H8), по группам таблицы', () => {
