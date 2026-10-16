@@ -49,3 +49,6 @@ exports.sandboxStart = async (p, url, o = {}) => {
   await p.evaluate(c => window.__sandbox.start(c), o);
   await p.waitForSelector('#screen', { state: 'hidden', timeout: 10000 });
 };
+
+/* Камера бара (Б1-1), только #dev: window.__sec.go('L'|'C'|'R', instant); вернёт false, если секция закрыта */
+exports.goSection = (p, id, instant = true) => p.evaluate(([i, n]) => window.__sec.go(i, n), [id, instant]);

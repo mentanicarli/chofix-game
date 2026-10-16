@@ -18,6 +18,7 @@ import LAMP2 from '../../assets/art/lamp-2.svgf?raw';
 import { Actor, Limb, type ActorOpts } from './actor';
 import { Ribbon, frameSprite } from './ribbon';
 import { BarScene, type BarFrame, type BarUpgrades } from './bar';
+import type { SectionsOpen } from '../../game/sections';
 import { drinkArtSvg, drinkIconSvg } from './drinkModel';
 import { allSpecs, specOf, type ModelRef } from '../../game/drinkModel';
 import { BARISTA_ARM_LEN, BARISTA_K, BARISTA_PIVOT, GUEST_K, SEAT_PIVOT, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
@@ -719,6 +720,21 @@ export class World {
 
   setBarUpgrades(u: BarUpgrades): void {
     if (this.ready) this.bar.setUpgrades(u);
+  }
+
+  /** Открытые секции бара (Б1-1): боковая получает текстуры, только когда открыта и камера у неё. */
+  setBarSections(open: SectionsOpen): void {
+    if (this.ready) this.bar.setSections(open);
+  }
+
+  /** Камера бара: мировой x левого края кадра. */
+  setBarCamera(x: number): void {
+    if (this.ready) this.bar.setCamera(x);
+  }
+
+  /** Сколько текстур держат боковые секции (до покупки и вне #dev — 0). */
+  barSideTextures(): number {
+    return this.bar.sideTextureCount();
   }
 
   /** Ноутбук, блюдце и стул: неподвижные предметы столика, которыми двигает посадка гостя. */

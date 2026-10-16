@@ -14,7 +14,7 @@ function frame(ts) {
   if (G && G.phase === 'day' && !paused && !CARDON) { if (SBX.on) { SBX.clock += dt; tickDay(dt * SBX.scale); } else tickDay(dt); }
   if (SBX.on) sbxUi(dt);
   if (!paused) { tickFx(dt); animActors(dt); animBarista(dt); if (G && G.phase === 'day') barTick(CARDON ? 0 : dt); }
-  ambTick(); tickLoops(); MUSIC.duck(paused ? .35 : 1); stage.classList.toggle('paused', paused);
+  camTick(dt); ambTick(); tickLoops(); MUSIC.duck(paused ? .35 : 1); stage.classList.toggle('paused', paused);
   tickSky(paused ? 0 : dt); tickMoney(dt); tickTint(dt);
   WORLD.setBar(stage.classList.contains('inbar')); WORLD.render(dt, rawMs);
 }

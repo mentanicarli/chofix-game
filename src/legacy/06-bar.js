@@ -100,8 +100,29 @@ dcEl.addEventListener('click', e => {
   const x = e.target.closest('[data-dcexact]');
   if (x) { const box = dcEl.querySelector('.dcExact'); box.hidden = !box.hidden; x.setAttribute('aria-expanded', String(!box.hidden)); x.classList.toggle('on', !box.hidden); sndTap(); }
 });
+/* ---------- камера бара: три остановки L «Чайный бар» · C «Кофейный бар» · R «Холодный бар» (Б1-1, docs/design/sections.md) ----------
+   Навигации игрока пока нет (клавиши, перетаскивание, стрелки — промпты 2–4 блока Б1): в обычной игре камера не двигается и всегда в центре,
+   даже если покупки уже «открыли» боковую секцию (sectionsOpen). Боковые секции (заглушки) видны только в #dev через window.__sec / __dbg.goSection. */
+const CAM = { sec: 'C', from: 0, to: 0, t: 0, moving: false, x: 0 };
+function secOpenNow() { const o = MENUAPI.sectionsOpen(G || {}); return DEV ? { L: true, C: true, R: true } : o; }
+function camSync() { WORLD.setBarSections(secOpenNow()); WORLD.setBarCamera(CAM.x); }
+/* instant — без анимации (вход в бар); иначе переход 0,3 с в camTick. Закрытая секция недоступна. */
+function camGo(id, instant) {
+  if (!secOpenNow()[id]) return false;
+  CAM.sec = id; CAM.from = CAM.x; CAM.to = MENUAPI.cameraTarget(id); CAM.t = 0;
+  CAM.moving = !instant && CAM.from !== CAM.to;
+  if (!CAM.moving) CAM.x = CAM.to;
+  WORLD.setBarCamera(CAM.x); return true;
+}
+function camTick(dt) {
+  if (!CAM.moving) return;
+  CAM.t += dt;
+  if (CAM.t >= MENUAPI.CAM_SECONDS) { CAM.moving = false; CAM.x = CAM.to; } else CAM.x = MENUAPI.cameraAt(CAM.from, CAM.to, CAM.t);
+  WORLD.setBarCamera(CAM.x);
+}
 function barShow(on) {
   stage.classList.toggle('inbar', on);
+  if (on) camGo('C', true);
   if (on) { zonesSync(); UI.close.hidden = !BR || !BR.inset; coachKey = ''; tkKey = ''; }
   frontHintUpd();
 }

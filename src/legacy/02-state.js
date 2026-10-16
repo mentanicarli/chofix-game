@@ -21,7 +21,7 @@ function menuBoard() {
   WORLD.setMenu(ids.map(d => ({ name: d.name, price: MENUAPI.priceOf(d.id) })));
 }
 function applyUpgrades() {
-  menuBoard(); zonesSync();
+  menuBoard(); zonesSync(); camSync();
   WORLD.setUpgrades({ milk: !!G.milk, machine: !!G.machine, cozy: !!G.cozy });
   WORLD.setBarUpgrades({ milk: !!G.milk, ice: !!G.eq_ice, eq: Object.fromEntries(['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].map(k => [k, !!G['eq_' + k]])), snacks: !!G.eq_case_snacks, pastry: !!G.eq_case_pastry, dessert: !!G.eq_case_dessert, deli: !!G.eq_fridge_deli, micro: !!G.eq_microwave });
 }

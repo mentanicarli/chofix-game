@@ -168,4 +168,6 @@ if (DEV) {
   /* «Своё» открыли или закрыли: пересчитать сводку (при закрытии ручные правки отбрасываются) */
   scr.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('[data-custom]') && menuView() === 'sandbox' && sbxCfg && e.target.open !== (sbxCfg.custom !== null)) sbxShow(sbxRead()); }, true);
   window.__sandbox = { start: sbxStart, config: () => SBX_STORE.load(), state: SBX };
+  /* только для проверки Б1-1: камера бара без навигации игрока (goSection из e2e: window.__sec.go('L'|'C'|'R', instant)) */
+  window.__sec = { go: (id, instant) => camGo(id, !!instant), state: () => ({ sec: CAM.sec, x: CAM.x, moving: CAM.moving }), textures: () => WORLD.barSideTextures() };
 }

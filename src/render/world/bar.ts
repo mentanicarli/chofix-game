@@ -4,6 +4,8 @@ import { raster } from './svg';
 import { TexCache, modelTexKey } from './texCache';
 import { BAR_UNIT, drinkPx, geomOf, glassHalfWidth, type CeramicGeom, type GlassGeom } from './drinkModel';
 import { specOf, type DrinkSpec, type ModelRef } from '../../game/drinkModel';
+import { SECTION_CAM, SECTION_NAMES, SECTION_W, type SectionsOpen } from '../../game/sections';
+import PAL from '../../../art-src/palette.json';
 
 interface Box { x: number; y: number; w: number; h: number }
 interface TextSpec { t: string; x: number; y: number; size: number; weight: string; fill: string; family: string; tl: number | null }
@@ -81,8 +83,32 @@ class ModelTex {
   }
 }
 
+/** Боковая секция (Б1-1): плашка-заглушка вместо будущего арта (этап 30). Текстуры живут, пока секция открыта и камера на ней или на соседней остановке. */
+interface SideSection { c: Container; tex: Texture | null; label: Text | null; loading: boolean }
+
+/** Заглушка фона боковой секции: стена в полоску со смещением (шов с центром без разрыва ритма, sections.md 1.2), тумба, плашка под подпись. Только палитра art-src. */
+function placeholderSvg(id: 'L' | 'R'): string {
+  const C = PAL.colors;
+  const off = id === 'L' ? 40 : 80;
+  let stripes = '';
+  for (let x = off - 130; x < SECTION_W + 130; x += 130) stripes += `<rect x="${x}" y="0" width="65" height="472" fill="${C.KRAFT_SH}" opacity="0.55"/>`;
+  return `<rect width="${SECTION_W}" height="720" fill="${C.KRAFT}"/>${stripes}`
+    + `<rect x="-6" y="472" width="${SECTION_W + 12}" height="140" fill="${C.TOP}" stroke="${C.INK}" stroke-width="3.5"/>`
+    + `<rect x="-6" y="612" width="${SECTION_W + 12}" height="130" fill="${C.WOOD}" stroke="${C.INK}" stroke-width="3.5"/>`
+    + `<rect x="${SECTION_W / 2 - 220}" y="236" width="440" height="150" rx="22" fill="${C.PAPER}" stroke="${C.INK}" stroke-width="3.5" stroke-dasharray="14 9"/>`;
+}
+
 export class BarScene {
   readonly root = new Container();
+  /** Весь мир бара: центр в 0…1280, боковые секции по бокам; камера сдвигает `world.x = −cam` (Б1-1). */
+  readonly world = new Container();
+  private fontRes = 1;
+  private cam = 0;
+  private sOpen: SectionsOpen = { L: false, C: true, R: false };
+  private side: Record<'L' | 'R', SideSection> = {
+    L: { c: new Container(), tex: null, label: null, loading: false },
+    R: { c: new Container(), tex: null, label: null, loading: false }
+  };
   private tex = new Map<string, Texture>();
   private res = 1;
   private pf = new Container();
@@ -128,12 +154,19 @@ export class BarScene {
 
   async build(res: number, fontRes: number): Promise<void> {
     this.res = res;
+    this.fontRes = fontRes;
+    this.root.addChild(this.world);
+    for (const id of ['L', 'R'] as const) {
+      this.side[id].c.position.set(SECTION_CAM[id], 0);
+      this.side[id].c.visible = false;
+      this.world.addChild(this.side[id].c);
+    }
     const ids = Object.keys(P);
     await Promise.all(ids.map(async (id) => {
       const p = P[id] as Part;
       this.tex.set(id, await raster(p.svg, p.box, res));
     }));
-    const R = this.root;
+    const R = this.world;
     const spr = (id: string, parent: Container = R): Sprite => {
       const p = P[id] as Part;
       const s = new Sprite(this.tex.get(id));
@@ -277,6 +310,70 @@ export class BarScene {
     });
     this.setUpgrades({ milk: false, ice: false, eq: {}, snacks: false, pastry: false, dessert: false, deli: false, micro: false });
     this.root.visible = false;
+  }
+
+  /** Какие секции открыты (по покупкам или принудительно в #dev). Закрытая секция не держит текстур. */
+  setSections(open: SectionsOpen): void {
+    this.sOpen = open;
+    this.syncSides();
+  }
+
+  /** Камера: мировой x левого края кадра (−1280, 0, +1280 и между ними при переходе). */
+  setCamera(x: number): void {
+    this.cam = x;
+    this.world.x = -x;
+    this.syncSides();
+  }
+
+  /** Живые текстуры боковых секций (счётчик для проверки: до покупки 0). */
+  sideTextureCount(): number {
+    let n = 0;
+    for (const id of ['L', 'R'] as const) {
+      const s = this.side[id];
+      if (s.tex) n++;
+      if (s.label) n++;
+    }
+    return n;
+  }
+
+  private syncSides(): void {
+    for (const id of ['L', 'R'] as const) {
+      const s = this.side[id];
+      const dist = Math.abs(this.cam - SECTION_CAM[id]);
+      const open = this.sOpen[id];
+      /* создаём лениво: секция открыта, камера в ней или на соседней остановке (центр соседствует с обеими) */
+      if (open && dist <= SECTION_W && !s.tex && !s.loading) this.buildSide(id);
+      if (!open && (s.tex || s.label)) this.freeSide(id);
+      s.c.visible = open && !!s.tex && dist < SECTION_W;
+    }
+  }
+
+  private buildSide(id: 'L' | 'R'): void {
+    const s = this.side[id];
+    s.loading = true;
+    void raster(placeholderSvg(id), { x: 0, y: 0, w: SECTION_W, h: 720 }, this.res).then((t) => {
+      s.loading = false;
+      if (!this.sOpen[id]) { t.destroy(true); return; }
+      const sp = new Sprite(t);
+      sp.width = SECTION_W;
+      sp.height = 720;
+      const label = new Text({ text: SECTION_NAMES[id], style: { fontFamily: 'Caveat, Nunito, cursive', fontSize: 64, fontWeight: '700', fill: PAL.colors.INK, padding: 6 }, resolution: this.fontRes });
+      label.anchor.set(0.5, 0.5);
+      label.position.set(SECTION_W / 2, 311);
+      s.tex = t;
+      s.label = label;
+      s.c.addChild(sp, label);
+      this.syncSides();
+    });
+  }
+
+  private freeSide(id: 'L' | 'R'): void {
+    const s = this.side[id];
+    s.c.removeChildren().forEach((c) => c.destroy());
+    s.tex?.destroy(true);
+    s.tex = null;
+    s.label = null;
+    s.c.visible = false;
   }
 
   setUpgrades(u: BarUpgrades): void {

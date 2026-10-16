@@ -29,3 +29,4 @@ export * from './playlist';
 export * from './sandbox';
 export * from './playerModel';
 export * from './drinkModel';
+export { sectionsOpen, cameraAt, cameraTarget, neighbors, sectionOfZone, SECTION_NAMES, SECTION_CAM, CAM_SECONDS, type SectionId } from './sections';
