@@ -152,3 +152,53 @@ export function dragTarget(startCam: number, dx: number, vx: number, open: Secti
   /* курсор вправо — мир вправо — камера влево */
   return moveTarget(from, dir > 0 ? -1 : 1, open) ?? from;
 }
+
+/* ---------- подсказки: «в какой секции станция» (Б1-3) ---------- */
+
+/**
+ * Пока плитки боковых станций живут в центре (до этапа 30), «в какой секции станция» для игрока — центр.
+ * Б1-4 переключает флаг, когда зоны боковых станций переедут в секции. Всё, что зависит от секции станции
+ * (точка на мини-карте, подсветка стрелки, тосты), читает её только через `stationSection`.
+ */
+export const ZONES_IN_SIDE_SECTIONS = false;
+
+/** Станция по id зоны бара (`syr1` → полка сиропов, `milk` → холодильник с молоком); для зон вне 19 станций (витрина, микроволновка, звонок) — undefined. */
+export function stationOfZone(zone: string): Station | undefined {
+  return STATIONS.find((s) => s.id === zone) ?? STATIONS.find((s) => s.zones.includes(zone));
+}
+
+/** Секция станции или зоны (id станции, зоны или шага): при выключенном флаге всегда центр. */
+export function stationSection(x: string, zonesInSide: boolean): SectionId {
+  if (!zonesInSide) return 'C';
+  return sectionOfStation(x) ?? sectionOfZone(x) ?? 'C';
+}
+
+/** Тост «станция в другой секции» по таблице раздела 11 docs/design/sections.md; null, если это не одна из 19 станций или камера уже в её секции. */
+export function stationToast(station: string, from: SectionId): string | null {
+  const st = STATIONS.find((s) => s.id === station);
+  if (!st || st.section === from) return null;
+  const head = `Станция «${st.name}» в секции «${SECTION_NAMES[st.section]}».`;
+  /* из одной боковой секции в другую стрелки с нужным названием ещё нет: сначала центр */
+  return from !== 'C' && st.section !== 'C' ? `${head} Сначала откройте «${SECTION_NAMES.C}».` : `${head} Нажмите стрелку с этим названием.`;
+}
+
+/** Задачи шагов бара, у которых зона не совпадает с названием шага берём из TASK_ZONE на стороне вызова; здесь только id зоны или станции. */
+export interface HintView {
+  /** ячейка мини-карты, где горит точка «нужная станция» (null — точки нет) */
+  dotSection: SectionId | null;
+  /** какая стрелка подсвечена: −1 левая, +1 правая (null — никакая) */
+  highlightArrow: -1 | 1 | null;
+}
+
+/**
+ * Точка и подсветка стрелки. `zone` — id зоны или станции текущего шага (null — шага нет), `section` — секция камеры.
+ * Только при включённых подсказках. Станция в текущей секции: точка в текущей ячейке, стрелка не подсвечена.
+ * Станция в другой: точка в её ячейке, подсвечена стрелка в сторону центра или (из центра) в сторону нужной секции.
+ */
+export function needHint(zone: string | null, section: SectionId, hintsOn: boolean, zonesInSide: boolean): HintView {
+  if (!hintsOn || !zone) return { dotSection: null, highlightArrow: null };
+  const target = stationSection(zone, zonesInSide);
+  if (target === section) return { dotSection: target, highlightArrow: null };
+  const dir = section === 'C' ? (target === 'L' ? -1 : 1) : section === 'L' ? 1 : -1;
+  return { dotSection: target, highlightArrow: dir };
+}

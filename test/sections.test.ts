@@ -184,3 +184,66 @@ describe('секции: управление камерой (Б1-2)', () => {
     expect(DRAG_START_PX).toEqual({ mouse: 8, touch: 12 });
   });
 });
+
+import SECTIONS_MD from '../docs/design/sections.md?raw';
+import { ZONES_IN_SIDE_SECTIONS, needHint, stationOfZone, stationSection, stationToast } from '../src/game/sections';
+
+describe('секции: подсказки и тосты (Б1-3)', () => {
+  /* таблица раздела 11 sections.md — источник правды для текстов */
+  const rows = SECTIONS_MD.split('\n').filter((l) => /^\| \d+ \| [^|]+ \| [^|]+ \| Станция «/.test(l)).map((l) => l.split('|').map((c) => c.trim()).slice(1, -1));
+  test('в таблице раздела 11 19 станций', () => expect(rows).toHaveLength(19));
+
+  test('флаг зон в боковых секциях выключен', () => expect(ZONES_IN_SIDE_SECTIONS).toBe(false));
+
+  test('stationToast совпадает с таблицей для всех достижимых from', () => {
+    const NAME_TO_ID = new Map(STATIONS.map((s) => [s.name, s.id]));
+    for (const r of rows) {
+      const [, name, sec, normal, , via] = r as [string, string, string, string, string, string];
+      const id = NAME_TO_ID.get(name) as string;
+      expect(id, name).toBeDefined();
+      const own = STATIONS.find((s) => s.id === id)?.section as 'L' | 'C' | 'R';
+      expect(SECTION_NAMES[own]).toBe(sec);
+      for (const from of ['L', 'C', 'R'] as const) {
+        const t = stationToast(id, from);
+        if (from === own) { expect(t, `${name} из ${from}`).toBeNull(); continue; }
+        const expected = from !== 'C' && own !== 'C' ? via : normal;
+        expect(t, `${name} из ${from}`).toBe(expected);
+        expect((t as string).length).toBeLessThanOrEqual(100);
+        expect(t).not.toMatch(/слева|справа|сверху|снизу|вверху|внизу|левее|правее|выше|ниже|в углу/i);
+      }
+    }
+    expect(stationToast('food', 'L')).toBeNull();
+  });
+
+  test('stationOfZone: зоны шагов и сиропы', () => {
+    expect(stationOfZone('syr2')?.id).toBe('syrup');
+    expect(stationOfZone('milk')?.id).toBe('milk');
+    expect(stationOfZone('matcha')?.id).toBe('matcha');
+    expect(stationOfZone('micro')).toBeUndefined();
+  });
+
+  test('stationSection: флаг выключен — всегда центр, включён — по карте', () => {
+    for (const s of STATIONS) expect(stationSection(s.id, false)).toBe('C');
+    expect(stationSection('matcha', true)).toBe('L');
+    expect(stationSection('shaker', true)).toBe('R');
+    expect(stationSection('grind', true)).toBe('C');
+    expect(stationSection('syr3', true)).toBe('C');
+    expect(stationSection('food', true)).toBe('C');
+  });
+
+  test('needHint: 3 секции × флаг × подсказки', () => {
+    for (const sec of ['L', 'C', 'R'] as const) {
+      expect(needHint('matcha', sec, false, true)).toEqual({ dotSection: null, highlightArrow: null });
+      expect(needHint(null, sec, true, true)).toEqual({ dotSection: null, highlightArrow: null });
+      /* флаг выключен: станция всегда в центре */
+      expect(needHint('matcha', sec, true, false)).toEqual({ dotSection: 'C', highlightArrow: sec === 'C' ? null : sec === 'L' ? 1 : -1 });
+    }
+    expect(needHint('matcha', 'C', true, true)).toEqual({ dotSection: 'L', highlightArrow: -1 });
+    expect(needHint('shaker', 'C', true, true)).toEqual({ dotSection: 'R', highlightArrow: 1 });
+    expect(needHint('matcha', 'L', true, true)).toEqual({ dotSection: 'L', highlightArrow: null });
+    expect(needHint('shaker', 'L', true, true)).toEqual({ dotSection: 'R', highlightArrow: 1 }); /* через центр */
+    expect(needHint('matcha', 'R', true, true)).toEqual({ dotSection: 'L', highlightArrow: -1 });
+    expect(needHint('grind', 'R', true, true)).toEqual({ dotSection: 'C', highlightArrow: -1 });
+    expect(needHint('grind', 'L', true, true)).toEqual({ dotSection: 'C', highlightArrow: 1 });
+  });
+});

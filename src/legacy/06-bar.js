@@ -50,10 +50,10 @@ function barOpen(c) {
   const rc = rcFor(c);
   /* перед приготовлением: сначала «Зачем это нужно» (по одному), потом карточка нового напитка; после каждого окна заказ открывается заново */
   const intro = c.order && !tutOffNow() ? MENUAPI.orderIntro(c.order.id, G.tutorialSeen, { shots: rc.shots || 1, foam: rc.foam, size: c.order.size, cold: !!c.order.cold }) : [];
-  if (intro.length) {
-    const again = () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); };
-    const it = intro[0]; if (it.kind === 'why') showWhy(it.key, again); else showDrinkCard(it.card, again, c.order); return;
-  }
+  const again = () => { if (G && G.phase === 'day' && !paused && !c.leaving && D.customers.includes(c)) barOpen(c); };
+  if (intro.length) { const it = intro[0]; if (it.kind === 'why') showWhy(it.key, again); else showDrinkCard(it.card, again, c.order); return; }
+  /* «Как листать бар» (Б1-3): один раз, последним окном, когда листание включено и открыта боковая секция; камера в центре, терпение и таймер стоят */
+  if (c.order && !tutOffNow() && sectionsPlayable() && (secOpenNow().L || secOpenNow().R) && !G.tutorialSeen.includes(MENUAPI.WHY_SECTIONS)) { camGo('C', true); showWhy(MENUAPI.WHY_SECTIONS, again); return; }
   const d = c.drink, exp = MENUAPI.buildTasks(d, { cold: !!(c.order && c.order.cold), syrup: !!c.syrup, shots: rc.shots });
   if (c.order && c.order.food) exp.push('food');
   const tasks = MENUAPI.uniqueTasks(exp);
@@ -133,6 +133,17 @@ function camStep(dir) {
   sndTap(); return camGo(to, false);
 }
 /* перетаскивание пустого фона; клик по зоне без движения работает как раньше (порог 8 px мышь, 12 касание) */
+/* «в какой секции станция»: пока плитки боковых станций в центре, флаг выключен (Б1-4 включит); для проверки в #dev window.__sec.zones(true) */
+let zonesInSide = MENUAPI.ZONES_IN_SIDE_SECTIONS;
+/* зона текущего шага для подсказок (та же логика выбора шага, что у кольца ringTarget) */
+function hintZone() {
+  const B = BR; if (!B || B.inset) return null;
+  if (B.shot.st === 'run') return 'shot';
+  if (B.ready) return 'bell';
+  if (B.pumps > 0 && !B.done.syrup) return null;
+  const t = B.tasks.find(x => !B.done[x] && !blockMsg(x)); if (!t) return null;
+  return t === 'syrup' ? 'syrup' : (MENUAPI.TASK_ZONE[t] || t);
+}
 const DRAGS = { s: null, eat: false };
 let secNavKey = '', secNavSync = () => {};
 function dragSpeed(s, x, t) { s.samples.push([t, x]); while (s.samples.length > 2 && t - s.samples[0][0] > 120) s.samples.shift(); const a = s.samples[0]; return t > a[0] ? (x - a[1]) / (t - a[0]) / stageScale : 0; }
@@ -156,12 +167,18 @@ if (sectionsPlayable()) {
   /* после перетаскивания click по зоне под курсором гасится в фазе перехвата */
   svg.addEventListener('click', e => { if (DRAGS.eat) { e.stopPropagation(); e.preventDefault(); DRAGS.eat = false; } }, true);
   /* стрелки с названиями секций */
-  const holder = document.createElement('div'); holder.innerHTML = sectionNavHTML(); const nav = holder.firstChild; $('#bar').appendChild(nav);
+  const holder = document.createElement('div'); holder.innerHTML = sectionNavHTML() + minimapHTML(); const nav = holder.firstChild, mini = holder.lastChild; $('#bar').append(nav, mini);
   nav.addEventListener('click', e => { const b = e.target.closest('[data-secnav]'); if (b) { camStep(+b.dataset.secnav); b.blur(); } });
   secNavSync = () => {
-    const arrows = camBlocked() ? [] : MENUAPI.allowedMoves(CAM.sec, secOpenNow()).length ? navArrows(CAM.sec, secOpenNow()) : [];
-    const key = arrows.map(a => a.dir + a.label).join('|'); if (key === secNavKey) return; secNavKey = key;
-    nav.querySelectorAll('[data-secnav]').forEach(b => { const a = arrows.find(x => x.dir === +b.dataset.secnav); b.hidden = !a; if (a) { b.innerHTML = navLabelHTML(a); b.setAttribute('aria-label', 'Перейти в секцию «' + a.label + '»'); } });
+    const blocked = camBlocked(), open = secOpenNow();
+    const arrows = blocked ? [] : navArrows(CAM.sec, open);
+    /* точка и подсветка — только при подсказках (то же условие, что у кольца и коуча) */
+    const hv = blocked ? { dotSection: null, highlightArrow: null } : MENUAPI.needHint(hintZone(), CAM.sec, !!(G.hints || tutKey()), zonesInSide);
+    const cells = blocked ? [] : minimapCells(CAM.sec, open, hv.dotSection);
+    const key = arrows.map(a => a.dir + a.label).join('|') + '#' + hv.highlightArrow + '#' + cells.map(c => c.id + (c.cur ? 1 : 0) + (c.dot ? 1 : 0)).join('');
+    if (key === secNavKey) return; secNavKey = key;
+    nav.querySelectorAll('[data-secnav]').forEach(b => { const a = arrows.find(x => x.dir === +b.dataset.secnav); b.hidden = !a; b.classList.toggle('hl', !!a && hv.highlightArrow === a.dir); if (a) { b.innerHTML = navLabelHTML(a); b.setAttribute('aria-label', 'Перейти в секцию «' + a.label + '»'); } });
+    mini.hidden = !cells.length; mini.innerHTML = minimapFill(cells, CAM.sec); mini.setAttribute('aria-label', minimapLabel(CAM.sec));
   };
 }
 function barShow(on) {
@@ -270,6 +287,8 @@ function zoneClick(z) {
   if (BR.tasks.indexOf(t) < 0 && !(z === 'pour' && BR.tasks.indexOf('pour') >= 0)) { barMsg(zoneNoNeed(z)); sndTap(); return; }
   if (d[t]) { barMsg(TASK_NAME[t] + ' уже готов'); return; }
   const b = blockMsg(t); if (b) { barMsg(b, true); play('ui_error-soft-thud', .4); return; }
+  /* станция в другой секции (Б1-3): окно не открывается, тост по таблице раздела 11, камера на месте */
+  if (sectionsPlayable()) { const zn = MENUAPI.TASK_ZONE[t] || t, sec = MENUAPI.stationSection(zn, zonesInSide), st = MENUAPI.stationOfZone(zn); if (st && sec !== CAM.sec) { const txt = MENUAPI.stationToast(st.id, CAM.sec); if (txt) { barMsg(txt); sndTap(); return; } } }
   if (t === 'tamp') { BR.pf = 'mat'; }
   openInset(t);
 }

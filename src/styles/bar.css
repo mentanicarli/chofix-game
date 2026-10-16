@@ -212,11 +212,25 @@ html.kbd .dcard :focus-visible { outline: 3px solid #E8B04A; outline-offset: 2px
 .dcard .dcModel svg { display: block; max-width: 100%; height: auto; overflow: visible; }
 .dcard .mdlTag { margin: -4px 0 8px; text-align: center; font-size: 14px; font-weight: 800; color: #7A4A38; }
 
-/* Стрелки секций (Б1-2): только при включённом листании (#dev). Полоса y 522–552 над плитками (зоны плиток начинаются с y 556), у краёв, не задевают билет, коуч и тосты. */
+/* Стрелки секций (Б1-2): только при включённом листании (#dev). Полоса y 516–546 над плитками (зоны плиток начинаются с y 556, зазор 10 px), у краёв, не задевают билет, коуч и тосты. */
 #secNav { position: absolute; inset: 0; pointer-events: none; }
-.secNavBtn { position: absolute; top: 522px; height: 30px; padding: 0 12px; border-radius: 15px; border: 3px solid var(--ink); background: #FFFDF6; color: var(--ink); font: 800 14px/1 Nunito, sans-serif; cursor: pointer; box-shadow: 0 3px 0 var(--ink); pointer-events: auto; white-space: nowrap; }
+.secNavBtn { position: absolute; top: 516px; height: 30px; padding: 0 12px; border-radius: 15px; border: 3px solid var(--ink); background: #FFFDF6; color: var(--ink); font: 800 14px/1 Nunito, sans-serif; cursor: pointer; box-shadow: 0 3px 0 var(--ink); pointer-events: auto; white-space: nowrap; }
 .secNavBtn.l { left: 10px; }
 .secNavBtn.r { right: 10px; }
 .secNavBtn[hidden] { display: none; }
 .secNavBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
 html.kbd .secNavBtn:focus-visible { outline: 3px solid #E8B04A; outline-offset: 2px; }
+
+/* Мини-карта секций (Б1-3): вверху по центру, x 598–766, y 12–56; не кликабельна */
+#miniMap { position: absolute; top: 12px; left: 598px; width: 168px; height: 44px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; gap: 6px; padding: 0 9px; border: 3px solid var(--ink); border-radius: 14px; background: #FFF8EC; box-shadow: 0 4px 0 var(--ink); pointer-events: none; }
+#miniMap[hidden] { display: none; }
+#miniMap b { position: relative; width: 44px; height: 26px; border: 2.5px solid var(--ink); border-radius: 8px; background: #F1DFC2; display: block; flex: none; }
+#miniMap b.cur { background: #F0BC55; }
+#miniMap b u { position: absolute; right: -5px; top: -7px; width: 14px; height: 14px; border-radius: 50%; background: #C4694A; border: 2px solid var(--ink); }
+/* подсветка стрелки «нужная станция там»: рамка и точка, пульс 1,2 с три раза, потом спокойная рамка */
+.secNavBtn.hl { border-color: #C4694A; box-shadow: 0 3px 0 var(--ink), 0 0 0 4px #F0BC55; animation: secPulse 1.2s ease-in-out 3; }
+.secNavBtn.hl::after { content: ''; position: absolute; top: -8px; width: 14px; height: 14px; border-radius: 50%; background: #C4694A; border: 2px solid var(--ink); }
+.secNavBtn.hl.l::after { left: -8px; }
+.secNavBtn.hl.r::after { right: -8px; }
+@keyframes secPulse { 50% { box-shadow: 0 3px 0 var(--ink), 0 0 0 8px #F0BC55; } }
+@media (prefers-reduced-motion: reduce) { .secNavBtn.hl { animation: none; } }

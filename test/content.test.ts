@@ -36,15 +36,17 @@ describe('тексты К1 в игре', () => {
     for (const t of GLOSSARY) expect(t.text.length, t.name).toBeGreaterThan(20);
     expect(GLOSSARY.find((t) => /ристретто/i.test(t.name))).toBeUndefined();
   });
-  test('23 экрана «Зачем» с заголовком и текстом; why:sections зарезервирован, но без текста', () => {
-    expect(WHY_KEYS).toHaveLength(23);
+  test('24 экрана «Зачем» с заголовком и текстом, среди них why:sections («Как листать бар»)', () => {
+    expect(WHY_KEYS).toHaveLength(24);
     for (const w of Object.values(WHY_TEXTS)) {
       expect(w.title.length).toBeGreaterThan(5);
       expect(w.text.length).toBeGreaterThan(1);
       expect(w.text.length).toBeLessThanOrEqual(5);
     }
     expect(WHY_SECTIONS).toBe('why:sections');
-    expect(WHY_KEYS).not.toContain(WHY_SECTIONS);
+    expect(WHY_KEYS).toContain(WHY_SECTIONS);
+    expect(WHY_TEXTS[WHY_SECTIONS]?.title).toBe('Как листать бар');
+    for (const l of WHY_TEXTS[WHY_SECTIONS]?.text ?? []) expect(l.length).toBeLessThanOrEqual(100);
   });
   test('нет положений на экране и восклицательных знаков', () => {
     for (const { id, t } of allTexts()) {
