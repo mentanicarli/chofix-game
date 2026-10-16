@@ -22,7 +22,7 @@ function spawn() {
   if (c.syrup) tags.push({ text: SYR[c.syrup].name.toLowerCase() + (c.pumps ? ' ×' + c.pumps : ''), color: SYR[c.syrup].col });
   const slot = SLOTS[Math.min(D.customers.length, SLOTS.length - 1)];
   c.px = -110; c.tx = slot; c.x = slot; c.ph = Math.random() * 6.28; c.walk = Math.random() * 6;
-  c.act = WORLD.addActor({ look: c.look, icon: iconOf(drink), iconKey: drink, iconK: MENUAPI.legacyRecipe(drink, order.size, !!order.cold).cupK || 1, title: NAME[drink], tags, x: c.px, onTap: () => serve(c) });
+  c.act = WORLD.addActor({ look: c.look, icon: iconOf(drink), iconKey: drink, model: MENUAPI.pilotRef(order.id, order.size, !!order.cold), iconK: MENUAPI.legacyRecipe(drink, order.size, !!order.cold).cupK || 1, title: NAME[drink], tags, x: c.px, onTap: () => serve(c) });
   ACT.add(c);
   if (SBX.on) c.t0 = SBX.clock;
   D.customers.push(c);

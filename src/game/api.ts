@@ -28,3 +28,4 @@ export * from './shop';
 export * from './playlist';
 export * from './sandbox';
 export * from './playerModel';
+export * from './drinkModel';

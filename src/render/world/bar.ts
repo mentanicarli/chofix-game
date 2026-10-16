@@ -1,6 +1,8 @@
 import { Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
 import PARTS from '../../assets/art/bar-parts.json';
 import { raster } from './svg';
+import { BAR_UNIT, drinkPx, geomOf, glassHalfWidth, type CeramicGeom, type GlassGeom } from './drinkModel';
+import { specOf, type DrinkSpec, type ModelRef } from '../../game/drinkModel';
 import { GLASS_FILL, STROKE, pc } from './style';
 
 interface Box { x: number; y: number; w: number; h: number }
@@ -34,6 +36,10 @@ export interface BarFrame {
   art: { pts: [number, number][]; alpha: number } | null;
   /** холодный напиток: прозрачный стакан со слоями и льдом; иначе непрозрачная керамическая чашка (стайлгайд, разд. 15) */
   glass: boolean;
+  /** напиток из пилота Н1-2: чашка рисуется моделью (src/render/world/drinkModel.ts) вместо drawShell, масштаб ×2,5 */
+  model: ModelRef | null;
+  /** напиток готов (звонок): у модели вместо живого налива показываются слои спецификации */
+  ready: boolean;
   pitH: number;
   stream: { y: number; h: number; col: string } | null;
   gaugeDeg: number;
@@ -102,6 +108,21 @@ export class BarScene {
   private showcase = new Container();
   private subs = new Map<string, Container>();
   private eq = new Map<string, Container>();
+  /* модель напитка (Н1-2): слои снизу вверх — back (блюдце, корпус), живая жидкость под маской, лёд, front (контур) */
+  private mC = new Container();
+  private mBack = new Sprite();
+  private mIce = new Sprite();
+  private mFront = new Sprite();
+  private mLive = new Container();
+  private mLiveG = new Graphics();
+  private mMask = new Graphics();
+  private mSurfY: number | null = null;
+  private mKey = '';
+  private mLiveKey = '';
+  private mUnit = 1;
+  private mDone = new Sprite();
+  private mTex = new Map<string, { back: Texture; liquid: Texture; ice: Texture | null; front: Texture; box: { x: number; y: number; w: number; h: number } }>();
+  private mLoading = new Set<string>();
   private lastKey = '';
   private lastHop = -1;
   private lastPit = -1;
@@ -259,6 +280,12 @@ export class BarScene {
       this.ice.addChild(g);
     });
     R.addChild(this.cupC);
+    this.mC.position.set(630, 478);
+    this.mLive.addChild(this.mMask, this.mLiveG);
+    this.mLiveG.mask = this.mMask;
+    this.mC.addChild(this.mBack, this.mLive, this.mDone, this.mIce, this.mFront);
+    this.mC.visible = false;
+    R.addChild(this.mC);
     /* питчер из нержавейки под группой (раф): корпус, уровень эспрессо, носик и ручка */
     const pb = new Graphics();
     pb.poly([-34, -72, 34, -72, 26, -4, -26, -4]).fill(0xd8d8d0).stroke({ width: 3, color: INK, join: 'round' });
@@ -327,6 +354,129 @@ export class BarScene {
     this.eq.forEach((c, k) => (c.visible = !!u.eq[k]));
   }
 
+  /** Описание модели по ссылке заказа; нет такого размера или варианта — null (рисуется по-старому). */
+  private modelSpec(m: ModelRef): DrinkSpec | null {
+    try {
+      return specOf(m.id, m.size, m.cold);
+    } catch {
+      return null;
+    }
+  }
+
+  /** Текстуры слоёв модели (блюдце и корпус, лёд, контур) для ключа; грузятся асинхронно, пока их нет, чашка не показывается. */
+  private ensureModelTex(key: string, spec: DrinkSpec): boolean {
+    if (this.mTex.has(key)) return true;
+    if (this.mLoading.has(key)) return false;
+    this.mLoading.add(key);
+    const u = BAR_UNIT[spec.vessel.material];
+    const px = drinkPx(spec, { level: 'full', s: u, saucer: true });
+    const box = px.all.box;
+    const mk = (name: 'back' | 'liquid' | 'ice' | 'front'): Promise<Texture> => raster(px.layer(name).inner, box, this.res);
+    void Promise.all([mk('back'), mk('liquid'), px.parts.ice ? mk('ice') : Promise.resolve(null), mk('front')]).then(([back, liquid, ice, front]) => {
+      this.mTex.set(key, { back, liquid, ice, front, box });
+      this.mLoading.delete(key);
+    });
+    return false;
+  }
+
+  /**
+   * Чашка-модель в баре: back → живая жидкость (прямоугольники слоёв из legacy `barPaint`, 72 px старой чашки = полный налив) под маской → лёд (прозрачность по мере добавления) → front.
+   * Масштаб ×2,5 (`BAR_UNIT`); высота ограничена потолком `HEIGHT_CAP` внутри геометрии. Возвращает false, пока текстуры не готовы.
+   */
+  private paintModel(f: BarFrame, spec: DrinkSpec): boolean {
+    const key = `${spec.id}|${spec.size}|${spec.cold ? 1 : 0}`;
+    if (!this.ensureModelTex(key, spec)) return false;
+    const t = this.mTex.get(key);
+    if (!t) return false;
+    const u = BAR_UNIT[spec.vessel.material];
+    const g = geomOf(spec.vessel);
+    if (this.mKey !== key) {
+      this.mKey = key;
+      this.mUnit = u;
+      for (const [sp, tex] of [[this.mBack, t.back], [this.mFront, t.front], [this.mDone, t.liquid]] as const) {
+        sp.texture = tex;
+        sp.position.set(t.box.x, t.box.y);
+        sp.width = t.box.w;
+        sp.height = t.box.h;
+      }
+      this.mIce.visible = !!t.ice;
+      if (t.ice) {
+        this.mIce.texture = t.ice;
+        this.mIce.position.set(t.box.x, t.box.y);
+        this.mIce.width = t.box.w;
+        this.mIce.height = t.box.h;
+      }
+      this.mLive.scale.set(u);
+      this.mLiveKey = '';
+      this.mMask.clear();
+      if (g.kind === 'glass') {
+        const pts: number[] = [-g.Wt, -g.H, g.Wt, -g.H, g.Wb, g.yb];
+        for (let i = 1; i < 12; i++) {
+          const q = i / 12;
+          const x = (1 - q) * (1 - q) * g.Wb + 2 * (1 - q) * q * 0 + q * q * -g.Wb;
+          const y = (1 - q) * (1 - q) * g.yb + 2 * (1 - q) * q * g.bulge + q * q * g.yb;
+          pts.push(x, y);
+        }
+        pts.push(-g.Wb, g.yb);
+        this.mMask.poly(pts).fill(0xffffff);
+      } else this.mMask.ellipse(0, -g.H, g.W, g.kind === 'ceramic' ? g.ryR : g.ryR).fill(0xffffff);
+    }
+    this.mIce.alpha = Math.max(0, Math.min(1, f.ice));
+    this.mDone.visible = f.ready;
+    this.mLive.visible = !f.ready;
+    const lvl = Math.min(1, Math.max(0, (2 - f.topY) / 72));
+    if (g.kind === 'glass') this.mSurfY = (g.yBot + lvl * (g.yTop - g.yBot)) * u;
+    else if (g.kind === 'ceramic') this.mSurfY = (-g.H + (3 + (1 - lvl) * 9) * g.ky) * u;
+    else this.mSurfY = -g.H * u;
+    const lk = JSON.stringify([f.rects, f.topY, f.topRx, f.topCol, f.topOn, f.art]);
+    if (lk !== this.mLiveKey) {
+      this.mLiveKey = lk;
+      const G = this.mLiveG.clear();
+      if (g.kind === 'glass') this.liveGlass(G, g, f);
+      else if (g.kind === 'ceramic') this.liveCeramic(G, g, f, lvl);
+    }
+    return true;
+  }
+
+  private liveGlass(G: Graphics, g: GlassGeom, f: BarFrame): void {
+    const yAt = (y: number): number => g.yBot + Math.min(1, Math.max(0, (2 - y) / 72)) * (g.yTop - g.yBot);
+    for (const r of f.rects) {
+      if (r.h <= 0.05) continue;
+      const y0 = yAt(r.y);
+      const y1 = yAt(r.y + r.h);
+      G.rect(-(g.Wt + 4), y0, 2 * (g.Wt + 4), y1 - y0).fill(hexNum(r.col));
+    }
+    if (!f.topOn) return;
+    const ys = yAt(f.topY);
+    const rx = glassHalfWidth(g, ys) - 3;
+    const ry = g.ry * (rx / g.Wt);
+    G.ellipse(0, ys, rx, ry).fill(hexNum(f.topCol)).stroke({ width: 1.6 / this.mUnit, color: 0x4a2f25, alpha: 0.25 });
+    this.liveArt(G, f, ys, rx / Math.max(1, f.topRx), ry / 9);
+  }
+
+  private liveCeramic(G: Graphics, g: CeramicGeom, f: BarFrame, lvl: number): void {
+    /* керамика: поверхность видна только в овале обода; чем меньше налито, тем ниже и уже она уходит за переднюю кромку */
+    if (lvl <= 0.12) return;
+    const cy = -g.H + (3 + (1 - lvl) * 9) * g.ky;
+    const rx = (g.W - 6 * g.k) * (0.88 + 0.12 * lvl);
+    const ry = (g.ryR - 3.5 * g.ky) * (0.9 + 0.1 * lvl);
+    G.ellipse(0, cy, rx, ry).fill(hexNum(f.topCol));
+    this.liveArt(G, f, cy, rx / 51, ry / 11);
+  }
+
+  private liveArt(G: Graphics, f: BarFrame, cy: number, sx: number, sy: number): void {
+    if (!f.art || f.art.pts.length < 2) return;
+    const p = f.art.pts;
+    const at = (q: [number, number]): [number, number] => [q[0] * sx, cy + (q[1] - f.topY) * sy];
+    const p0 = at(p[0] as [number, number]);
+    G.moveTo(p0[0], p0[1]);
+    for (let i = 1; i < p.length; i++) {
+      const q = at(p[i] as [number, number]);
+      G.lineTo(q[0], q[1]);
+    }
+    G.stroke({ width: 3 / this.mUnit, color: 0xfbf4e8, alpha: f.art.alpha, join: 'round', cap: 'round' });
+  }
+
   paint(f: BarFrame): void {
     this.pf.position.set(f.pf.x, f.pf.y);
     this.cof.visible = f.cof;
@@ -345,6 +495,8 @@ export class BarScene {
     }
     const bs = f.bell ? 1 + f.bell : 1;
     this.bell.scale.set(bs);
+    const spec = f.model ? this.modelSpec(f.model) : null;
+    const modelReady = !!spec && this.paintModel(f, spec);
     /* чашка */
     /* высота чашки ограничена нишей группы (верх обода не выше y 380): крупные объёмы растут вширь, а не вверх; стайлгайд, раздел 15 */
     const ky = Math.min(f.cupK, CUP_MAX_KY);
@@ -360,7 +512,8 @@ export class BarScene {
       this.lastKey = '';
     }
     this.saucer.scale.set(Math.min(1.4, Math.max(0.85, 0.2 + 0.8 * f.cupK)));
-    this.cupC.visible = !f.pitUnder;
+    this.cupC.visible = !f.pitUnder && !spec;
+    this.mC.visible = !f.pitUnder && modelReady;
     this.pitUnderG.visible = !!f.pitUnder;
     if (f.pitUnder) {
       const h = 6 + 54 * f.pitUnder.level;
@@ -390,7 +543,11 @@ export class BarScene {
     }
     /* струя */
     this.stream.clear();
-    if (f.stream) this.stream.rect(627, f.stream.y, 6, f.stream.h).fill(hexNum(f.stream.col));
+    if (f.stream) {
+      /* струя кончается на поверхности напитка: у модели поверхность считается по её геометрии */
+      const h = modelReady && this.mSurfY !== null ? Math.max(8, 478 + this.mSurfY - f.stream.y) : f.stream.h;
+      this.stream.rect(627, f.stream.y, 6, h).fill(hexNum(f.stream.col));
+    }
     this.steam.alpha += ((f.steam ? 0.9 : 0) - this.steam.alpha) * 0.4;
     if (f.ring) {
       this.ring.alpha = f.ring.a;

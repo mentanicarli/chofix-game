@@ -5,6 +5,8 @@ import MICRO from '../art-src/bar/sc-micro.svg?raw';
 import INDEX from '../index.html?raw';
 import FRONT from '../art-src/bar/counter-front.svg?raw';
 import NOSE from '../art-src/bar/counter-nose.svg?raw';
+import { specOf } from '../src/game/drinkModel';
+import { BAR_UNIT, geomOf } from '../src/render/world/drinkModel';
 
 /* Этап 12.3(2): соотношения размеров по шкале docs/art/scale.md. Бар: 4,64 px/см (кофемашина 75 см = 348 px). Допуск у фона 0,75–1,25. */
 const S_BAR = 4.64;
@@ -78,5 +80,37 @@ describe('подстоечные блоки: опора и стыковка', ()
     const nose = NOSE;
     for (const b of bays) expect(front).toContain(`<rect x="${b.bay.x}" y="630" width="${b.bay.w}"`);
     expect(nose).toMatch(/<rect x="-6" y="607" width="1292"/);
+  });
+});
+
+/* Н1-2: чашка в баре ×2,5 (решение владельца 16.10.2026; было ×3). Реальные ширины по ободу: 0,2 л 8 см, 0,6 л 12 см (docs/art/scale.md). */
+describe('шкала: чашка-модель в баре ×2,5', () => {
+  const CM = 4.64;
+  const widthPx = (id: string, size: '0.2' | '0.3' | '0.4' | '0.6', cold: boolean): number => {
+    const g = geomOf(specOf(id, size, cold).vessel);
+    if (g.kind === 'demitas') return 2 * g.W * BAR_UNIT.demitas;
+    return (g.kind === 'glass' ? 2 * g.Wt : 2 * g.W) * BAR_UNIT[g.kind];
+  };
+  test('стакан и керамика 0,2 л: отношение к реальному размеру около ×2,3–2,5 (исключение чашки, было ×3)', () => {
+    for (const [id, cold] of [['latte', false], ['cappuccino', false]] as const) {
+      const ratio = widthPx(id, '0.2', cold) / (8 * CM);
+      expect(ratio, id).toBeGreaterThanOrEqual(2.2);
+      expect(ratio, id).toBeLessThanOrEqual(2.6);
+    }
+  });
+  test('0,6 л: отношение к реальным 12 см не больше ×2,6', () => {
+    for (const [id, cold] of [['latte', false], ['cappuccino', false], ['cappuccino', true]] as const) {
+      const ratio = widthPx(id, '0.6', cold) / (12 * CM);
+      expect(ratio, id).toBeLessThanOrEqual(2.6);
+      expect(ratio, id).toBeGreaterThanOrEqual(1.8);
+    }
+  });
+  test('эспрессо в демитасе заметно меньше кружки 0,2 л (одинарный не больше 55 %, двойной не больше 60 % ширины)', () => {
+    const mug = widthPx('cappuccino', '0.2', false);
+    expect(widthPx('espresso', '0.2', false) / mug).toBeLessThanOrEqual(0.55);
+    expect(widthPx('espresso_double', '0.2', false) / mug).toBeLessThanOrEqual(0.6);
+  });
+  test('чашка 0,6 л не шире ниши группы кофемашины (около 280 px) и не закрывает группу', () => {
+    expect(widthPx('cappuccino', '0.6', true)).toBeLessThan(280);
   });
 });

@@ -71,7 +71,7 @@ function barPaint(dt) {
     pf: B.pf0, cof: B.dose > 2 && !B.done.shot,
     grindDeg: ((G.grindSet || 3) - 3) * 40, dose: B.dose,
     tamperUp: B.inset === 'tamp', cupK: k, pitUnder,
-    ice: rc.ice ? clamp(cup.ice / rc.ice, 0, 1) : 0, rects, topY, topRx: 46 + (-topY) * .12, topCol, topOn: topY < -10, art, glass: !!(B.c.order && B.c.order.cold),
+    ice: rc.ice ? clamp(cup.ice / rc.ice, 0, 1) : 0, rects, topY, topRx: 46 + (-topY) * .12, topCol, topOn: topY < -10, art, glass: !!(B.c.order && B.c.order.cold), model: MENUAPI.pilotRef(B.c.order.id, B.c.order.size, !!B.c.order.cold), ready: !!B.ready,
     pitH: Math.min(74, (B.pit.ml + B.pit.es) / B.pitCap * 74 * 1.6),
     stream: run ? { y: 354, h: Math.max(8, (pitUnder ? 470 : 478 + topY * k) - 354), col: mixC('#4A2E20', '#C99B6E', clamp((B.shot.t - 14) / 24, 0, 1)) } : null,
     gaugeDeg: run ? 70 + Math.sin(now / 120) * 4 : B.inset === 'steam' ? 40 : -30,
@@ -115,8 +115,10 @@ function drawTicket() {
   const cur = next || cs.find(x => x.cur && !x.done), nDone = cs.filter(x => x.done).length;
   const now = cur ? `<button type="button" data-t="${cur.t}" class="tkStep ${cur === next ? 'next' : 'lock'}">Шаг ${nDone + 1} из ${cs.length}: ${cur.label}</button>` : '<span class="tkStep ready">Готово: позвоните в звонок</span>';
   const ik = Math.round(44 * Math.min(1.15, B.rc.cupK || 1));
+  /* пилот Н1-2: иконка-модель в слоте 49 × 42 px (компактный уровень); остальные напитки пока старой иконкой */
+  const mRef = MENUAPI.pilotRef(o.id, o.size, !!o.cold), mSvg = mRef && WORLD.drinkIcon(mRef, 49, 42), mIcon = mSvg ? `<span class="tkIcon model" aria-hidden="true">${mSvg}</span>` : '';
   UI.tk.innerHTML = `<div class="tkWho"><span>${WHO[c.type] || 'Гость'} · №${c.id}</span><div class="tkBar"><u style="width:${(f * 100).toFixed(0)}%;background:${bar}"></u></div></div>
-<div class="tkMain"><svg class="tkIcon" viewBox="-30 -30 60 60" width="${ik}" height="${ik}" aria-hidden="true"><g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${iconOf(B.drink)}</g></svg><b class="tkName">${NAME[B.drink]}</b>${tags}</div>
+<div class="tkMain">${mIcon || `<svg class="tkIcon" viewBox="-30 -30 60 60" width="${ik}" height="${ik}" aria-hidden="true"><g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${iconOf(B.drink)}</g></svg>`}<b class="tkName">${NAME[B.drink]}</b>${tags}</div>
 <div class="tkNow">${now}<button type="button" class="tkMore" data-tkmore="1" aria-expanded="${tkOpen}" title="Все шаги и реплика гостя">${tkOpen ? '▴' : '▾'}</button></div>
 <div class="tkBtns"><button type="button" data-hint="1" class="${G.hints ? 'on' : ''}" title="Подсказки">?</button><button type="button" data-back="1" title="К залу (Tab)">К залу</button></div>${tkOpen ? `<div class="tkDrop"><div class="tkSay">«${c.order ? c.order.line : ''}»</div><div class="tkSteps${cs.length > 7 ? ' many' : ''}">${chips}</div></div>` : ''}`;
 }

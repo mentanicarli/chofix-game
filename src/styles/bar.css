@@ -15,6 +15,9 @@
 .tkMain { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .tkName { font-size: 20px; font-weight: 800; white-space: nowrap; flex: 0 1 auto; min-width: 60px; max-width: 330px; overflow: hidden; text-overflow: ellipsis; }
 .tkIcon { flex: none; margin: -8px -4px -8px -8px; }
+/* слот иконки-модели в билете: 49 × 42 px при 1280×720 (при 1024×600 сцена сжимается, слот становится 38 × 35) */
+.tkIcon.model { display: flex; align-items: center; justify-content: center; width: 49px; height: 42px; margin: -6px -6px -6px -8px; }
+.tkIcon.model svg { display: block; max-width: 49px; max-height: 42px; }
 .tkMain i { white-space: nowrap; flex: none; font-style: normal; font-size: 13px; font-weight: 800; color: #FFF8EC; padding: 3px 9px; border-radius: 999px; border: 2px solid var(--ink); }
 .tkSteps { display: flex; align-items: center; gap: 3px; flex-wrap: nowrap; }
 .tkSteps b { color: var(--ink-soft); font-size: 14px; margin: 0 1px; }

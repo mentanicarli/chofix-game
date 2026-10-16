@@ -154,24 +154,16 @@ export function groupOf(d: Drink, cold: boolean): ModelGroup {
   return 'C2';
 }
 const ICE_GROUPS: ReadonlySet<ModelGroup> = new Set(['C1', 'C2', 'C3', 'C4', 'C6']);
-/** Лёд заполняет стакан равномерно (правило 16.10.2026, Н1-1б): кубик одного размера на любом стакане, число рядов по высоте, столбцов по ширине. */
-export const ICE_CUBE = 28;
-/** Шаг рядов и столбцов в долях стороны кубика: кубики слегка перекрываются. */
-export const ICE_ROW_PITCH = 0.85;
-export const ICE_COL_PITCH = 0.95;
-/** Доля высоты стакана, занятая льдом от дна (верхний ряд выступает над жидкостью). */
-export const ICE_FILL_SHARE = 0.9;
+/** Лёд v3 (правило владельца): заполняет стакан равномерно от дна до верха. Число рядов по масштабу чашки (`cupScale`): до 0,4 л три ряда, с 0,6 л четыре; столбцов всегда три. */
+export const ICE_FOUR_ROWS_FROM_K = 1.35;
+export const ICE_COLS = 3;
 /** Наклон кубиков, градусы (±). */
-export const ICE_ROT_MAX = 12;
+export const ICE_ROT_MAX = 25;
 export const NO_ICE: IceGrid = { rows: 0, cols: 0 };
-/** Сетка льда стакана: ряды по высоте силуэта (с потолком `HEIGHT_CAP`), столбцы по средней внутренней ширине. У групп без льда — 0 × 0. */
+/** Сетка льда стакана; у горячих, керамики и блендерных напитков 0 × 0. 0,3 л — 3 × 3 (9 кубиков), 0,6 л — 4 × 3 (12). */
 export function iceGridFor(group: ModelGroup, vessel: VesselSpec): IceGrid {
   if (!ICE_GROUPS.has(group) || vessel.material !== 'glass') return NO_ICE;
-  const g = GEOMETRY.glass;
-  const rows = Math.max(2, Math.round((ICE_FILL_SHARE * vesselDims(vessel).height) / (ICE_ROW_PITCH * ICE_CUBE)));
-  const innerWidth = ((g.width + g.bottom) / 2) * vessel.k - 6;
-  const cols = Math.max(2, Math.round(innerWidth / (ICE_COL_PITCH * ICE_CUBE)));
-  return { rows, cols };
+  return { rows: vessel.k >= ICE_FOUR_ROWS_FROM_K ? 4 : 3, cols: ICE_COLS };
 }
 export const iceCount = (g: IceGrid): number => g.rows * g.cols;
 
@@ -368,4 +360,20 @@ export interface CompactIce { rows: number; cols: number; dots: number }
 export function compactIce(spec: DrinkSpec): CompactIce | null {
   if (spec.ice.rows <= 0) return null;
   return { rows: Math.min(4, spec.ice.rows + 1), cols: spec.ice.cols, dots: 2 };
+}
+
+/* ---------- пилот Н1-2: какие напитки рисуются моделью ---------- */
+
+/** Ссылка на модель: напиток, размер, вариант. */
+export interface ModelRef { id: string; size: Size; cold: boolean }
+/** Напитки пилота: латте, капучино (горячие и холодные), апельсиновый бамбл. Остальные до этапа Н2 рисуются по-старому. */
+export const PILOT_IDS: ReadonlySet<string> = new Set(['latte', 'cappuccino', 'orange_bumble']);
+/** Ссылка на модель для заказа или null, если напиток не из пилота или такого размера и варианта у него нет. */
+export function pilotRef(id: string, size: string, cold: boolean): ModelRef | null {
+  const d = drinkById[id];
+  if (!PILOT_IDS.has(id) || !d) return null;
+  /* у напитков только холодных (бамбл) заказ может нести cold = false: вариант определяет сам напиток */
+  const c = d.temp === 'cold' ? true : d.temp === 'hot' ? false : cold;
+  const sz = size as Size;
+  return sizesOf(id, c).includes(sz) ? { id, size: sz, cold: c } : null;
 }

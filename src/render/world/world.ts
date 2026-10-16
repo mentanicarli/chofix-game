@@ -18,6 +18,8 @@ import LAMP2 from '../../assets/art/lamp-2.svgf?raw';
 import { Actor, Limb, type ActorOpts } from './actor';
 import { Ribbon, frameSprite } from './ribbon';
 import { BarScene, type BarFrame, type BarUpgrades } from './bar';
+import { drinkIconSvg } from './drinkModel';
+import { specOf, type ModelRef } from '../../game/drinkModel';
 import { BARISTA_ARM_LEN, BARISTA_K, BARISTA_PIVOT, GUEST_K, SEAT_PIVOT, baristaCells, baristaParts, lookFor, wrapCell, wrapPart, type BaristaFace, type Box, type Look } from './art';
 import { Spring, Spring2, damp, ik2 } from './anim';
 import { Fx } from './fx';
@@ -674,6 +676,15 @@ export class World {
 
   paintBar(f: BarFrame): void {
     if (this.ready && this.barP > 0) this.bar.paint(f);
+  }
+
+  /** SVG иконки напитка из пилота Н1-2 (компактный уровень) для билета; null, если такого размера и варианта нет. */
+  drinkIcon(ref: ModelRef, w: number, h: number): string | null {
+    try {
+      return drinkIconSvg(specOf(ref.id, ref.size, ref.cold), w, h).svg;
+    } catch {
+      return null;
+    }
   }
 
   setBarUpgrades(u: BarUpgrades): void {

@@ -4,6 +4,8 @@ import { Seq, Spring, Spring2, clamp, damp, ease, ik2 } from './anim';
 import { Ribbon, frameSprite } from './ribbon';
 import { rasterAtlas, raster, type Atlas } from './svg';
 import { strokeAt } from './style';
+import { drinkIconPx } from './drinkModel';
+import { specOf, type ModelRef } from '../../game/drinkModel';
 
 const INK = 0x4a2f25;
 const RAD = Math.PI / 180;
@@ -26,6 +28,8 @@ export interface ActorOpts {
   /** Разметка иконки напитка для пузыря заказа (рисуется вокруг точки 0,0). */
   icon: string;
   iconKey: string;
+  /** напиток из пилота Н1-2: в слоте пузыря рисуется модель (компактный уровень) вместо иконки */
+  model?: ModelRef | null;
   /** масштаб иконки чашки в пузыре по объёму напитка */
   iconK?: number;
   title: string;
@@ -51,6 +55,11 @@ const BUBBLE_SCALE = 0.9;
 export type SeatPhase = 'walk' | 'sit' | 'seated' | 'rise';
 
 const iconCache = new Map<string, Promise<Texture>>();
+/* пузырь заказа (Н1-2): слот картинки слева ≈ 38 × 41 px на экране (42 × 45 единиц пузыря), справа полоса терпения и название */
+const SLOT = { cx: -41, cy: 347, w: 42, h: 45 };
+const PAT_X = -12;
+const PAT_Y = 328;
+const PAT_W = 66;
 
 /** Рука или нога: лента из атласа по ломаной и конец (кисть, ступня). */
 export class Limb {
@@ -144,7 +153,7 @@ export class Actor {
   private bubbleOn = false;
   private bubbleK = 0;
   private readonly barG = new Graphics();
-  private patW = 52;
+  private patW = 66;
   private patCol = 0x93a684;
   private patF = 1;
   private t = vr() * 10;
@@ -375,9 +384,9 @@ export class Actor {
   /** Полоска терпения, f от 0 до 1. */
   setPatience(f: number): void {
     this.patF = f;
-    this.patW = Math.round(f * 520) / 10;
+    this.patW = Math.round(f * PAT_W * 10) / 10;
     this.patCol = f > 0.5 ? 0x93a684 : f > 0.25 ? 0xe8b04a : 0xc4694a;
-    this.barG.clear().roundRect(-16, 330, this.patW, 10, 5).fill(this.patCol).stroke({ width: 2, color: INK });
+    this.barG.clear().roundRect(PAT_X, PAT_Y, this.patW, 10, 5).fill(this.patCol).stroke({ width: 2, color: INK });
   }
 
   shake(): void {
@@ -1147,18 +1156,30 @@ export class Actor {
     card.roundRect(-64, 318, 128, 58, 14).fill('#FFF8EC').stroke({ width: 3, color: INK, join: 'round' });
     card.poly([-9, 375, 0, 387, 9, 375]).fill('#FFF8EC');
     card.moveTo(-9, 376).lineTo(0, 387).lineTo(9, 376).stroke({ width: 3, color: INK, join: 'round', cap: 'round' });
-    card.roundRect(-16, 330, 52, 10, 5).fill('#E7D6BC').stroke({ width: 2, color: INK });
+    card.roundRect(PAT_X, PAT_Y, PAT_W, 10, 5).fill('#E7D6BC').stroke({ width: 2, color: INK });
     b.addChild(card, this.barG);
     this.setPatience(1);
-    const name = new Text({ text: o.title, style: { fontFamily: 'Nunito, system-ui, sans-serif', fontSize: 12, fontWeight: '800', fill: '#4A2F25' }, resolution: o.res });
+    const name = new Text({ text: o.title, style: { fontFamily: 'Nunito, system-ui, sans-serif', fontSize: 11, fontWeight: '800', fill: '#4A2F25', align: 'center', wordWrap: true, wordWrapWidth: 78, lineHeight: 12 }, resolution: o.res });
     name.anchor.set(0.5, 0.5);
-    name.position.set(10, 357.5);
-    if (name.width > 100) name.scale.set(100 / name.width);
+    name.position.set(PAT_X + PAT_W / 2, 356);
+    if (name.height > 28) name.scale.set(28 / name.height);
     b.addChild(name);
     const ic = new Sprite();
-    ic.anchor.set(0.5);
-    ic.position.set(-41, 347);
     b.addChild(ic);
+    const spec = o.model ? this.modelSpecOf(o.model) : null;
+    if (spec) {
+      const px = drinkIconPx(spec, SLOT.w, SLOT.h);
+      void raster(px.inner, px.box, 2 * 1).then((t) => {
+        if (!this.alive) return;
+        ic.texture = t;
+        ic.width = px.box.w;
+        ic.height = px.box.h;
+        ic.position.set(SLOT.cx - px.box.w / 2, SLOT.cy - px.box.h / 2);
+      });
+      return;
+    }
+    ic.anchor.set(0.5);
+    ic.position.set(SLOT.cx, SLOT.cy);
     let p = iconCache.get(o.iconKey);
     if (!p) {
       p = raster(`<g stroke="#4A2F25" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">${o.icon}</g>`, { x: -30, y: -30, w: 60, h: 60 }, 2);
@@ -1169,6 +1190,14 @@ export class Actor {
       ic.texture = t;
       ic.width = ic.height = 60 * (o.iconK ?? 1);
     });
+  }
+
+  private modelSpecOf(m: ModelRef): ReturnType<typeof specOf> | null {
+    try {
+      return specOf(m.id, m.size, m.cold);
+    } catch {
+      return null;
+    }
   }
 
   destroy(): void {

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { DRINKS } from '../src/game/menu';
 import {
-  COMPACT_MAX_BANDS, DEMITAS_K, ICE_CUBE, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
+  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
   sizesOf, specOf, variantsOf, vesselDims, vesselOf, type ModelGroup
 } from '../src/game/drinkModel';
 import { cupScale } from '../src/game/volumes';
@@ -61,29 +61,38 @@ describe('описания всех напитков', () => {
       if (s.cold) expect(s.vessel.material).toBe('glass');
     }
   });
-  test('лёд: у горячих нет, у холодных 9–12 кубиков сеткой (3 ряда, 3 или 4 столбца), у блендерных нет', () => {
+  test('лёд v3: у горячих и блендерных нет, у остальных холодных 9–12 кубиков (3 или 4 ряда по 3)', () => {
     for (const s of specs) {
       const n = iceCount(s.ice);
       if (!s.cold || s.group === 'C5') expect(n, `${s.id} ${s.size} ${s.cold}`).toBe(0);
       else {
         expect(n, `${s.id} ${s.size}`).toBeGreaterThanOrEqual(9);
         expect(n, `${s.id} ${s.size}`).toBeLessThanOrEqual(12);
-        expect(s.ice.rows).toBe(3);
-        expect([3, 4]).toContain(s.ice.cols);
+        expect([3, 4]).toContain(s.ice.rows);
+        expect(s.ice.cols).toBe(ICE_COLS);
       }
     }
   });
-  test('лёд: число столбцов растёт с размером стакана, кубик один и тот же', () => {
-    expect(ICE_CUBE).toBe(28);
-    const cols = (id: string, size: '0.3' | '0.4' | '0.6'): number => specOf(id, size, true).ice.cols;
-    expect(cols('orange_bumble', '0.3')).toBe(3);
-    expect(cols('orange_bumble', '0.4')).toBe(4);
-    expect(cols('orange_bumble', '0.6')).toBe(4);
-    expect(iceCount(specOf('orange_bumble', '0.3', true).ice)).toBe(9);
-    expect(iceCount(specOf('orange_bumble', '0.6', true).ice)).toBe(12);
+  test('лёд v3: ряды по cupScale — 0,3 л 3 × 3, 0,6 л 4 × 3', () => {
+    expect(ICE_COLS).toBe(3);
+    expect(ICE_ROT_MAX).toBe(25);
+    expect(ICE_FOUR_ROWS_FROM_K).toBeGreaterThan(cupScale(400));
+    expect(ICE_FOUR_ROWS_FROM_K).toBeLessThan(cupScale(600));
+    expect(specOf('orange_bumble', '0.3', true).ice).toEqual({ rows: 3, cols: 3 });
+    expect(specOf('orange_bumble', '0.4', true).ice).toEqual({ rows: 3, cols: 3 });
+    expect(specOf('orange_bumble', '0.6', true).ice).toEqual({ rows: 4, cols: 3 });
     expect(iceGridFor('C2', specOf('latte', '0.3', true).vessel)).toEqual(specOf('latte', '0.3', true).ice);
     expect(iceGridFor('H3', specOf('cappuccino', '0.2', false).vessel)).toEqual({ rows: 0, cols: 0 });
     expect(iceGridFor('C5', specOf('milkshake_vanilla', '0.4', true).vessel)).toEqual({ rows: 0, cols: 0 });
+  });
+  test('пилот: латте, капучино, бамбл; ссылка только для существующих размеров и вариантов', () => {
+    expect([...PILOT_IDS].sort()).toEqual(['cappuccino', 'latte', 'orange_bumble']);
+    expect(pilotRef('latte', '0.2', false)).toEqual({ id: 'latte', size: '0.2', cold: false });
+    expect(pilotRef('cappuccino', '0.3', true)).toEqual({ id: 'cappuccino', size: '0.3', cold: true });
+    expect(pilotRef('latte', '0.2', true)).toBeNull();
+    expect(pilotRef('orange_bumble', '0.3', false)).toEqual({ id: 'orange_bumble', size: '0.3', cold: true });
+    expect(pilotRef('orange_bumble', '0.2', true)).toBeNull();
+    expect(pilotRef('espresso', '0.2', false)).toBeNull();
   });
   test('цвета в формате #rrggbb', () => {
     for (const s of specs) {
