@@ -72,6 +72,12 @@ const hexNum = (c: string): number => {
 const CUP_MAX_KY = 1.12;
 
 /** Четыре слоя модели одного ключа; `destroy` освобождает видеопамять при вытеснении из кэша. */
+/** Ключ живого налива: меняется только когда меняется то, что рисуется (дешевле JSON.stringify каждый кадр). */
+function liveKey(f: BarFrame): string {
+  let k = `${f.topY}|${f.topRx}|${f.topCol}|${f.topOn ? 1 : 0}|${f.art ? f.art.pts.length + ':' + f.art.alpha : ''}`;
+  for (const r of f.rects) k += `|${r.y},${r.h},${r.col}`;
+  return k;
+}
 class ModelTex {
   constructor(readonly back: Texture, readonly liquid: Texture, readonly ice: Texture | null, readonly front: Texture, readonly box: { x: number; y: number; w: number; h: number }) {}
   destroy(): void {
@@ -133,6 +139,10 @@ export class BarScene {
   /** Текстуры слоёв модели: LRU на 40 ключей (напиток, размер, уровень, режим, разрешение), вытесненное уничтожается. */
   private mTex = new TexCache<ModelTex>();
   private mLoading = new Set<string>();
+  private mSpecRef: ModelRef | null = null;
+  private mSpec: DrinkSpec | null = null;
+  private mTexKey = '';
+  private mTexSpec: DrinkSpec | null = null;
   private lastKey = '';
   private lastHop = -1;
   private lastPit = -1;
@@ -366,11 +376,15 @@ export class BarScene {
 
   /** Описание модели по ссылке заказа; нет такого размера или варианта — null (рисуется по-старому). */
   private modelSpec(m: ModelRef): DrinkSpec | null {
+    /* описание считается из рецепта (recipeNumbers), поэтому не каждый кадр, а при смене ссылки */
+    if (this.mSpecRef && this.mSpecRef.id === m.id && this.mSpecRef.size === m.size && this.mSpecRef.cold === m.cold) return this.mSpec;
+    this.mSpecRef = m;
     try {
-      return specOf(m.id, m.size, m.cold);
+      this.mSpec = specOf(m.id, m.size, m.cold);
     } catch {
-      return null;
+      this.mSpec = null;
     }
+    return this.mSpec;
   }
 
   /** Текстуры слоёв модели (блюдце и корпус, лёд, контур) для ключа; грузятся асинхронно, пока их нет, чашка не показывается. */
@@ -394,7 +408,11 @@ export class BarScene {
    * Масштаб ×2,5 (`BAR_UNIT`); высота ограничена потолком `HEIGHT_CAP` внутри геометрии. Возвращает false, пока текстуры не готовы.
    */
   private paintModel(f: BarFrame, spec: DrinkSpec): boolean {
-    const key = modelTexKey(spec, 'full', this.res);
+    if (this.mTexSpec !== spec) {
+      this.mTexSpec = spec;
+      this.mTexKey = modelTexKey(spec, 'full', this.res);
+    }
+    const key = this.mTexKey;
     if (!this.ensureModelTex(key, spec)) return false;
     const t = this.mTex.get(key);
     if (!t) return false;
@@ -438,12 +456,13 @@ export class BarScene {
     if (g.kind === 'glass') this.mSurfY = (g.yBot + lvl * (g.yTop - g.yBot)) * u;
     else if (g.kind === 'ceramic') this.mSurfY = (-g.H + (3 + (1 - lvl) * 9) * g.ky) * u;
     else this.mSurfY = -g.H * u;
-    const lk = JSON.stringify([f.rects, f.topY, f.topRx, f.topCol, f.topOn, f.art]);
+    const lk = liveKey(f);
     if (lk !== this.mLiveKey) {
       this.mLiveKey = lk;
       const G = this.mLiveG.clear();
       if (g.kind === 'glass') this.liveGlass(G, g, f);
       else if (g.kind === 'ceramic') this.liveCeramic(G, g, f, lvl);
+      else if (lvl > 0.12) G.ellipse(0, -g.H + 1.4 * g.k, g.W - 4 * g.k, g.ryR - 2.6 * g.k).fill(hexNum(f.topCol));
     }
     return true;
   }

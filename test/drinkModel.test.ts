@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { DRINKS } from '../src/game/menu';
 import {
-  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
+  COMPACT_MAX_BANDS, DEMITAS_K, ICE_COLS, ICE_FOUR_ROWS_FROM_K, ICE_ROT_MAX, PILOT_IDS, HOT_MODEL_IDS, MODEL_TAGS, pilotRef, GLASS_HOT, HEIGHT_CAP, LOD_FULL_MIN_PX, allSpecs, compactIce, groupOf, iceCount, iceGridFor, layersFor, lodFor, mixColor,
   sizesOf, specOf, variantsOf, vesselDims, vesselOf, type ModelGroup
 } from '../src/game/drinkModel';
 import { cupScale } from '../src/game/volumes';
@@ -92,7 +92,61 @@ describe('описания всех напитков', () => {
     expect(pilotRef('latte', '0.2', true)).toBeNull();
     expect(pilotRef('orange_bumble', '0.3', false)).toEqual({ id: 'orange_bumble', size: '0.3', cold: true });
     expect(pilotRef('orange_bumble', '0.2', true)).toBeNull();
-    expect(pilotRef('espresso', '0.2', false)).toBeNull();
+    expect(pilotRef('milkshake_vanilla', '0.4', true)).toBeNull();
+    expect(pilotRef('tea_sencha', '0.4', true)).toBeNull(); /* холодные варианты ждут Н2-2 */
+    expect(pilotRef('tea_sencha', '0.4', false)).toEqual({ id: 'tea_sencha', size: '0.4', cold: false });
+  });
+  test('Н2-1: 24 горячих вида на модели (H1–H8), по группам таблицы', () => {
+    expect(HOT_MODEL_IDS.size).toBe(24);
+    const grp: Record<string, string[]> = {
+      H1: ['espresso', 'espresso_double'], H2: ['americano', 'hot_bumble'], H3: ['cappuccino', 'cappuccino_pumpkin'], H4: ['flat_white'],
+      H5: ['vanilla_raf', 'cocoa', 'raf', 'raf_halva'], H6: ['tea_sencha', 'tea_assam', 'tea_hibiscus', 'tea_buckwheat', 'tea_currant'],
+      H7: ['latte', 'latte_sakura', 'latte_banana', 'latte_lemon', 'latte_coconut'], H8: ['matcha_latte', 'chicory_latte', 'matcha_coconut']
+    };
+    const seen = new Set<string>();
+    for (const [g, ids] of Object.entries(grp)) {
+      for (const id of ids) {
+        seen.add(id);
+        expect(HOT_MODEL_IDS.has(id), id).toBe(true);
+        const hot = specs.filter((x) => x.id === id && !x.cold);
+        expect(hot.length, id).toBeGreaterThan(0);
+        for (const sp of hot) {
+          expect(sp.group, id).toBe(g);
+          expect(sp.ice, id).toEqual({ rows: 0, cols: 0 });
+          expect(pilotRef(id, sp.size, false), id).toEqual({ id, size: sp.size, cold: false });
+          expect(sp.vessel.material, id).toBe(g === 'H1' ? 'demitas' : g === 'H7' || g === 'H8' ? 'glass' : 'ceramic');
+          expect(sp.liquid.reduce((a, l) => a + l.frac, 0)).toBeCloseTo(1, 5);
+        }
+      }
+    }
+    expect(seen.size).toBe(24);
+  });
+  test('Н2-1: цвета верха и детали по таблице', () => {
+    const top = (id: string, size: '0.2' | '0.3' | '0.4' | '0.6' = '0.4') => specOf(id, size, false).top;
+    expect(top('espresso', '0.2').ring).toBe('#C99B6E');
+    expect(top('cappuccino_pumpkin').specks).toBe('#7A4A38');
+    expect(specOf('cappuccino_pumpkin', '0.4', false).detail).toBe('spice_specks');
+    expect(top('flat_white', '0.2').art).toBe('tulip');
+    expect(top('cappuccino').art).toBe('heart');
+    expect(top('tea_sencha').color.toLowerCase()).toBe('#c8b84a');
+    expect(top('tea_hibiscus').color.toLowerCase()).toBe('#b4234a');
+    expect(top('tea_assam').color.toLowerCase()).toBe('#a0501e');
+    expect(top('tea_buckwheat', '0.2').color.toLowerCase()).toBe('#b88a3a');
+    expect(specOf('tea_currant', '0.4', false).detail).toBe('cloudy');
+    for (const id of ['latte_sakura', 'latte_lemon', 'latte_coconut', 'matcha_coconut']) {
+      expect(top(id).color.toLowerCase(), id).toBe('#b9a3d4');
+      expect(specOf(id, '0.4', false).detail, id).toBe('taro_cap');
+    }
+    expect(top('latte_banana').color.toLowerCase()).toBe('#e9d29a');
+    expect(top('cocoa').ring?.toLowerCase()).toBe('#6b4331');
+    expect(top('raf_halva').ring?.toLowerCase()).toBe('#e9d29a');
+    expect(top('raf').ring).toBeUndefined();
+    /* горячий бамбл: слои сок и эспрессо, сверху эспрессо (в керамике не видны), подпись «с соком» */
+    const hb = specOf('hot_bumble', '0.3', false);
+    expect(hb.liquid.length).toBe(2);
+    expect(MODEL_TAGS.hot_bumble).toBe('с соком');
+    /* американано и горячий бамбл — разные цвета верха */
+    expect(top('americano').color).not.toBe(hb.top.color);
   });
   test('цвета в формате #rrggbb', () => {
     for (const s of specs) {

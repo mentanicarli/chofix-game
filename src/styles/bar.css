@@ -210,3 +210,4 @@ html.kbd .dcard :focus-visible { outline: 3px solid #E8B04A; outline-offset: 2px
 /* Н1-3: модель напитка в окне «Новый напиток» (полный уровень, крупнее, чем в книге) */
 .dcard .dcModel { display: flex; align-items: flex-end; justify-content: center; margin: 0 0 8px; }
 .dcard .dcModel svg { display: block; max-width: 100%; height: auto; overflow: visible; }
+.dcard .mdlTag { margin: -4px 0 8px; text-align: center; font-size: 14px; font-weight: 800; color: #7A4A38; }

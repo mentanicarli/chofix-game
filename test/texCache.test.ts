@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { allSpecs, specOf } from '../src/game/drinkModel';
 import { MODEL_TEX_CAP, TexCache, modelTexKey, type Destroyable } from '../src/render/world/texCache';
-import { drinkArtSvg } from '../src/render/world/drinkModel';
+import { HOT_MODEL_IDS } from '../src/game/drinkModel';
+import { drinkArtSvg, drinkParts } from '../src/render/world/drinkModel';
 import { bookHTML } from '../src/ui/book';
 
 /** Фальшивая текстура: считает, сколько штук живых. */
@@ -64,6 +65,35 @@ describe('кэш текстур модели (LRU 40)', () => {
     expect(modelTexKey(specOf('latte', '0.3', true), 'full', 1)).not.toBe(modelTexKey(a, 'full', 1));
     const all = allSpecs().map((s) => modelTexKey(s, 'full', 1));
     expect(new Set(all).size).toBe(all.length);
+  });
+});
+
+describe('Н2-1: 24 горячих вида в кэше', () => {
+  test('обход всех горячих видов × размеров × уровней × разрешений оставляет в кэше ровно 40 живых, ключи уникальны', () => {
+    Fake.live = 0;
+    const c = new TexCache<Fake>();
+    const hot = allSpecs().filter((s) => !s.cold && HOT_MODEL_IDS.has(s.id));
+    expect(new Set(hot.map((s) => s.id)).size).toBe(24);
+    const keys: string[] = [];
+    for (const sp of hot) for (const lod of ['full', 'compact'] as const) for (const res of [1, 2]) keys.push(modelTexKey(sp, lod, res));
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.length).toBeGreaterThan(40);
+    for (const k of keys) c.set(k, new Fake());
+    expect(c.size).toBe(40);
+    expect(Fake.live).toBe(40);
+    c.clear();
+    expect(Fake.live).toBe(0);
+  });
+  test('каждый горячий вид рисуется в обоих уровнях и не пустой', () => {
+    for (const sp of allSpecs().filter((s) => !s.cold && HOT_MODEL_IDS.has(s.id))) {
+      for (const level of ['full', 'compact'] as const) {
+        const p = drinkParts(sp, { level, s: 1, saucer: true, steamMark: true });
+        expect(p.back.length, sp.id).toBeGreaterThan(50);
+        expect(p.liquid.length, sp.id).toBeGreaterThan(20);
+        expect(p.front.length, sp.id).toBeGreaterThan(20);
+        expect(p.bbox.x1 - p.bbox.x0, sp.id).toBeGreaterThan(20);
+      }
+    }
   });
 });
 

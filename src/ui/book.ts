@@ -2,6 +2,7 @@
 import { ADDONS, ALT_MILK, BOTTLES, DRINKS, DRINK_NEEDS, ENGINE, EQUIPMENT, FOOD, MAX_RANK, SYRUPS, needsMilk, rankInfo } from '../game/menu';
 import { lesson, lessonKeysOfDrink } from '../game/lessons';
 import { cardVariants, recipeCard, sizeLabelOf, type RecipeCard } from '../game/recipeCard';
+import { MODEL_TAGS } from '../game/drinkModel';
 import { drinkText, glossaryGroups, stepsForShots } from '../game/content';
 import { TUTORIALS, coachSteps, equipmentName, tutorialEqsOfDrink } from '../game/tutorial';
 import type { Drink, Family, Size, Temp } from '../game/types';
@@ -117,7 +118,7 @@ function card(
   const list = (xs: readonly string[]): string => `<ol class="bkSteps bkHuman">${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`;
   return `<div class="bk${made && !miss.length ? '' : ' soon'}" data-drink="${esc(d.id)}"><div class="bkTop"><b>${esc(d.name)}</b><em>${esc(FAM[d.family] || '')}</em></div>
 <div class="bkSub">${TEMP[d.temp]} · ранг ${d.rank} «${esc(rankInfo(d.rank).title)}»</div>
-${model ? `<div class="bkModel" aria-hidden="true">${model}</div>` : ''}<div class="imgSlot bkImg" data-img="${esc(d.id)}" hidden></div>
+${model ? `<div class="bkModel" aria-hidden="true">${model}</div>${MODEL_TAGS[d.id] ? `<p class="mdlTag">${esc(MODEL_TAGS[d.id])}</p>` : ''}` : ''}<div class="imgSlot bkImg" data-img="${esc(d.id)}" hidden></div>
 ${t ? `<p class="bkWhat">${esc(t.what)}</p>` : ''}<p class="bkIng">Ингредиенты: ${esc(d.ing.join(', '))}</p>${pickBlock(d, pick)}
 <h5 class="bkH">Как готовится</h5>${list(human)}${ice.length ? `<h5 class="bkH">Если со льдом</h5>${list(ice)}` : ''}${t ? `<p class="bkDiff"><b>Чем отличается.</b> ${esc(t.differs)}</p>` : ''}${ex}${need}${hintBlock(d, tut)}</div>`;
 }

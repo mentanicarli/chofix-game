@@ -216,7 +216,9 @@ function build(d: Drink, r: Recipe, group: ModelGroup): Body {
     }
     case 'H5': {
       const color = d.id === 'cocoa' ? pal.powder : d.id === 'raf_halva' ? CREAM_GOLD : CREAM;
-      return { liquid: toLayers([{ color, vol: r.drinkMl }]), top: { color: FOAM }, detail: null };
+      /* какао и халва отличаются от рафа цветным кольцом по краю пены, иначе под одной пеной их не различить */
+      const ring = d.id === 'cocoa' ? pal.powder : d.id === 'raf_halva' ? CREAM_GOLD : undefined;
+      return { liquid: toLayers([{ color, vol: r.drinkMl }]), top: ring ? { color: FOAM, ring } : { color: FOAM }, detail: null };
     }
     case 'H6': {
       const juice = r.juice ?? 0;
@@ -368,12 +370,21 @@ export function compactIce(spec: DrinkSpec): CompactIce | null {
 export interface ModelRef { id: string; size: Size; cold: boolean }
 /** Напитки пилота: латте, капучино (горячие и холодные), апельсиновый бамбл. Остальные до этапа Н2 рисуются по-старому. */
 export const PILOT_IDS: ReadonlySet<string> = new Set(['latte', 'cappuccino', 'orange_bumble']);
-/** Ссылка на модель для заказа или null, если напиток не из пилота или такого размера и варианта у него нет. */
+/** Горячие напитки групп H1–H8 (Н2-1): рисуются моделью только в горячем варианте, холодные варианты ждут Н2-2. 24 вида вместе с горячими латте и капучино. */
+export const HOT_MODEL_IDS: ReadonlySet<string> = new Set([
+  'espresso', 'espresso_double', 'americano', 'hot_bumble', 'cappuccino', 'cappuccino_pumpkin', 'flat_white',
+  'vanilla_raf', 'cocoa', 'raf', 'raf_halva', 'tea_sencha', 'tea_assam', 'tea_hibiscus', 'tea_buckwheat', 'tea_currant',
+  'latte', 'latte_sakura', 'latte_banana', 'latte_lemon', 'latte_coconut', 'matcha_latte', 'chicory_latte', 'matcha_coconut'
+]);
+/** Подпись под моделью в книге и окне «Новый напиток», когда одной картинки мало (решение владельца: горячий бамбл выглядит как американано, отличие только подписью). */
+export const MODEL_TAGS: Readonly<Record<string, string>> = { hot_bumble: 'с соком' };
+/** Ссылка на модель для заказа или null, если напиток (в этом варианте) ещё рисуется по-старому или такого размера и варианта у него нет. */
 export function pilotRef(id: string, size: string, cold: boolean): ModelRef | null {
   const d = drinkById[id];
-  if (!PILOT_IDS.has(id) || !d) return null;
+  if (!d) return null;
   /* у напитков только холодных (бамбл) заказ может нести cold = false: вариант определяет сам напиток */
   const c = d.temp === 'cold' ? true : d.temp === 'hot' ? false : cold;
+  if (!PILOT_IDS.has(id) && !(!c && HOT_MODEL_IDS.has(id))) return null;
   const sz = size as Size;
   return sizesOf(id, c).includes(sz) ? { id, size: sz, cold: c } : null;
 }

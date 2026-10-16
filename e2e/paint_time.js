@@ -15,7 +15,7 @@ const SEC = Number(process.argv[3] || 6), REP = Number(process.argv[4] || 3);
   await p.waitForFunction(() => window.__dbg && window.__dbg.G);
   await p.evaluate(() => { const G = __dbg.G; ['ice', 'tea', 'matcha', 'powders', 'juice', 'blender', 'boba'].forEach(k => G['eq_' + k] = true); G.milk = true; G.tutOff = true; G.hints = false; __dbg.applyUpgrades(); __dbg.D.nextArr = 1e9; __dbg.SBX.next = { drink: 'latte', size: '0.3', cold: false }; __dbg.spawn(); __dbg.D.customers.forEach(c => { c.pat = c.max = 1e9; }); });
   await p.waitForTimeout(1500);
-  for (const [id, size, cold] of [['latte', '0.3', false], ['cappuccino', '0.4', true], ['orange_bumble', '0.6', true], ['americano', '0.3', false]]) {
+  for (const [id, size, cold] of [['latte', '0.3', false], ['cappuccino', '0.4', true], ['orange_bumble', '0.6', true], ['americano', '0.3', false], ['espresso', '0.2', false], ['tea_sencha', '0.4', false], ['latte_sakura', '0.4', false]]) {
     const rs = [];
     for (let r = 0; r < REP; r++) {
       await p.evaluate(() => __dbg.resetBar());

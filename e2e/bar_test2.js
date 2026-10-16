@@ -5,6 +5,7 @@
    Ключи механики: espresso, espresso2 (двойной), americano, icedamericano, cappuccino, icedcappuccino, latte, icedlatte, flatwhite, raf, vanillaraf, rafhalva.
    Цели берутся из самой игры (BR.rc: шоты, молоко, вода, лёд, зона пара), поэтому сценарий не зависит от размера. */
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
+const PANEL = new Set(['juice', 'tonic', 'powder', 'boba', 'topping', 'whisk', 'blend', 'shake', 'foam', 'whip', 'layer']);
 const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink, size] = s.split(':'); return { drink, size: size || '0.2' }; });
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, endDay, barOpen, spawn };');
@@ -15,7 +16,7 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
   const errs = []; require('./pw').watch(p, errs);
   await p.addInitScript(() => { let a = 1234567; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; /* mulberry32: детерминированный прогон */ });
   /* песочница: день 6, «Средний», всё доступное: ранг 3 с молоком и льдогенератором */
-  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: 6, profile: 'medium' }); await p.waitForTimeout(400);
+  await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: Number(process.env.DAY || 6), profile: 'medium' }); await p.waitForTimeout(400);
   const st = () => p.evaluate(() => { const B = window.__dbg.BR; return B ? { inset: B.inset, shot: B.shotIdx + '/' + B.shots, dose: +B.dose.toFixed(1), un: +B.uneven.toFixed(2), tp: B.tampPhase, P: +B.tampP.toFixed(1), sh: B.shot.st, ml: +B.shot.ml.toFixed(1), t: +B.shot.t.toFixed(1), done: Object.keys(B.done).join(','), ready: B.ready, res: JSON.stringify(B.res), pit: JSON.stringify(B.pit), lvl: B.pourLevel } : null; });
   const ic = async (x, y) => { const r = await p.evaluate(() => { const r = document.querySelector('#bi').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }); return [r[0] + x * r[2] / 440, r[1] + y * r[3] / 450]; };
   const zone = z => p.click(`[data-z=${z}]`, { force: true });
@@ -27,7 +28,7 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
     await p.evaluate(() => { const d = window.__dbg; if (!d.D.customers.length) d.spawn(); });
     await waitFor(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, 60000);
     await p.evaluate(({ d, size }) => {
-      const M = window.__MENUAPI, dk = M.drinkOfKey(d), cold = /^iced/.test(d), c = window.__dbg.D.customers[0];
+      const M = window.__MENUAPI, dk = M.drinkOfKey(d), cold = /^iced/.test(d) || M.drinkById[dk.id].temp === 'cold', c = window.__dbg.D.customers[0];
       c.drink = d; c.order.key = d; c.order.id = dk.id; c.order.name = M.drinkById[dk.id].name; c.order.size = size; c.order.cold = cold; c.order.food = null;
       c.order.shots = M.legacyRecipe(d, size, cold).shots; c.strong = false; c.syrup = d === 'vanillaraf' ? 'vanilla' : null; c.pumps = 2; c.pat = c.max = 999;
     }, { d: drink, size });
@@ -62,6 +63,13 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
         await waitFor(() => window.__dbg.BR.shot.ml >= window.__dbg.BR.tgtMl - .8 || window.__dbg.BR.shot.st !== 'run', null, 40000);
         await zone('stop'); await p.waitForTimeout(400);
         console.log(tag, 'шот', shotN, await st());
+      } else if (PANEL.has(t)) {
+        /* станции нового ядра (сок, слои и т. п.): открыть зону, держать кнопку «Лить» до цели, «Готово» */
+        await zone(await p.evaluate(tt => window.__MENUAPI.TASK_ZONE[tt], t)); await p.waitForSelector('#xPanel [data-xhold]', { timeout: 10000 }); await p.waitForTimeout(250);
+        const bx = await p.locator('#xPanel [data-xhold]').boundingBox(); await p.mouse.move(bx.x + bx.width / 2, bx.y + bx.height / 2); await p.mouse.down();
+        await waitFor(tt => { const B = window.__dbg.BR, st = B.xs[tt]; return st.ml !== undefined ? st.ml >= st.target - 1 : st.t >= st.target - 0.05; }, t, 60000);
+        await p.screenshot({ path: `${out}_${tag}_6${t}.png` }); await p.mouse.up(); await p.click('#xPanel [data-xdone]'); await p.waitForTimeout(400);
+        const ok = await p.evaluate(tt => !!window.__dbg.BR.done[tt], t); if (!ok) throw new Error('шаг ' + t + ' не засчитан');
       } else if (t === 'ice') {
         await zone('ice'); await p.waitForTimeout(250);
         await hold(() => window.__dbg.BR.cup.ice >= window.__dbg.BR.rc.ice - 1); await p.screenshot({ path: `${out}_${tag}_5ice.png` }); await done();
