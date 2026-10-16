@@ -101,3 +101,54 @@ export function cameraAt(from: number, to: number, elapsed: number, duration: nu
   if (duration <= 0) return to;
   return from + (to - from) * easeInOut(elapsed / duration);
 }
+
+/* ---------- управление камерой (Б1-2) ---------- */
+
+/**
+ * Листание для игрока. Пока боковые секции — заглушки (до блока 30), оно включено только в #dev; блок 30 переключит константу.
+ * Через эту функцию проходят клавиши, перетаскивание и стрелки (legacy: `sectionsPlayable()` в 06-bar.js).
+ */
+export const SECTIONS_PLAYABLE_FOR_PLAYER = false;
+export const sectionsPlayable = (dev: boolean): boolean => dev || SECTIONS_PLAYABLE_FOR_PLAYER;
+
+/** Секция, у которой камера стоит ровно на остановке; между остановками — null. */
+export function sectionAtCam(cam: number): SectionId | null {
+  return SECTION_ORDER.find((s) => SECTION_CAM[s] === cam) ?? null;
+}
+
+/** Куда можно пойти из секции: только на соседнюю ОТКРЫТУЮ. */
+export function allowedMoves(section: SectionId, open: SectionsOpen): SectionId[] {
+  const n = neighbors(section);
+  return [n.left, n.right].filter((s): s is SectionId => s !== null && open[s]);
+}
+
+/** Шаг клавишей или стрелкой: dir −1 влево, +1 вправо; null, если туда нельзя. */
+export function moveTarget(section: SectionId, dir: -1 | 1, open: SectionsOpen): SectionId | null {
+  const n = neighbors(section);
+  const t = dir < 0 ? n.left : n.right;
+  return t !== null && open[t] ? t : null;
+}
+
+/** Пороги перетаскивания фона. */
+export const DRAG_START_PX = { mouse: 8, touch: 12 } as const;
+export const DRAG_SWITCH_PX = 120;
+export const DRAG_SWITCH_SPEED = 0.5; /* px/мс */
+
+/** Живое положение камеры при перетаскивании: мир тянется за курсором (cam = старт − dx), упор у крайних открытых остановок и не дальше соседней. */
+export function dragCam(startCam: number, dx: number, open: SectionsOpen): number {
+  const lo = Math.max(open.L ? SECTION_CAM.L : SECTION_CAM.C, startCam - SECTION_W);
+  const hi = Math.min(open.R ? SECTION_CAM.R : SECTION_CAM.C, startCam + SECTION_W);
+  return Math.min(hi, Math.max(lo, startCam - dx));
+}
+
+/**
+ * Куда доедет камера при отпускании: на соседнюю секцию в сторону жеста, если сдвиг больше 120 px или скорость больше 0,5 px/мс,
+ * иначе возвращается на старую остановку. dx и vx — движение курсора (px сцены, px/мс), vx считается по последним ~100 мс.
+ */
+export function dragTarget(startCam: number, dx: number, vx: number, open: SectionsOpen): SectionId {
+  const from = sectionAtCam(startCam) ?? 'C';
+  const dir = Math.abs(dx) > DRAG_SWITCH_PX ? Math.sign(dx) : Math.abs(vx) > DRAG_SWITCH_SPEED ? Math.sign(vx) : 0;
+  if (dir === 0) return from;
+  /* курсор вправо — мир вправо — камера влево */
+  return moveTarget(from, dir > 0 ? -1 : 1, open) ?? from;
+}

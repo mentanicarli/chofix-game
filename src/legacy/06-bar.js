@@ -103,7 +103,7 @@ dcEl.addEventListener('click', e => {
 /* ---------- камера бара: три остановки L «Чайный бар» · C «Кофейный бар» · R «Холодный бар» (Б1-1, docs/design/sections.md) ----------
    Навигации игрока пока нет (клавиши, перетаскивание, стрелки — промпты 2–4 блока Б1): в обычной игре камера не двигается и всегда в центре,
    даже если покупки уже «открыли» боковую секцию (sectionsOpen). Боковые секции (заглушки) видны только в #dev через window.__sec / __dbg.goSection. */
-const CAM = { sec: 'C', from: 0, to: 0, t: 0, moving: false, x: 0 };
+const CAM = { sec: 'C', from: 0, to: 0, t: 0, moving: false, drag: false, x: 0 };
 function secOpenNow() { const o = MENUAPI.sectionsOpen(G || {}); return DEV ? { L: true, C: true, R: true } : o; }
 function camSync() { WORLD.setBarSections(secOpenNow()); WORLD.setBarCamera(CAM.x); }
 /* instant — без анимации (вход в бар); иначе переход 0,3 с в camTick. Закрытая секция недоступна. */
@@ -119,6 +119,50 @@ function camTick(dt) {
   CAM.t += dt;
   if (CAM.t >= MENUAPI.CAM_SECONDS) { CAM.moving = false; CAM.x = CAM.to; } else CAM.x = MENUAPI.cameraAt(CAM.from, CAM.to, CAM.t);
   WORLD.setBarCamera(CAM.x);
+}
+/* ---------- управление камерой (Б1-2): гейт, клавиши, перетаскивание, стрелки ----------
+   Листание включено только в #dev (MENUAPI.sectionsPlayable); блок 30 переключит константу в sections.ts. Без #dev ничего из этого не создаётся и не срабатывает. */
+const sectionsPlayable = () => MENUAPI.sectionsPlayable(DEV);
+/* листать нельзя: бар закрыт, меню/пауза/книга/магазин (#screen), карточка, окно станции, удержание, идущий переход, перетаскивание */
+function camBlocked() {
+  return !sectionsPlayable() || !G || G.phase !== 'day' || paused || !BR || !stage.classList.contains('inbar') || !scr.hidden || !!CARDON || !!BR.inset || BR.hold || CAM.moving || CAM.drag;
+}
+function camStep(dir) {
+  if (camBlocked()) return false;
+  const to = MENUAPI.moveTarget(CAM.sec, dir, secOpenNow()); if (!to) return false;
+  sndTap(); return camGo(to, false);
+}
+/* перетаскивание пустого фона; клик по зоне без движения работает как раньше (порог 8 px мышь, 12 касание) */
+const DRAGS = { s: null, eat: false };
+let secNavKey = '', secNavSync = () => {};
+function dragSpeed(s, x, t) { s.samples.push([t, x]); while (s.samples.length > 2 && t - s.samples[0][0] > 120) s.samples.shift(); const a = s.samples[0]; return t > a[0] ? (x - a[1]) / (t - a[0]) / stageScale : 0; }
+function dragEnd(cancel) {
+  const s = DRAGS.s; DRAGS.s = null; if (!s || !s.moved) return;
+  CAM.drag = false; DRAGS.eat = true; setTimeout(() => { DRAGS.eat = false; }, 0);
+  const dx = (s.lastX - s.x0) / stageScale; camGo(cancel ? CAM.sec : MENUAPI.dragTarget(s.cam0, dx, s.v, secOpenNow()), false);
+}
+if (sectionsPlayable()) {
+  const svg = $('#barSvg'); svg.style.touchAction = 'none';
+  svg.addEventListener('pointerdown', e => { if (e.button !== 0 || !e.isPrimary || camBlocked()) return; DRAGS.s = { id: e.pointerId, x0: e.clientX, lastX: e.clientX, cam0: CAM.x, touch: e.pointerType !== 'mouse', moved: false, samples: [[e.timeStamp, e.clientX]], v: 0 }; });
+  addEventListener('pointermove', e => {
+    const s = DRAGS.s; if (!s || e.pointerId !== s.id) return;
+    if (camBlocked() && !s.moved) { DRAGS.s = null; return; }
+    s.lastX = e.clientX; const dx = (e.clientX - s.x0) / stageScale;
+    if (!s.moved) { if (Math.abs(e.clientX - s.x0) < (s.touch ? MENUAPI.DRAG_START_PX.touch : MENUAPI.DRAG_START_PX.mouse)) return; s.moved = true; CAM.drag = true; CAM.moving = false; try { svg.setPointerCapture(e.pointerId); } catch (x) { /* без захвата */ } }
+    s.v = dragSpeed(s, e.clientX, e.timeStamp); CAM.x = MENUAPI.dragCam(s.cam0, dx, secOpenNow()); WORLD.setBarCamera(CAM.x);
+  });
+  addEventListener('pointerup', e => { if (DRAGS.s && e.pointerId === DRAGS.s.id) dragEnd(false); });
+  addEventListener('pointercancel', e => { if (DRAGS.s && e.pointerId === DRAGS.s.id) dragEnd(true); });
+  /* после перетаскивания click по зоне под курсором гасится в фазе перехвата */
+  svg.addEventListener('click', e => { if (DRAGS.eat) { e.stopPropagation(); e.preventDefault(); DRAGS.eat = false; } }, true);
+  /* стрелки с названиями секций */
+  const holder = document.createElement('div'); holder.innerHTML = sectionNavHTML(); const nav = holder.firstChild; $('#bar').appendChild(nav);
+  nav.addEventListener('click', e => { const b = e.target.closest('[data-secnav]'); if (b) { camStep(+b.dataset.secnav); b.blur(); } });
+  secNavSync = () => {
+    const arrows = camBlocked() ? [] : MENUAPI.allowedMoves(CAM.sec, secOpenNow()).length ? navArrows(CAM.sec, secOpenNow()) : [];
+    const key = arrows.map(a => a.dir + a.label).join('|'); if (key === secNavKey) return; secNavKey = key;
+    nav.querySelectorAll('[data-secnav]').forEach(b => { const a = arrows.find(x => x.dir === +b.dataset.secnav); b.hidden = !a; if (a) { b.innerHTML = navLabelHTML(a); b.setAttribute('aria-label', 'Перейти в секцию «' + a.label + '»'); } });
+  };
 }
 function barShow(on) {
   stage.classList.toggle('inbar', on);

@@ -121,6 +121,9 @@ addEventListener('keydown', e => {
   if (CARDON && !paused) { if (!e.repeat && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape')) { e.preventDefault(); closeDrinkCard(); } return; }
   if (e.repeat) return;
   const c = e.code, mv = menuView();
+  /* Б1-2: A/D и ←/→ листают бар (по event.code: работает на русской раскладке); стрелка-кнопка Enter/Space нажимается сама */
+  const nb = e.target.closest && e.target.closest('.secNavBtn'); if (nb && (c === 'Enter' || c === 'Space')) { e.preventDefault(); nb.click(); return; }
+  if ((c === 'KeyA' || c === 'ArrowLeft' || c === 'KeyD' || c === 'ArrowRight') && !e.ctrlKey && !e.altKey && !e.metaKey && !(e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) && camStep(c === 'KeyA' || c === 'ArrowLeft' ? -1 : 1)) { e.preventDefault(); return; }
   if (c === 'Escape' && menuBack()) { e.preventDefault(); return; }
   if (G && G.phase === 'day' && !paused) {
     if ((BR || c === 'Space') && barKey(c)) { e.preventDefault(); return; }
@@ -133,7 +136,8 @@ addEventListener('keyup', e => { if (e.code === 'Space' && G && G.phase === 'day
 addEventListener('pointerdown', () => { try { audioCtx(); sfxLoad(); } catch (x) { /* без звука */ } MUSIC.unlock(); });
 addEventListener('pointerup', () => MUSIC.unlock());
 /* режим клавиатуры: кольцо фокуса появляется после Tab или стрелок и гаснет при любом нажатии мышью или касании */
-addEventListener('keydown', e => { if (e.code === 'Tab' || e.code.startsWith('Arrow')) document.documentElement.classList.add('kbd'); }, true);
+/* ←/→ в баре листают камеру и кольцо фокуса не включают (только Tab); пока листание не включено, всё как раньше */
+addEventListener('keydown', e => { if (e.code === 'Tab' || (e.code.startsWith('Arrow') && !((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && sectionsPlayable() && BR && stage.classList.contains('inbar')))) document.documentElement.classList.add('kbd'); }, true);
 addEventListener('pointerdown', () => document.documentElement.classList.remove('kbd'), true);
 const autoPause = () => { if (G && G.phase === 'day' && !paused) setPause(true); };
 document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });

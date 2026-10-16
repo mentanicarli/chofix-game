@@ -118,3 +118,69 @@ describe('секции: соседи и камера', () => {
     expect(cameraAt(0, 1280, 0.1, 0)).toBe(1280);
   });
 });
+
+import { DRAG_START_PX, SECTIONS_PLAYABLE_FOR_PLAYER, allowedMoves, dragCam, dragTarget, moveTarget, sectionAtCam, sectionsPlayable } from '../src/game/sections';
+
+describe('секции: управление камерой (Б1-2)', () => {
+  const both = { L: true, C: true, R: true } as const;
+  const onlyR = { L: false, C: true, R: true } as const;
+  const none = { L: false, C: true, R: false } as const;
+
+  test('листание для игрока выключено, в #dev включено', () => {
+    expect(SECTIONS_PLAYABLE_FOR_PLAYER).toBe(false);
+    expect(sectionsPlayable(false)).toBe(false);
+    expect(sectionsPlayable(true)).toBe(true);
+  });
+
+  test('allowedMoves: из какой секции при каких открытых', () => {
+    expect(allowedMoves('C', both)).toEqual(['L', 'R']);
+    expect(allowedMoves('C', onlyR)).toEqual(['R']);
+    expect(allowedMoves('C', none)).toEqual([]);
+    expect(allowedMoves('L', both)).toEqual(['C']);
+    expect(allowedMoves('R', both)).toEqual(['C']);
+    expect(allowedMoves('L', none)).toEqual(['C']); /* центр открыт всегда */
+  });
+
+  test('moveTarget: в L только вправо, в R только влево, закрытая недоступна', () => {
+    expect(moveTarget('C', -1, both)).toBe('L');
+    expect(moveTarget('C', 1, both)).toBe('R');
+    expect(moveTarget('C', -1, onlyR)).toBeNull();
+    expect(moveTarget('L', -1, both)).toBeNull();
+    expect(moveTarget('L', 1, both)).toBe('C');
+    expect(moveTarget('R', 1, both)).toBeNull();
+    expect(moveTarget('R', -1, both)).toBe('C');
+  });
+
+  test('sectionAtCam', () => {
+    expect(sectionAtCam(-1280)).toBe('L');
+    expect(sectionAtCam(0)).toBe('C');
+    expect(sectionAtCam(1280)).toBe('R');
+    expect(sectionAtCam(300)).toBeNull();
+  });
+
+  test('dragCam: мир за курсором, упор у краёв и не дальше соседней', () => {
+    expect(dragCam(0, -200, both)).toBe(200); /* курсор влево — камера вправо */
+    expect(dragCam(0, 200, both)).toBe(-200);
+    expect(dragCam(0, 200, onlyR)).toBe(0); /* L закрыта: упор */
+    expect(dragCam(0, -5000, both)).toBe(1280);
+    expect(dragCam(1280, -300, both)).toBe(1280); /* дальше R некуда */
+    expect(dragCam(1280, 5000, both)).toBe(0); /* не дальше соседней остановки */
+    expect(dragCam(-1280, 100, both)).toBe(-1280);
+  });
+
+  test('dragTarget: порог 120 px или 0,5 px/мс', () => {
+    expect(dragTarget(0, -121, 0, both)).toBe('R');
+    expect(dragTarget(0, 121, 0, both)).toBe('L');
+    expect(dragTarget(0, -120, 0, both)).toBe('C'); /* ровно 120 — ещё нет */
+    expect(dragTarget(0, -40, -0.6, both)).toBe('R'); /* быстрый бросок */
+    expect(dragTarget(0, -40, -0.5, both)).toBe('C');
+    expect(dragTarget(0, 300, 0, onlyR)).toBe('C'); /* закрытая секция */
+    expect(dragTarget(1280, 300, 0, both)).toBe('C');
+    expect(dragTarget(1280, -300, 0, both)).toBe('R'); /* за край нельзя */
+    expect(dragTarget(-1280, -300, 0, both)).toBe('C');
+  });
+
+  test('пороги начала перетаскивания', () => {
+    expect(DRAG_START_PX).toEqual({ mouse: 8, touch: 12 });
+  });
+});
