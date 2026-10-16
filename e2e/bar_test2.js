@@ -81,8 +81,9 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
         const ok = await p.evaluate(tt => !!window.__dbg.BR.done[tt], t); if (!ok) throw new Error('шаг ' + t + ' не засчитан');
       } else if (t === 'ice') {
         await zone('ice'); await p.waitForTimeout(250);
-        /* у протеина шаг «лёд» есть, а цели льда в рецепте нет (rc.ice не задан): сразу «Готово», как сделал бы игрок */
-        if (await p.evaluate(() => window.__dbg.BR.rc.ice)) await hold(() => window.__dbg.BR.cup.ice >= window.__dbg.BR.rc.ice - 1); await p.screenshot({ path: `${out}_${tag}_5ice.png` }); await done();
+        /* защита: шаг «лёд» без цели в рецепте — ошибка данных (протеин раньше получал его без цели, исправлено в buildTasks; тест test/iceStep.test.ts) */
+        if (!(await p.evaluate(() => window.__dbg.BR.rc.ice))) throw new Error('шаг «лёд» без цели льда в рецепте');
+        await hold(() => window.__dbg.BR.cup.ice >= window.__dbg.BR.rc.ice - 1); await p.screenshot({ path: `${out}_${tag}_5ice.png` }); await done();
       } else if (t === 'water') {
         await zone('water'); await p.waitForTimeout(250);
         await hold(() => window.__dbg.BR.cup.water >= window.__dbg.BR.rc.water - 2); await p.screenshot({ path: `${out}_${tag}_6water.png` }); await done();

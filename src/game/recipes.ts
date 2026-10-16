@@ -53,6 +53,12 @@ function defaultShots(key: string): number {
   return d ? (d.shots === 'size' ? 1 : d.shots) : 1;
 }
 
+/** Есть ли у холодного рецепта напитка цель льда (по первому размеру: наличие льда от размера не зависит). */
+function hasIceTarget(d: Drink): boolean {
+  const size = Object.keys(d.sizes)[0] as Size | undefined;
+  return !size || (recipeNumbers(d, size, true).ice ?? 0) > 0;
+}
+
 /** Шаги бара по ключу механики. Шоты идут циклами «помол → темпер → шот» (по одному на шот). */
 export function buildTasks(key: string, o: BuildOpts): string[] {
   const n = Math.max(1, o.shots ?? defaultShots(key));
@@ -89,7 +95,8 @@ export function buildTasks(key: string, o: BuildOpts): string[] {
       default: t.push(s.st);
     }
   }
-  if (o.cold && !t.includes('ice')) t.push('ice');
+  /* шаг «лёд» в конце холодного заказа — только там, где в рецепте есть цель льда: у протеина лёд не нужен (recipeNumbers.ice не задан), раньше шаг добавлялся без цели */
+  if (o.cold && !t.includes('ice') && (d.temp !== 'cold' || hasIceTarget(d))) t.push('ice');
   return expandShots(t, n);
 }
 
