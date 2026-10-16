@@ -83,9 +83,12 @@ function drinkSVG(spec, o) {
       if (spec.top?.spice && !compact) for (let i = 0; i < 9; i++) { const a = i * 2.4; g += `<circle cx="${f(Math.cos(a) * rxS * 0.6 * ((i % 3) / 2 + 0.3))}" cy="${f(Ytop + Math.sin(a) * ryS * 0.55)}" r="${f(1.3)}" fill="${C.CHOC}"/>`; }
     }
     /* лёд: кубики, часть выступает над поверхностью */
-    if (spec.ice) {
+    if (spec.ice || spec.iceAuto) {
       const lb = []; let a2 = yBot; layers.forEach((ly, i) => { const h2 = liqH * ly.frac; lb.push({ yt: a2 - h2, yb: a2, col: ly.col, h: h2 }); a2 -= h2; });
-      g += spec.iceStyle === 'old' ? iceCubesOld(spec.ice, Wt, Wb, Ytop, yBot, k, compact, sw, hw) : iceCubes({ n: spec.ice, Ytop, yBot, k, compact, sw, hw, lb, Wt });
+      const mode = spec.iceStyle || 'grid';
+      if (mode === 'old') g += iceCubesOld(spec.ice, Wt, Wb, Ytop, yBot, k, compact, sw, hw);
+      else if (mode === 'n11') g += iceCubesN11({ n: spec.ice, Ytop, yBot, k, compact, sw, hw, lb, Wt });
+      else g += iceGridSVG({ k, H, Ytop, yBot, compact, sw, hw, lb, Wt, Wb, grid: iceGrid(k) });
     }
     if (spec.boba) g += boba(Wb, yb, k, compact);
     if (spec.bubbles && !compact) for (let i = 0; i < 9; i++) g += `<circle cx="${f(((i * 37) % 70 - 35) * k * 0.9)}" cy="${f(yBot - 8 - ((i * 53) % 40) * k * 0.9)}" r="${f(1.8)}" fill="#FFFFFF" fill-opacity=".7" stroke="${C.GLASS_DP}" stroke-width="${sw(0.8)}"/>`;
@@ -94,7 +97,7 @@ function drinkSVG(spec, o) {
     g += `<ellipse cx="0" cy="${f(-H)}" rx="${f(Wt)}" ry="${f(ry0)}" fill="none" stroke="${INK}" stroke-width="${sw(D)}"/>`;
     if (!compact) g += `<path d="M${f(-Wt * 0.8)} ${f(-H * 0.8)}L${f(-Wb * 0.85)} ${f(-H * 0.2)}" stroke="#fff" stroke-opacity=".7" stroke-width="${sw(3)}" stroke-linecap="round"/>`;
     grow(-Wt, -H - ry0 - 1, Wt, bulge + 8 * k);
-    if (spec.ice) grow(-Wt, -H - ry0 - 8 * k, Wt, 0);
+    if (spec.ice || spec.iceAuto) grow(-Wt, -H - ry0 - 8 * k, Wt, 0);
   } else if (spec.vessel === 'ceramic') {
     const W = 55 * k, Wb = W * 0.78, H = 75 * k, yb = -8 * k, ryR = 14 * k;
     const side = (cmd) => `M${f(-W)} ${f(-H)}C${f(-W * 1.03)} ${f(-H * 0.5)} ${f(-Wb * 1.1)} ${f(-H * 0.1)} ${f(-Wb)} ${f(yb)}Q0 ${f(4 * k)} ${f(Wb)} ${f(yb)}C${f(Wb * 1.1)} ${f(-H * 0.1)} ${f(W * 1.03)} ${f(-H * 0.5)} ${f(W)} ${f(-H)}${cmd}`;
@@ -170,7 +173,7 @@ function iceCubesOld(n, Wt, Wb, Ytop, yBot, k, compact, sw, hw) {
  * Кубик внутри слоя не выше трети высоты слоя; 4–5 кубиков (4 до 0,3 л, 5 с 0,4 л); кубики на поверхности наполовину над жидкостью.
  * Компактный уровень: 2–3 светлых блика-точки.
  */
-function iceCubes({ n, Ytop, yBot, k, compact, sw, hw, lb }) {
+function iceCubesN11({ n, Ytop, yBot, k, compact, sw, hw, lb }) {
   const EDGE = mix(C.DUSTY, C.HILITE, 0.12);
   if (compact) {
     const lbw = lb.slice().sort((a, b) => b.h - a.h)[0];
@@ -204,6 +207,50 @@ function iceCubes({ n, Ytop, yBot, k, compact, sw, hw, lb }) {
   });
   return o;
 }
+/** Сетка льда по размеру (зеркало iceGrid в src/game/drinkModel.ts): кубик 28 ед., шаг рядов 0,85, шаг столбцов 0,95; ряды по высоте стакана (с потолком 1,12), столбцы по ширине. */
+const ICE_CUBE = 28;
+function iceGrid(k) {
+  const H = 80 * Math.min(k, 1.12), innerW = 82 * k - 6;
+  return { rows: Math.max(2, Math.round((0.9 * H) / (0.85 * ICE_CUBE))), cols: Math.max(2, Math.round(innerW / (0.95 * ICE_CUBE))) };
+}
+/**
+ * Лёд заполняет стакан равномерно от дна до верха (правило 16.10.2026, Н1-1б): кубики одного размера плотной шахматной сеткой, поворот ±12°,
+ * верхний ряд торчит над жидкостью; заливка кубика = цвет слоя под ним светлее на 20 % с прозрачностью 0,3 (кубик перекрашивается по слоям клипом,
+ * поэтому границы слоёв читаются сквозь лёд), контур 2 px серо-голубой, один короткий блик.
+ * Компактный уровень: отдельных кубиков нет, лёгкая прозрачная решётка мелких квадратов и две блика-точки.
+ */
+function iceGridSVG({ k, H, Ytop, yBot, compact, sw, hw, lb, grid }) {
+  const { rows, cols } = grid; const EDGE = mix(C.DUSTY, C.HILITE, 0.12);
+  if (compact) {
+    const q = 12, top = Ytop + 5, bot = yBot - 6; let o = '';
+    const rr = rows + (rows < 4 ? 1 : 0);
+    for (let r = 0; r < rr; r++) for (let c = 0; c < cols; c++) {
+      const y = top + (bot - top) * (r / Math.max(1, rr - 1)); const w = hw(y) - 8; const x = (c - (cols - 1) / 2) * (2 * w / cols) + (r % 2 ? 0.25 : -0.25) * (w / cols);
+      o += `<rect x="${f(x - q / 2)}" y="${f(y - q / 2)}" width="${q}" height="${q}" rx="${f(q * 0.28)}" fill="${C.HILITE}" fill-opacity=".28" stroke="${EDGE}" stroke-opacity=".7" stroke-width="${sw(1)}"/>`;
+    }
+    [[-0.35, 0.3], [0.3, 0.55]].forEach(([ux, uy]) => { const y = top + (bot - top) * uy; o += `<circle cx="${f(ux * (hw(y) - 8))}" cy="${f(y)}" r="${sw(1.4)}" fill="${C.HILITE}" fill-opacity=".9"/>`; });
+    return o;
+  }
+  const s = ICE_CUBE; const topC = Ytop - 0.12 * s; const botC = yBot - 0.5 * s + 1; const pitch = rows > 1 ? (botC - topC) / (rows - 1) : 0;
+  const cubes = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const i = r * cols + c; const y = topC + r * pitch;
+    const sz = s * (0.94 + ((i * 13) % 7) / 60); const rot = ((i * 37) % 25) - 12;
+    const wy = hw(y) - 3 - sz * 0.5; const sp = (2 * wy) / Math.max(1, cols - 0.5 + 0.0);
+    const stag = (r % 2 ? 0.25 : -0.25) * sp;
+    const x = Math.max(-wy, Math.min(wy, (c - (cols - 1) / 2) * sp * (cols > 1 ? (cols - 1 + 0.5) / (cols - 1) * 0.92 : 1) + stag));
+    cubes.push({ x, y, s: sz, rot });
+  }
+  const zones = [{ y0: -500, y1: Ytop, col: '#DCEBEA', air: true }, ...lb.map((l) => ({ y0: l.yt, y1: l.yb + 6, col: light(l.col, 0.2) }))];
+  const id = 'ig' + Math.random().toString(36).slice(2, 6); let o = '';
+  const rect = (c, extra) => `<rect x="${f(-c.s / 2)}" y="${f(-c.s / 2)}" width="${f(c.s)}" height="${f(c.s)}" rx="${f(c.s * 0.14)}" ${extra}/>`;
+  zones.forEach((z, zi) => {
+    o += `<clipPath id="${id}${zi}"><rect x="-400" y="${f(zi === 0 ? -500 : z.y0)}" width="800" height="${f(z.y1 - (zi === 0 ? -500 : z.y0))}"/></clipPath>`;
+    o += `<g clip-path="url(#${id}${zi})">` + cubes.map((c) => `<g transform="translate(${f(c.x)} ${f(c.y)}) rotate(${c.rot})">${rect(c, `fill="${z.col}" fill-opacity="${z.air ? 0.34 : 0.3}"`)}</g>`).join('') + '</g>';
+  });
+  cubes.forEach((c) => { o += `<g transform="translate(${f(c.x)} ${f(c.y)}) rotate(${c.rot})">${rect(c, `fill="none" stroke="${EDGE}" stroke-opacity=".9" stroke-width="${sw(2)}"`)}<path d="M${f(-c.s * 0.3)} ${f(-c.s * 0.27)}h${f(c.s * 0.26)}" stroke="${C.HILITE}" stroke-opacity=".9" stroke-width="${sw(2)}" stroke-linecap="round" fill="none"/></g>`; });
+  return o;
+}
 function boba(Wb, yb, k, compact) { let o = ''; const n = compact ? 4 : 7; for (let i = 0; i < n; i++) { const x = (-0.8 + (1.6 * i) / (n - 1)) * (Wb - 8 * k); o += `<circle cx="${f(x)}" cy="${f(yb - 8 * k - (i % 2) * 4 * k)}" r="${f(5.2 * k)}" fill="#3A2A24" stroke="${INK}" stroke-width=".8"/>`; } return o; }
 
-module.exports = { drinkSVG, C, INK, PALJ, cupScale, mix, shade, light };
+module.exports = { iceGrid, drinkSVG, C, INK, PALJ, cupScale, mix, shade, light };

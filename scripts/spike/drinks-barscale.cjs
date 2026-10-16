@@ -51,7 +51,7 @@ const grid = (cells, cols) => `<div style="display:grid;grid-template-columns:re
   /* E. лёд: без льда / было (Н0) / стало на баре ×2,5, бамбл 0,3 и 0,6 л */
   const ice = (V, spec) => spec.iceAuto ? { ...spec, ice: V <= 300 ? 4 : 5 } : spec;
   const cellsI = [];
-  for (const V of [300, 600]) for (const [nm, key] of [['без льда', 'orange_bumble_noice'], ['было (лёд Н0, 6 кубиков)', 'orange_bumble_old'], ['стало (правило 16.10.2026)', 'orange_bumble']]) cellsI.push(cell(onBar(ice(V, SPEC[key]), V, U, 'newcap'), `${nm} · ${V / 1000} л`));
-  await render(`<div style="font:800 18px Nunito,sans-serif;margin-bottom:8px">Бамбл на баре ×2,5: чтение слоёв без льда, со старым и с новым льдом</div>` + grid(cellsI, 3), 'bumble_ice_bar_x2.5.png', 2300);
+  for (const V of [300, 600]) for (const [nm, key] of [['без льда', 'orange_bumble_noice'], ['было (Н1-1: 5 кубиков)', 'orange_bumble_n11'], ['стало (Н1-1б: равномерно)', 'orange_bumble']]) cellsI.push(cell(onBar(ice(V, SPEC[key]), V, U, 'newcap'), `${nm} · ${V / 1000} л`));
+  await render(`<div style="font:800 18px Nunito,sans-serif;margin-bottom:8px">Бамбл на баре ×2,5: чтение слоёв без льда, со льдом Н1-1 и с равномерным льдом Н1-1б</div>` + grid(cellsI, 3), 'bumble_ice_bar_x2.5.png', 2300);
   await render(`<div style="font:800 18px Nunito,sans-serif;margin-bottom:8px">Холодное капучино на баре ×2,5</div>` + grid([300, 600].map((V) => cell(onBar(ice(V, SPEC.cold_cappuccino), V, U, 'newcap'), `холодное капучино · ${V / 1000} л`)), 2), 'cold_cappuccino_bar_x2.5.png', 1500);
 })();
