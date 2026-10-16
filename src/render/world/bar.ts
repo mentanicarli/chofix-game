@@ -4,7 +4,7 @@ import { raster } from './svg';
 import { TexCache, modelTexKey } from './texCache';
 import { BAR_UNIT, drinkPx, geomOf, glassHalfWidth, type CeramicGeom, type GlassGeom } from './drinkModel';
 import { specOf, type DrinkSpec, type ModelRef } from '../../game/drinkModel';
-import { SECTION_CAM, SECTION_NAMES, SECTION_W, type SectionsOpen } from '../../game/sections';
+import { SECTION_CAM, SECTION_NAMES, SECTION_W, SIDE_ZONES, stationOfZone, type SectionsOpen } from '../../game/sections';
 import PAL from '../../../art-src/palette.json';
 
 interface Box { x: number; y: number; w: number; h: number }
@@ -84,7 +84,7 @@ class ModelTex {
 }
 
 /** Боковая секция (Б1-1): плашка-заглушка вместо будущего арта (этап 30). Текстуры живут, пока секция открыта и камера на ней или на соседней остановке. */
-interface SideSection { c: Container; tex: Texture | null; label: Text | null; loading: boolean }
+interface SideSection { c: Container; tex: Texture | null; label: Text | null; names: Text[]; loading: boolean }
 
 /** Заглушка фона боковой секции: стена в полоску со смещением (шов с центром без разрыва ритма, sections.md 1.2), тумба, плашка под подпись. Только палитра art-src. */
 function placeholderSvg(id: 'L' | 'R'): string {
@@ -95,7 +95,9 @@ function placeholderSvg(id: 'L' | 'R'): string {
   return `<rect width="${SECTION_W}" height="720" fill="${C.KRAFT}"/>${stripes}`
     + `<rect x="-6" y="472" width="${SECTION_W + 12}" height="140" fill="${C.TOP}" stroke="${C.INK}" stroke-width="3.5"/>`
     + `<rect x="-6" y="612" width="${SECTION_W + 12}" height="130" fill="${C.WOOD}" stroke="${C.INK}" stroke-width="3.5"/>`
-    + `<rect x="${SECTION_W / 2 - 220}" y="236" width="440" height="150" rx="22" fill="${C.PAPER}" stroke="${C.INK}" stroke-width="3.5" stroke-dasharray="14 9"/>`;
+    + `<rect x="${SECTION_W / 2 - 220}" y="170" width="440" height="90" rx="22" fill="${C.PAPER}" stroke="${C.INK}" stroke-width="3.5" stroke-dasharray="14 9"/>`
+    /* штриховые рамки на месте зон станций, чтобы по заглушке можно было играть (убираются в блоке 30 вместе с заглушкой) */
+    + SIDE_ZONES.filter((z) => z.section === id).map((z) => `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="14" fill="${C.PAPER}" fill-opacity="0.55" stroke="${C.INK}" stroke-width="3" stroke-dasharray="10 7"/>`).join('');
 }
 
 export class BarScene {
@@ -106,8 +108,8 @@ export class BarScene {
   private cam = 0;
   private sOpen: SectionsOpen = { L: false, C: true, R: false };
   private side: Record<'L' | 'R', SideSection> = {
-    L: { c: new Container(), tex: null, label: null, loading: false },
-    R: { c: new Container(), tex: null, label: null, loading: false }
+    L: { c: new Container(), tex: null, label: null, names: [], loading: false },
+    R: { c: new Container(), tex: null, label: null, names: [], loading: false }
   };
   private tex = new Map<string, Texture>();
   private res = 1;
@@ -332,6 +334,7 @@ export class BarScene {
       const s = this.side[id];
       if (s.tex) n++;
       if (s.label) n++;
+      n += s.names.length;
     }
     return n;
   }
@@ -359,10 +362,16 @@ export class BarScene {
       sp.height = 720;
       const label = new Text({ text: SECTION_NAMES[id], style: { fontFamily: 'Caveat, Nunito, cursive', fontSize: 64, fontWeight: '700', fill: PAL.colors.INK, padding: 6 }, resolution: this.fontRes });
       label.anchor.set(0.5, 0.5);
-      label.position.set(SECTION_W / 2, 311);
+      label.position.set(SECTION_W / 2, 215);
+      s.names = SIDE_ZONES.filter((z) => z.section === id).map((z) => {
+        const t = new Text({ text: stationOfZone(z.id)?.name ?? z.id, style: { fontFamily: 'Nunito, sans-serif', fontSize: 18, fontWeight: '700', fill: PAL.colors.INK, padding: 4, align: 'center', wordWrap: true, wordWrapWidth: z.w - 16 }, resolution: this.fontRes });
+        t.anchor.set(0.5, 0.5);
+        t.position.set(z.x + z.w / 2, z.y + z.h / 2);
+        return t;
+      });
       s.tex = t;
       s.label = label;
-      s.c.addChild(sp, label);
+      s.c.addChild(sp, label, ...s.names);
       this.syncSides();
     });
   }
@@ -373,6 +382,7 @@ export class BarScene {
     s.tex?.destroy(true);
     s.tex = null;
     s.label = null;
+    s.names = [];
     s.c.visible = false;
   }
 

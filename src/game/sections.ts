@@ -156,11 +156,31 @@ export function dragTarget(startCam: number, dx: number, vx: number, open: Secti
 /* ---------- подсказки: «в какой секции станция» (Б1-3) ---------- */
 
 /**
- * Пока плитки боковых станций живут в центре (до этапа 30), «в какой секции станция» для игрока — центр.
- * Б1-4 переключает флаг, когда зоны боковых станций переедут в секции. Всё, что зависит от секции станции
- * (точка на мини-карте, подсветка стрелки, тосты), читает её только через `stationSection`.
+ * Зоны боковых станций живут в боковых секциях, когда включено листание (Б1-4): эффективный флаг равен `sectionsPlayable(dev)`,
+ * то есть сейчас только `#dev`, а блок 30 включит его для игрока той же константой. Пока флаг выключен, плитки боковых станций
+ * в центре, «в какой секции станция» для игрока = центр. Всё, что зависит от секции станции (точка, подсветка стрелки, тосты, кольцо),
+ * читает её только через `stationSection`.
  */
-export const ZONES_IN_SIDE_SECTIONS = false;
+export const zonesInSideSections = (dev: boolean): boolean => sectionsPlayable(dev);
+
+/** Зона станции боковой секции в секция-локальных координатах (docs/design/sections.md, раздел 13, «Промпт 4»). */
+export interface SideZone { id: string; section: 'L' | 'R'; x: number; y: number; w: number; h: number }
+export const SIDE_ZONES: readonly SideZone[] = [
+  { id: 'tea', section: 'L', x: 112, y: 370, w: 226, h: 136 },
+  { id: 'matcha', section: 'L', x: 428, y: 428, w: 266, h: 84 },
+  { id: 'powders', section: 'L', x: 716, y: 392, w: 376, h: 118 },
+  { id: 'juice', section: 'R', x: 66, y: 296, w: 152, h: 214 },
+  { id: 'whipper', section: 'R', x: 262, y: 328, w: 134, h: 182 },
+  { id: 'foamer', section: 'R', x: 418, y: 344, w: 104, h: 166 },
+  { id: 'blender', section: 'R', x: 552, y: 288, w: 130, h: 220 },
+  { id: 'boba', section: 'R', x: 716, y: 388, w: 232, h: 122 },
+  { id: 'shaker', section: 'R', x: 992, y: 408, w: 150, h: 100 }
+];
+
+/** Центр зоны в мировых координатах (секция L сдвинута на −1280, R на +1280). */
+export function sideZoneCenter(z: SideZone): [number, number] {
+  return [SECTION_CAM[z.section] + z.x + z.w / 2, z.y + z.h / 2];
+}
 
 /** Станция по id зоны бара (`syr1` → полка сиропов, `milk` → холодильник с молоком); для зон вне 19 станций (витрина, микроволновка, звонок) — undefined. */
 export function stationOfZone(zone: string): Station | undefined {

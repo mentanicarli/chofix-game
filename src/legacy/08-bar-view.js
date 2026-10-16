@@ -80,14 +80,17 @@ function barPaint(dt) {
     ring: ring && (G.hints || tutKey()) ? { x: ring[0], y: ring[1], a: .7 + .3 * Math.sin(now / 260), s: 1 + .05 * Math.sin(now / 260) } : null
   });
 }
+/* кольцо рисуется в мировых координатах и только для станции текущей секции; для станции другой секции вместо него подсвечена стрелка (Б1-3) */
+const ringHere = z => !sectionsPlayable() || MENUAPI.stationSection(z, zonesInSide) === CAM.sec;
 function ringTarget() {
   const B = BR; if (!B || B.inset) return null;
-  if (B.shot.st === 'run') return [740, 257];
-  if (B.ready) return ZONE_POS.bell;
+  if (B.shot.st === 'run') return ringHere('stop') ? [740, 257] : null;
+  if (B.ready) return ringHere('bell') ? ZONE_POS.bell : null;
   if (B.pumps > 0 && !B.done.syrup) return null;
   const t = B.tasks.find(x => !B.done[x] && !blockMsg(x));
   if (!t) return null;
-  return t === 'syrup' ? ZONE_POS[SYR[B.c.syrup].z] : ZONE_POS[MENUAPI.TASK_ZONE[t] || t];
+  const z = t === 'syrup' ? SYR[B.c.syrup].z : (MENUAPI.TASK_ZONE[t] || t);
+  return ringHere(z) ? ZONE_POS[z] : null;
 }
 
 /* ---------- тикет и подсказки ---------- */
@@ -176,6 +179,8 @@ function coachText() {
   if (B.ready) return 'Всё готово. Нажмите на звонок, чтобы подать напиток.';
   if (B.inset === 'syrup') return 'Выберите бутылку: каждое нажатие это одна порция. Нужно: ' + (B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() + ' ×' + B.c.pumps : '') + '. Потом «Готово».';
   const t = B.tasks.find(x => !B.done[x] && !blockMsg(x));
+  /* станция шага в другой секции (Б1-4): у новых станций обычного текста без окна нет, поэтому коуч говорит то же, что тост (по таблице раздела 11) */
+  if (t && sectionsPlayable()) { const zn = t === 'syrup' ? 'syrup' : (MENUAPI.TASK_ZONE[t] || t), st = MENUAPI.stationOfZone(zn); if (st && MENUAPI.stationSection(zn, zonesInSide) !== CAM.sec) { const x = MENUAPI.stationToast(st.id, CAM.sec); if (x) return x; } }
   return { syrup: `Клиент просил сироп: ${B.c.syrup ? SYR[B.c.syrup].name.toLowerCase() : ''} ×${B.c.pumps}. Нажмите на полку сиропов и выберите бутылку: одно нажатие это одна порция.`, grind: 'Начнём с помола. Нажмите на кофемолку.', tamp: 'Молотый кофе нужно уплотнить. Нажмите на темпер.', shot: 'Теперь на кофемашину: вставить портафильтр и запустить шот.', water: 'Долейте горячую воду: нажмите на кран кофемашины.', milk: B.rc.pitcherShot ? 'Теперь холодные сливки: нажмите на кувшин сливок.' : 'Пока кофе настаивается, займитесь молоком: нажмите на холодильник с молоком.', steam: 'Вспеньте молоко: нажмите на паровую трубку.', pour: 'Заливайте молоко в чашку: нажмите на чашку.' }[t] || '';
 }
 /* Коуч (Макс): реплика остаётся не короче max(4 с; длина / 12 симв./с) и меняется на новую, только когда прошла пауза ≥ 1,5 с после смены состояния (шаг выполнен); при нескольких сменах показывается последняя актуальная. Исключение: последний шаг пара («Остановите») показывается сразу, иначе подсказка придёт, когда молоко уже пригорит (зона 7°, нагрев 7°/с). «Повторить» показывает предыдущую реплику. */

@@ -105,24 +105,30 @@ dcEl.addEventListener('click', e => {
    даже если покупки уже «открыли» боковую секцию (sectionsOpen). Боковые секции (заглушки) видны только в #dev через window.__sec / __dbg.goSection. */
 const CAM = { sec: 'C', from: 0, to: 0, t: 0, moving: false, drag: false, x: 0 };
 function secOpenNow() { const o = MENUAPI.sectionsOpen(G || {}); return DEV ? { L: true, C: true, R: true } : o; }
-function camSync() { WORLD.setBarSections(secOpenNow()); WORLD.setBarCamera(CAM.x); }
+/* камера → Pixi и окно просмотра зон (viewBox двигается только при включённом листании, иначе #barSvg остаётся как был) */
+function camPush() { WORLD.setBarCamera(CAM.x); if (sectionsPlayable()) $('#barSvg').setAttribute('viewBox', Math.round(CAM.x * 100) / 100 + ' 0 1280 720'); }
+/* текстуры боковых секций нужны, только когда в них можно попасть: пока листание выключено (обычная игра), покупка секцию не строит */
+function camSync() { WORLD.setBarSections(sectionsPlayable() ? secOpenNow() : { L: false, C: true, R: false }); camPush(); zonesSync(); }
 /* instant — без анимации (вход в бар); иначе переход 0,3 с в camTick. Закрытая секция недоступна. */
 function camGo(id, instant) {
   if (!secOpenNow()[id]) return false;
   CAM.sec = id; CAM.from = CAM.x; CAM.to = MENUAPI.cameraTarget(id); CAM.t = 0;
   CAM.moving = !instant && CAM.from !== CAM.to;
   if (!CAM.moving) CAM.x = CAM.to;
-  WORLD.setBarCamera(CAM.x); return true;
+  camPush(); zonesSync(); return true;
 }
 function camTick(dt) {
   if (!CAM.moving) return;
   CAM.t += dt;
-  if (CAM.t >= MENUAPI.CAM_SECONDS) { CAM.moving = false; CAM.x = CAM.to; } else CAM.x = MENUAPI.cameraAt(CAM.from, CAM.to, CAM.t);
-  WORLD.setBarCamera(CAM.x);
+  const done = CAM.t >= MENUAPI.CAM_SECONDS;
+  if (done) { CAM.moving = false; CAM.x = CAM.to; } else CAM.x = MENUAPI.cameraAt(CAM.from, CAM.to, CAM.t);
+  camPush(); if (done) zonesSync();
 }
 /* ---------- управление камерой (Б1-2): гейт, клавиши, перетаскивание, стрелки ----------
    Листание включено только в #dev (MENUAPI.sectionsPlayable); блок 30 переключит константу в sections.ts. Без #dev ничего из этого не создаётся и не срабатывает. */
-const sectionsPlayable = () => MENUAPI.sectionsPlayable(DEV);
+/* #dev-nosec: песочница без листания (старые e2e песочницы кликают плитки боковых станций в центре, как раньше) */
+const NOSEC = DEV && /(^#|-)nosec(-|$)/.test(location.hash);
+const sectionsPlayable = () => !NOSEC && MENUAPI.sectionsPlayable(DEV);
 /* листать нельзя: бар закрыт, меню/пауза/книга/магазин (#screen), карточка, окно станции, удержание, идущий переход, перетаскивание */
 function camBlocked() {
   return !sectionsPlayable() || !G || G.phase !== 'day' || paused || !BR || !stage.classList.contains('inbar') || !scr.hidden || !!CARDON || !!BR.inset || BR.hold || CAM.moving || CAM.drag;
@@ -134,7 +140,7 @@ function camStep(dir) {
 }
 /* перетаскивание пустого фона; клик по зоне без движения работает как раньше (порог 8 px мышь, 12 касание) */
 /* «в какой секции станция»: пока плитки боковых станций в центре, флаг выключен (Б1-4 включит); для проверки в #dev window.__sec.zones(true) */
-let zonesInSide = MENUAPI.ZONES_IN_SIDE_SECTIONS;
+let zonesInSide = MENUAPI.zonesInSideSections(DEV) && sectionsPlayable();
 /* зона текущего шага для подсказок (та же логика выбора шага, что у кольца ringTarget) */
 function hintZone() {
   const B = BR; if (!B || B.inset) return null;
@@ -159,13 +165,26 @@ if (sectionsPlayable()) {
     const s = DRAGS.s; if (!s || e.pointerId !== s.id) return;
     if (camBlocked() && !s.moved) { DRAGS.s = null; return; }
     s.lastX = e.clientX; const dx = (e.clientX - s.x0) / stageScale;
-    if (!s.moved) { if (Math.abs(e.clientX - s.x0) < (s.touch ? MENUAPI.DRAG_START_PX.touch : MENUAPI.DRAG_START_PX.mouse)) return; s.moved = true; CAM.drag = true; CAM.moving = false; try { svg.setPointerCapture(e.pointerId); } catch (x) { /* без захвата */ } }
-    s.v = dragSpeed(s, e.clientX, e.timeStamp); CAM.x = MENUAPI.dragCam(s.cam0, dx, secOpenNow()); WORLD.setBarCamera(CAM.x);
+    if (!s.moved) { if (Math.abs(e.clientX - s.x0) < (s.touch ? MENUAPI.DRAG_START_PX.touch : MENUAPI.DRAG_START_PX.mouse)) return; s.moved = true; CAM.drag = true; CAM.moving = false; zonesSync(); try { svg.setPointerCapture(e.pointerId); } catch (x) { /* без захвата */ } }
+    s.v = dragSpeed(s, e.clientX, e.timeStamp); CAM.x = MENUAPI.dragCam(s.cam0, dx, secOpenNow()); camPush();
   });
   addEventListener('pointerup', e => { if (DRAGS.s && e.pointerId === DRAGS.s.id) dragEnd(false); });
   addEventListener('pointercancel', e => { if (DRAGS.s && e.pointerId === DRAGS.s.id) dragEnd(true); });
   /* после перетаскивания click по зоне под курсором гасится в фазе перехвата */
   svg.addEventListener('click', e => { if (DRAGS.eat) { e.stopPropagation(); e.preventDefault(); DRAGS.eat = false; } }, true);
+  /* зоны боковых станций в мировых координатах (Б1-4): группы data-sec в #bZones, ZONE_POS по центрам; в обычной игре не создаются */
+  const NS = 'http://www.w3.org/2000/svg', bz = $('#bZones'), sidePos = {};
+  for (const sec of ['L', 'R']) {
+    const g = document.createElementNS(NS, 'g'); g.dataset.sec = sec;
+    MENUAPI.SIDE_ZONES.filter(z => z.section === sec).forEach(z => {
+      const r = document.createElementNS(NS, 'rect'), x = MENUAPI.SECTION_CAM[sec] + z.x;
+      r.dataset.z = z.id; r.setAttribute('x', x); r.setAttribute('y', z.y); r.setAttribute('width', z.w); r.setAttribute('height', z.h); r.setAttribute('rx', 14);
+      const t = document.createElementNS(NS, 'title'); t.textContent = MENUAPI.stationOfZone(z.id).name; r.appendChild(t); g.appendChild(r);
+      sidePos[z.id] = MENUAPI.sideZoneCenter(z);
+    });
+    bz.appendChild(g);
+  }
+  Object.assign(ZONE_POS, sidePos);
   /* стрелки с названиями секций */
   const holder = document.createElement('div'); holder.innerHTML = sectionNavHTML() + minimapHTML(); const nav = holder.firstChild, mini = holder.lastChild; $('#bar').append(nav, mini);
   nav.addEventListener('click', e => { const b = e.target.closest('[data-secnav]'); if (b) { camStep(+b.dataset.secnav); b.blur(); } });
@@ -267,8 +286,15 @@ function zoneShown(z) {
   if (['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].includes(z)) return !!G['eq_' + z];
   return true;
 }
+const SIDE_ZONE_IDS = new Set(['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker']);
 function zonesSync() {
-  document.querySelectorAll('#bZones [data-z]').forEach(r => { r.style.pointerEvents = zoneShown(r.dataset.z) ? '' : 'none'; });
+  /* листание включено: зона боковой станции живёт в своей секции и кликабельна, только когда камера стоит в ней; плитка той же станции в центре не активна; во время перехода и перетаскивания зон нет */
+  const play = sectionsPlayable(), lock = play && (CAM.moving || CAM.drag);
+  document.querySelectorAll('#bZones [data-z]').forEach(r => {
+    let on = zoneShown(r.dataset.z);
+    if (play) { const g = r.closest('[data-sec]'); on = lock ? false : g ? on && CAM.sec === g.dataset.sec : SIDE_ZONE_IDS.has(r.dataset.z) ? false : on && CAM.sec === 'C'; }
+    r.style.pointerEvents = on ? '' : 'none';
+  });
 }
 function zoneClick(z) {
   if (!BR) return;

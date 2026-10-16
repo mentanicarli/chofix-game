@@ -29,4 +29,4 @@ export * from './playlist';
 export * from './sandbox';
 export * from './playerModel';
 export * from './drinkModel';
-export { sectionsOpen, cameraAt, cameraTarget, neighbors, sectionOfZone, SECTION_NAMES, SECTION_CAM, CAM_SECONDS, sectionsPlayable, sectionAtCam, allowedMoves, moveTarget, dragCam, dragTarget, DRAG_START_PX, ZONES_IN_SIDE_SECTIONS, stationSection, stationOfZone, stationToast, needHint, type SectionId } from './sections';
+export { sectionsOpen, cameraAt, cameraTarget, neighbors, sectionOfZone, SECTION_NAMES, SECTION_CAM, CAM_SECONDS, sectionsPlayable, sectionAtCam, allowedMoves, moveTarget, dragCam, dragTarget, DRAG_START_PX, zonesInSideSections, SIDE_ZONES, sideZoneCenter, stationSection, stationOfZone, stationToast, needHint, type SectionId } from './sections';

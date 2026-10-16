@@ -20,7 +20,7 @@ const specs = (process.argv[4] || 'espresso').split(',').map(s => { const [drink
   await require('./pw').sandboxStart(p, require('./pw').url(tmp), { day: Number(process.env.DAY || 6), profile: 'medium' }); await p.waitForTimeout(400);
   const st = () => p.evaluate(() => { const B = window.__dbg.BR; return B ? { inset: B.inset, shot: B.shotIdx + '/' + B.shots, dose: +B.dose.toFixed(1), un: +B.uneven.toFixed(2), tp: B.tampPhase, P: +B.tampP.toFixed(1), sh: B.shot.st, ml: +B.shot.ml.toFixed(1), t: +B.shot.t.toFixed(1), done: Object.keys(B.done).join(','), ready: B.ready, res: JSON.stringify(B.res), pit: JSON.stringify(B.pit), lvl: B.pourLevel } : null; });
   const ic = async (x, y) => { const r = await p.evaluate(() => { const r = document.querySelector('#bi').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }); return [r[0] + x * r[2] / 440, r[1] + y * r[3] / 450]; };
-  const zone = z => p.click(`[data-z=${z}]`, { force: true });
+  const zone = z => require('./pw').clickZone(p, z); /* SEC=1: с листанием секций камера сама едет к станции */
   const waitFor = (fn, arg, to = 30000) => p.waitForFunction(fn, arg, { timeout: to, polling: 30 });
   const done = async () => { const [x, y] = await ic(353, 384); await p.mouse.click(x, y); await p.waitForTimeout(250); };
   const hold = async (fn, arg) => { const [x, y] = await ic(155, 384); await p.mouse.move(x, y); await p.mouse.down(); await waitFor(fn, arg); await p.mouse.up(); };

@@ -186,14 +186,38 @@ describe('секции: управление камерой (Б1-2)', () => {
 });
 
 import SECTIONS_MD from '../docs/design/sections.md?raw';
-import { ZONES_IN_SIDE_SECTIONS, needHint, stationOfZone, stationSection, stationToast } from '../src/game/sections';
+import { SIDE_ZONES, needHint, sideZoneCenter, zonesInSideSections, stationOfZone, stationSection, stationToast } from '../src/game/sections';
 
 describe('секции: подсказки и тосты (Б1-3)', () => {
   /* таблица раздела 11 sections.md — источник правды для текстов */
   const rows = SECTIONS_MD.split('\n').filter((l) => /^\| \d+ \| [^|]+ \| [^|]+ \| Станция «/.test(l)).map((l) => l.split('|').map((c) => c.trim()).slice(1, -1));
   test('в таблице раздела 11 19 станций', () => expect(rows).toHaveLength(19));
 
-  test('флаг зон в боковых секциях выключен', () => expect(ZONES_IN_SIDE_SECTIONS).toBe(false));
+  test('зоны в боковых секциях включены вместе с листанием', () => {
+    expect(zonesInSideSections(false)).toBe(false);
+    expect(zonesInSideSections(true)).toBe(true);
+  });
+
+  test('зоны боковых секций: покрывают все 9 станций, внутри секции, не пересекаются, не лежат под стрелками, мини-картой, билетом, коучем и тостами', () => {
+    expect(SIDE_ZONES.map((z) => z.id).sort()).toEqual([...SECTION_EQ.L, ...SECTION_EQ.R].sort());
+    const hit = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    const fixed = [
+      { n: 'стрелки', x: 0, y: 516, w: 1280, h: 30 },
+      { n: 'мини-карта', x: 598, y: 12, w: 168, h: 44 },
+      { n: 'билет', x: 0, y: 76, w: 870, h: 150 },
+      { n: 'коуч', x: 472, y: 520, w: 322, h: 100 },
+      { n: 'тосты', x: 484, y: 136, w: 380, h: 120 }
+    ];
+    for (const z of SIDE_ZONES) {
+      expect(sectionOfZone(z.id), z.id).toBe(z.section);
+      expect(z.x).toBeGreaterThanOrEqual(0);
+      expect(z.x + z.w).toBeLessThanOrEqual(1280);
+      for (const f of fixed) expect(hit(z, f), `${z.id} × ${f.n}`).toBe(false);
+      for (const o of SIDE_ZONES) if (o !== z && o.section === z.section) expect(hit(z, o), `${z.id} × ${o.id}`).toBe(false);
+    }
+    expect(sideZoneCenter(SIDE_ZONES[0] as (typeof SIDE_ZONES)[number])).toEqual([-1280 + 112 + 113, 438]);
+    expect(sideZoneCenter(SIDE_ZONES[8] as (typeof SIDE_ZONES)[number])).toEqual([1280 + 992 + 75, 458]);
+  });
 
   test('stationToast совпадает с таблицей для всех достижимых from', () => {
     const NAME_TO_ID = new Map(STATIONS.map((s) => [s.name, s.id]));

@@ -43,7 +43,7 @@ exports.dismissCard = async (p) => {
  * Обучение по умолчанию выключено (showTutorial: true включит). Возвращает, когда экран закрылся и день идёт.
  */
 exports.sandboxStart = async (p, url, o = {}) => {
-  await p.goto('about:blank'); await p.goto(url + '#dev-nopixi-lowfx');
+  await p.goto('about:blank'); await p.goto(url + '#dev-nopixi-lowfx' + (o.sections || process.env.SEC ? '' : '-nosec')); /* без листания секций: плитки боковых станций кликаются в центре, как до Б1-4 (SEC=1 или o.sections — с листанием) */
   await p.waitForSelector('[data-sandbox]', { timeout: 30000 });
   await p.waitForTimeout(400);
   await p.evaluate(c => window.__sandbox.start(c), o);
@@ -52,3 +52,20 @@ exports.sandboxStart = async (p, url, o = {}) => {
 
 /* Камера бара (Б1-1), только #dev: window.__sec.go('L'|'C'|'R', instant); вернёт false, если секция закрыта */
 exports.goSection = (p, id, instant = true) => p.evaluate(([i, n]) => window.__sec.go(i, n), [id, instant]);
+
+/** Станция бокового ряда (чай, матча, порошки, соки, сифон, пенка, блендер, бабл ти, шейкер) — зона в боковой секции, когда листание включено. */
+const SIDE = ['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'];
+/** Селектор нужной зоны: при листании у боковых станций две зоны с одним id (плитка в центре не активна), берём ту, что в боковой секции. */
+exports.zoneSel = z => (SIDE.includes(z) ? `#bZones [data-sec] [data-z=${z}]` : `#bZones > [data-z=${z}]`);
+/** Камера к секции станции (#dev с листанием): возвращает секцию или null, если листания нет. Без листания (#dev-nosec) ничего не делает. */
+exports.goToStation = async (p, zone) => {
+  const sec = await p.evaluate(z => { if (!window.__sec) return null; const s = window.__MENUAPI.sectionOfZone(z) || 'C'; return window.__sec.state().sec === s || window.__sec.go(s, true) ? s : null; }, zone);
+  if (sec) await p.waitForTimeout(150);
+  return sec;
+};
+/** Клик по зоне станции: сначала камера в её секцию (если листание включено). */
+exports.clickZone = async (p, zone, opts = { force: true }) => {
+  const on = await p.evaluate(() => !!document.querySelector('#bZones [data-sec]'));
+  if (on) await exports.goToStation(p, zone);
+  await p.click(on ? exports.zoneSel(zone) : `[data-z=${zone}]`, opts);
+};

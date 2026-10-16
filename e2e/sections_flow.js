@@ -4,8 +4,9 @@
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs');
 const PW = require('./pw');
 const shots = process.argv[3] ? path.resolve(process.argv[3]) : null; if (shots) fs.mkdirSync(shots, { recursive: true });
+const shots3 = process.argv[5] ? path.resolve(process.argv[5]) : null; if (shots3) fs.mkdirSync(shots3, { recursive: true });
 const shots2 = process.argv[4] ? path.resolve(process.argv[4]) : null; if (shots2) fs.mkdirSync(shots2, { recursive: true });
-const HOOK = 'newGame(); updateHud(); showTitle(); window.__dbg = { resetBar() { try { barShow(false); } catch (e) { /* нет бара */ } BR = null; }, get G() { return G; }, get D() { return D; }, get BR() { return BR; }, CAM, WORLD, spawn, barOpen, barShow, applyUpgrades, openModal, camGo, barMsg };';
+const HOOK = 'newGame(); updateHud(); showTitle(); window.__dbg = { resetBar() { try { barShow(false); } catch (e) { /* нет бара */ } BR = null; }, get G() { return G; }, get D() { return D; }, get BR() { return BR; }, CAM, WORLD, ringTarget, camPush, zoneClick, spawn, barOpen, barShow, applyUpgrades, openModal, camGo, barMsg };';
 let fails = 0; const ok = (c, m) => { if (!c) fails++; console.log((c ? 'ok   ' : 'FAIL ') + m); };
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', HOOK);
@@ -209,6 +210,86 @@ let fails = 0; const ok = (c, m) => { if (!c) fails++; console.log((c ? 'ok   ' 
       ok(rep.bad.length === 0, `наложения мини-карты и стрелок ${vp.width}×${vp.height}: ${rep.bad.length ? rep.bad.join('; ') : 'нет'}; мини-карта ${rep.mm}; зазор до HUD слева ${rep.gap} экранных px`);
       if (vp.width === 1024) { ok(rep.gap >= 40, 'на 1024×600 зазор мини-карты до рейтинга ≥ 40 px (' + rep.gap + ')'); if (shots2) { await p.evaluate(() => window.scrollTo(0, 0)); await p.locator('#stage').screenshot({ path: `${shots2}/b13_8_minimap_1024x600.png`, timeout: 120000 }); } }
     }
+    await ctx.close(); }
+
+  /* ================= часть 3 (Б1-4): зоны боковых секций, кольцо в мировых координатах, коуч, блокировки ================= */
+  for (const vp of [{ width: 1312, height: 752 }, { width: 1040, height: 616 }]) {
+    const big = vp.width === 1312;
+    const { ctx, p } = await open('#dev', true, vp, big && shots3 ? 2 : 1);
+    await p.evaluate(() => document.querySelectorAll('#devBtn,#devPanel').forEach(e => { e.style.visibility = 'hidden'; }));
+    const sh3 = async (name) => { if (shots3 && big) { await p.evaluate(() => window.scrollTo(0, 0)); await p.locator('#stage').screenshot({ path: `${shots3}/${name}.png`, timeout: 120000 }); } };
+    const order3 = async (id) => { await p.evaluate(() => __dbg.resetBar()); await p.evaluate((id) => { const M = window.__MENUAPI, c = __dbg.D.customers[0], dk = M.drinkById[id]; c.drink = id; c.order.key = id; c.order.id = id; c.order.name = dk.name; c.order.size = '0.3'; c.order.cold = false; c.order.food = null; c.syrup = null; c.pat = c.max = 1e9; __dbg.barOpen(c); }, id); await p.waitForTimeout(900); await PW.dismissCard(p); await p.waitForTimeout(500); };
+    const active = () => p.evaluate(() => [...document.querySelectorAll('#bZones [data-z]')].filter(r => r.style.pointerEvents !== 'none').map(r => r.dataset.z));
+    const sameSet = (a, b) => a.length === b.length && b.every(x => a.includes(x));
+    const SIDE_L = ['tea', 'matcha', 'powders'], SIDE_R = ['juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'];
+    await p.evaluate(() => { const G = __dbg.G; G.tutOff = true; G.hints = true; ['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].forEach(k => { G['eq_' + k] = true; }); __dbg.applyUpgrades(); });
+    await order3('tea_sencha');
+    /* какие зоны активны в каждой секции */
+    let a = await active(); ok(!a.some(z => SIDE_L.concat(SIDE_R).includes(z)) && a.includes('grind') && a.includes('bell'), `${vp.width}: центр — активны зоны центра, плитки боковых станций не активны (${a.length} зон)`);
+    await p.evaluate(() => __dbg.camGo('L', true)); await p.waitForTimeout(300); a = await active(); ok(sameSet(a, SIDE_L), `${vp.width}: в L активны ровно зоны L: ${a}`);
+    await p.evaluate(() => __dbg.camGo('R', true)); await p.waitForTimeout(300); a = await active(); ok(sameSet(a, SIDE_R), `${vp.width}: в R активны ровно зоны R: ${a}`);
+    await p.evaluate(() => __dbg.camGo('C', false)); await p.waitForTimeout(100); a = await active(); ok(a.length === 0, `${vp.width}: во время перехода зон нет`); await p.waitForTimeout(500);
+    await p.evaluate(() => { __dbg.G.eq_tea = false; __dbg.applyUpgrades(); __dbg.camGo('L', true); }); await p.waitForTimeout(300); a = await active(); ok(sameSet(a, ['matcha', 'powders']), `${vp.width}: не купленная станция (чай) зоны не имеет: ${a}`); await p.evaluate(() => { __dbg.G.eq_tea = true; __dbg.applyUpgrades(); __dbg.camGo('C', true); });
+    /* коуч говорит то же, что тост, когда станция шага в другой секции */
+    await p.waitForTimeout(600); const ct = await p.evaluate(() => { const c = document.querySelector('#bCoach'); return c && !c.hidden ? c.textContent : ''; });
+    ok(/Станция «Чайная станция» в секции «Чайный бар»/.test(ct), `${vp.width}: коуч для станции другой секции: ${ct.slice(0, 90)}`);
+    /* бар с развёрнутым билетом, коучем и тостом: центры всех зон секций кликабельны (ничем не перекрыты) */
+    await p.evaluate(() => { document.querySelector('[data-tkmore]') && document.querySelector('[data-tkmore]').click(); __dbg.barMsg('Проверка наложений: тост на экране'); }); await p.waitForTimeout(400);
+    for (const sec of ['L', 'C', 'R']) {
+      await p.evaluate((s) => __dbg.camGo(s, true), sec); await p.waitForTimeout(350);
+      const r = await p.evaluate(() => {
+        const bad = [], okz = []; const act = [...document.querySelectorAll('#bZones [data-z]')].filter(z => z.style.pointerEvents !== 'none');
+        act.forEach(z => { const b = z.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2; const top = document.elementFromPoint(x, y); if (top && (top === z || (top.closest && top.closest('[data-z]') && !top.closest('[data-sec]') && !z.closest('[data-sec]')))) okz.push(z.dataset.z); /* зоны центра перекрываются по замыслу (чашка над шотом); боковые — нет */
+          else if (top && top === z) okz.push(z.dataset.z); else bad.push(z.dataset.z + ' закрыт ' + (top ? (top.id || top.className || top.tagName) : 'ничем')); });
+        return { bad, n: okz.length };
+      });
+      ok(r.bad.length === 0 && r.n > 0, `${vp.width} ${sec}: центры ${r.n} зон кликабельны, не перекрыты билетом, коучем, тостом, стрелками, мини-картой${r.bad.length ? ': ' + r.bad.join('; ') : ''}`);
+    }
+    await p.evaluate(() => { __dbg.camGo('C', true); const t = document.querySelector('[data-tkmore]'); if (t && t.getAttribute('aria-expanded') === 'true') t.click(); document.querySelector('#bFloat').innerHTML = ''; });
+    /* кольцо: только для станции текущей секции, в мировых координатах */
+    await p.waitForTimeout(500); ok(await p.evaluate(() => __dbg.ringTarget() === null), `${vp.width}: станция чая в L, камера в центре — кольца нет`);
+    ok((await navTxt(p)).length === 2 && await p.evaluate(() => document.querySelector('.secNavBtn.l.hl') !== null), `${vp.width}: вместо кольца подсвечена стрелка к Чайному бару`);
+    await sh3('b14_6_center_hints_other_section');
+    if (big) {
+      await p.evaluate(() => { __dbg.camGo('L', true); __dbg.CAM.x = 0; __dbg.camPush(); });
+      for (const [t, n] of [[0, 'b14_3_ring_move_000'], [0.15, 'b14_4_ring_move_150'], [0.3, 'b14_5_ring_move_300']]) { await p.evaluate((t) => { const x = window.__MENUAPI.cameraAt(0, -1280, t); __dbg.CAM.moving = false; __dbg.CAM.x = x; __dbg.camPush(); }, t); await p.waitForTimeout(300); await sh3(n); }
+    }
+    await p.evaluate(() => { __dbg.camGo('L', true); }); await p.waitForTimeout(500);
+    const rp = await p.evaluate(() => __dbg.ringTarget()); ok(rp && Math.abs(rp[0] - (-1055)) < 1 && Math.abs(rp[1] - 438) < 1, `${vp.width}: в L кольцо на станции чая в мировых координатах ${JSON.stringify(rp)}`);
+    await sh3('b14_1_left_ring');
+    /* клик по зоне станции в своей секции: окно, камера стоит; Esc, камера снова свободна */
+    const zc = await p.evaluate(() => { const r = document.querySelector('#bZones [data-sec="L"] [data-z="tea"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    await p.mouse.click(zc[0], zc[1]); await p.waitForTimeout(600); await PW.dismissCard(p);
+    ok(await p.evaluate(() => __dbg.BR.inset === 'brew'), `${vp.width}: клик по зоне чая в L открыл станцию`);
+    await p.keyboard.press('KeyD'); await p.waitForTimeout(450); await at(p, 'L', -1280, `${vp.width}: окно станции в L — камера не двигается`);
+    await p.keyboard.press('Escape'); await p.waitForTimeout(400); await key(p, 'KeyD'); await at(p, 'C', 0, `${vp.width}: после закрытия станции листание снова работает`);
+    await p.evaluate(() => __dbg.camGo('R', true)); await p.waitForTimeout(300); await p.mouse.click(...await p.evaluate(() => { const r = document.querySelector('#bZones [data-sec="R"] [data-z="juice"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })); await p.waitForTimeout(500); await PW.dismissCard(p);
+    ok(await p.evaluate(() => __dbg.BR.inset === null), `${vp.width}: станция сока не нужна к заказу чая — окна нет, камера стоит`);
+    await p.evaluate(() => { __dbg.camGo('C', true); }); await ctx.close();
+  }
+  /* окно станции в секции R (кадр): заказ с соком */
+  { const { ctx, p } = await open('#dev', true, { width: 1312, height: 752 }, shots3 ? 2 : 1);
+    await p.evaluate(() => { document.querySelectorAll('#devBtn,#devPanel').forEach(e => { e.style.visibility = 'hidden'; }); const G = __dbg.G; G.tutOff = true; G.hints = false; ['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].forEach(k => { G['eq_' + k] = true; }); __dbg.applyUpgrades(); });
+    await p.evaluate(() => __dbg.resetBar()); await p.evaluate(() => { const M = window.__MENUAPI, c = __dbg.D.customers[0], dk = M.drinkById.orange_bumble; c.drink = 'orange_bumble'; c.order.key = c.order.id = 'orange_bumble'; c.order.name = dk.name; c.order.size = '0.4'; c.order.cold = true; c.order.food = null; c.syrup = null; c.pat = c.max = 1e9; __dbg.barOpen(c); }); await p.waitForTimeout(900); await PW.dismissCard(p);
+    await p.evaluate(() => { const B = __dbg.BR; B.done.grind = B.done.tamp = B.done.shot = true; });
+    await p.evaluate(() => __dbg.camGo('R', true)); await p.waitForTimeout(400);
+    const jt = await p.evaluate(() => { const B = __dbg.BR; return B.tasks.find(x => !B.done[x] && x !== 'ice'); });
+    await p.evaluate(() => { const B = __dbg.BR; B.tasks.forEach(x => { if (['juice', 'tonic'].indexOf(x) < 0) B.done[x] = true; }); });
+    const zr = await p.evaluate(() => { const r = document.querySelector('#bZones [data-sec="R"] [data-z="juice"]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    await p.mouse.click(zr[0], zr[1]); await p.waitForTimeout(700); await PW.dismissCard(p);
+    ok(await p.evaluate(() => ['juice', 'tonic'].includes(__dbg.BR.inset)), 'секция R: клик по зоне сока открыл станцию (' + jt + ')');
+    await at(p, 'R', 1280, 'окно станции открыто в R: камера на месте'); ok((await navTxt(p)).length === 0, 'в R с окном станции стрелок нет');
+    if (shots3) { await p.evaluate(() => window.scrollTo(0, 0)); await p.locator('#stage').screenshot({ path: `${shots3}/b14_2_station_open_right.png`, timeout: 120000 }); }
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    await p.evaluate(() => { __dbg.camGo('R', true); }); await p.waitForTimeout(400);
+    if (shots3) { await p.evaluate(() => window.scrollTo(0, 0)); await p.locator('#stage').screenshot({ path: `${shots3}/b14_7_right_frames.png`, timeout: 120000 }); }
+    await ctx.close(); }
+  /* обычная игра: никаких боковых зон */
+  { const { ctx, p } = await open('', false, { width: 1312, height: 752 }, shots3 ? 2 : 1);
+    ok(await p.evaluate(() => !document.querySelector('#bZones [data-sec]') && document.querySelector('#barSvg').getAttribute('viewBox') === '0 0 1280 720'), 'без #dev: боковых зон нет, viewBox прежний');
+    await p.evaluate(() => { const G = __dbg.G; ['tea', 'matcha', 'powders', 'juice', 'whipper', 'foamer', 'blender', 'boba', 'shaker'].forEach(k => { G['eq_' + k] = true; }); __dbg.applyUpgrades(); });
+    ok(await p.evaluate(() => ['tea', 'matcha', 'boba', 'shaker'].every(z => document.querySelector(`#bZones [data-z=${z}]`).style.pointerEvents !== 'none')), 'без #dev: плитки боковых станций в центре кликабельны, как раньше');
+    if (shots3) { await p.evaluate(() => window.scrollTo(0, 0)); await p.locator('#stage').screenshot({ path: `${shots3}/b14_8_center_no_dev.png`, timeout: 120000 }); }
     await ctx.close(); }
   ok(!errs.length, errs.length ? errs.slice(0, 4).join(' | ') : 'ошибок страницы нет'); console.log(fails ? 'FAILS ' + fails : 'NO_ERRORS'); await b.close(); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
