@@ -7,6 +7,11 @@ const { chromium } = require('playwright'); const path = require('path'); const 
 const PW = require('./pw');
 const out = path.resolve(process.argv[3] || 'out/art-audit/sys'); fs.mkdirSync(out, { recursive: true });
 const parts = (process.argv[4] || 'cups,texts,recog').split(','); const on = k => parts.includes(k);
+/* Каждая часть идёт в своей странице: разбор реплик (texts) спавнит 400 гостей и обрезает D.customers, не снимая актёров с холста; их освобождённые текстуры давали ошибку страницы «alphaMode» в следующей части (recog). Это приём самого скрипта, не ошибка игры. */
+if (parts.length > 1 && !process.env.ART_MISC_CHILD) {
+  let code = 0; for (const k of parts) { const r = require('child_process').spawnSync(process.execPath, [__filename, process.argv[2], process.argv[3] || 'out/art-audit/sys', k], { stdio: 'inherit', env: { ...process.env, ART_MISC_CHILD: '1' } }); if (r.status) code = r.status; }
+  process.exit(code);
+}
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, WORLD, spawn, tickDay, barOpen, barShow, applyUpgrades, zoneClick, rcFor, barPaint, xLayers, resetBar() { try { barShow(false); } catch (e) { /* нет бара */ } BR = null; } };');
   if (!src.includes('window.__dbg')) { console.error('нужна отладочная сборка'); process.exit(2); }

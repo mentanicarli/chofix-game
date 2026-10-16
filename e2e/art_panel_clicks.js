@@ -10,6 +10,15 @@ const N = +(process.env.N || 30);
 const SIZES = (process.env.SIZES || '1280x720,1024x600,1920x1080').split(',').map(s => s.split('x').map(Number));
 const PANELS = [['tea_sencha', 'brew'], ['matcha_latte', 'whisk'], ['cocoa', 'powder'], ['espresso_tonic', 'tonic'], ['orange_bumble', 'juice'], ['milkshake_vanilla', 'blend'], ['boba_guava', 'brew'], ['latte_coconut', 'foam'], ['aerocano', 'whip'], ['protein_milk', 'powder'], ['frappe_caramel', 'blend']];
 const rnd = (a, b) => a + Math.random() * (b - a);
+/* Долгий прогон в одной странице иногда падает целиком («Target crashed» после ошибки звукового устройства, см. CLAUDE.md): память и состояние копятся. Поэтому без ONLY каждая панель идёт в своём процессе со свежим браузером, один повтор при падении процесса; ожидания (100 % попаданий, обрезки 0) не менялись. */
+if (!process.env.ONLY && !process.env.ART_PC_CHILD) {
+  let bad = 0;
+  for (const [id] of PANELS) {
+    let r; for (let k = 0; k < 2; k++) { r = require('child_process').spawnSync(process.execPath, [__filename, process.argv[2], process.argv[3] || 'out/art-audit/sys', ...process.argv.slice(4)], { stdio: 'inherit', env: { ...process.env, ONLY: id, ART_PC_CHILD: '1' } }); if (!r.status) break; console.log('панель ' + id + ': процесс упал, повтор ' + (k + 1)); }
+    if (r.status) bad++;
+  }
+  process.exit(bad ? 1 : 0);
+}
 (async () => {
   const src = fs.readFileSync(path.resolve(process.argv[2]), 'utf8').replace('newGame(); updateHud(); showTitle();', 'newGame(); updateHud(); showTitle(); window.__dbg = { get G() { return G; }, get D() { return D; }, get BR() { return BR; }, spawn, barOpen, zoneClick, applyUpgrades, resetBar() { try { barShow(false); } catch (e) { /* нет бара */ } BR = null; } };');
   if (!src.includes('window.__dbg')) { console.error('нужна отладочная сборка'); process.exit(2); }

@@ -99,7 +99,17 @@ function parseGuide(md) {
     if (!o.title || !o.text.length) throw new Error(`${key}: нет заголовка или текста`);
     why[key] = { title: o.title, text: o.text, picture: o.picture };
   }
-  return { stations, glossary, why };
+  /* часть 4: реплики коуча по шагам, ключ coach:<шаг> */
+  const coach = {};
+  const p4 = /## Часть 4[^\n]*\n([\s\S]*)$/.exec(md);
+  if (p4) for (const ch of p4[1].split(/^### /m).slice(1)) {
+    const lines = ch.split('\n'), h = /^coach:([a-z]+) — (.*)$/.exec(lines[0]);
+    if (!h) continue;
+    const r = lines.map((l) => /^Реплика:\s*(.*)$/.exec(l)).find(Boolean);
+    if (!r) throw new Error(`coach:${h[1]}: нет реплики`);
+    coach[h[1]] = r[1].trim();
+  }
+  return { stations, glossary, why, coach };
 }
 
 const drinks = parseDrinks(read('docs/content/drinks.md'));
@@ -142,6 +152,9 @@ export const DRINK_TEXTS: Readonly<Record<string, DrinkText>> = ${JSON.stringify
 export const GLOSSARY: readonly GlossaryTerm[] = ${JSON.stringify(guide.glossary, null, 1)};
 
 export const WHY_TEXTS: Readonly<Record<string, WhyText>> = ${JSON.stringify(guide.why, null, 1)};
+
+/** Реплика коуча на шаге станции до открытия окна (guide.md, часть 4); ключ — шаг билета. */
+export const COACH_LINES: Readonly<Record<string, string>> = ${JSON.stringify(guide.coach, null, 1)};
 `;
 
 if (process.argv.includes('--check')) {

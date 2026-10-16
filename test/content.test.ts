@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-  DRINKS, DRINK_TEXTS, GLOSSARY, STATION_NAMES, TUTORIALS, WHY_KEYS, WHY_MARK, WHY_SECTIONS, WHY_TEXTS, drinkSeenKey, freshSeen, glossaryGroups, lesson, orderIntro, stepsForShots, whyOfInset, whyOfOrder
+  COACH_LINES, DRINKS, DRINK_TEXTS, GLOSSARY, TASK_ZONE, STATION_NAMES, TUTORIALS, WHY_KEYS, WHY_MARK, WHY_SECTIONS, WHY_TEXTS, drinkSeenKey, freshSeen, glossaryGroups, lesson, orderIntro, stepsForShots, whyOfInset, whyOfOrder
 } from '../src/game/api';
 
 const POSITION = /слева|справа|в центре|по центру|сверху|снизу|вверху|внизу/i;
@@ -47,6 +47,20 @@ describe('тексты К1 в игре', () => {
     expect(WHY_KEYS).toContain(WHY_SECTIONS);
     expect(WHY_TEXTS[WHY_SECTIONS]?.title).toBe('Как листать бар');
     for (const l of WHY_TEXTS[WHY_SECTIONS]?.text ?? []) expect(l.length).toBeLessThanOrEqual(100);
+  });
+  test('реплика коуча есть у каждого шага новой станции, названия станций из списка, без положений, цифр и «!»', () => {
+    const LEGACY = new Set(['syrup', 'grind', 'tamp', 'shot', 'water', 'milk', 'steam', 'pour']);
+    const steps = Object.keys(TASK_ZONE).filter((k) => !LEGACY.has(k));
+    expect(Object.keys(COACH_LINES).sort()).toEqual([...steps].sort());
+    for (const [k, line] of Object.entries(COACH_LINES)) {
+      expect(line.length, k).toBeGreaterThan(15);
+      expect(line.length, k).toBeLessThanOrEqual(120);
+      expect(line, k).not.toMatch(POSITION);
+      expect(line, k).not.toMatch(/\d/);
+      expect(line, k).not.toContain('!');
+      expect(line[0], k).toBe((line[0] as string).toUpperCase());
+      for (const m of line.matchAll(/«([^»]+)»/g)) expect(STATION_NAMES, k).toContain(m[1]);
+    }
   });
   test('нет положений на экране и восклицательных знаков', () => {
     for (const { id, t } of allTexts()) {

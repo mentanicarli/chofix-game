@@ -17,6 +17,8 @@ const out = process.argv[3] || 'out/content';
   };
   const modal = () => p.evaluate(() => { const e = document.querySelector('#drinkCard'); return e.hidden ? '' : e.textContent; });
   const url = pw.url(tmp) + (process.env.HASH || '#nopixi-lowfx');
+  /* детерминированно: случайные числа сидированы, первый заказ задан (латте), раф — малого размера без второго «Зачем» (два шота) */
+  await p.addInitScript(() => { let a = 20261016; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; });
   await p.goto(url); await p.waitForTimeout(600);
   await pw.startNew(p); await p.waitForTimeout(500);
 
@@ -62,7 +64,7 @@ const out = process.argv[3] || 'out/content';
   await p.evaluate(() => { window.__dbg.G.tutorialSeen = window.__MENUAPI.freshSeen(); window.__dbg.G.hints = true; window.__dbg.G.rank = 1; window.__dbg.G.day = 1; });
   await p.click('[data-next]'); await p.waitForTimeout(800);
   await p.waitForFunction(() => window.__dbg.D.customers[0] && window.__dbg.D.customers[0].arrived, null, { timeout: 40000 });
-  await p.evaluate(() => { const c = window.__dbg.D.customers[0]; c.pat = c.max = 9999; });
+  await p.evaluate(() => { const c = window.__dbg.D.customers[0], dk = window.__MENUAPI.drinkById.latte; c.drink = 'latte'; Object.assign(c.order, { key: 'latte', id: 'latte', name: dk.name, size: '0.3', cold: false, food: null }); c.syrup = null; c.pat = c.max = 9999; });
   await p.keyboard.press('Space'); await p.waitForTimeout(900);
   let m = await modal(); console.log('первое окно:', JSON.stringify(m.slice(0, 80)));
   ok('первый заказ дня: карточка напитка (без «Зачем» на заказе)', /Новый напиток/.test(m));
@@ -92,7 +94,7 @@ const out = process.argv[3] || 'out/content';
   await p.evaluate(() => {
     const M = window.__MENUAPI, G = window.__dbg.G;
     let o; for (let i = 0; i < 20000 && !(o && o.id === 'raf'); i++) o = M.rollOrder({ rank: G.rank, day: G.day, milk: true, eq: { cream: true } }, 'regular');
-    const c = window.__dbg.D.customers[0]; c.order = o; c.drink = o.key; c.syrup = o.syrup ? o.syrup.shelf : null; c.pumps = o.syrup ? o.syrup.pumps : 1; c.strong = false; c.pat = c.max = 9999;
+    o.size = '0.2'; o.cold = false; const c = window.__dbg.D.customers[0]; c.order = o; c.drink = o.key; c.syrup = o.syrup ? o.syrup.shelf : null; c.pumps = o.syrup ? o.syrup.pumps : 1; c.strong = false; c.pat = c.max = 9999;
   });
   await p.keyboard.press('Space'); await p.waitForTimeout(900);
   m = await modal(); console.log('раф, окно 1:', JSON.stringify(m.slice(0, 70)));
