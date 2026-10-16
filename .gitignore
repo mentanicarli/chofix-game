@@ -7,6 +7,7 @@ out
 *.png
 !public/*.png
 !docs/art/drinks/**/*.png
+!docs/art/sections/**/*.png
 .DS_Store
 Thumbs.db
 .env*

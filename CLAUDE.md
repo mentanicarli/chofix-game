@@ -159,6 +159,7 @@ DOM поверх холста: `#bar` (z-index 2: тикет, коуч, инсе
 - Работаем только в ветке `main`, новые ветки не создаём. Владелец работает и локально, и в облаке; один запуск уже ушёл в чужую ветку, поэтому правило жёсткое.
 - Начало: `git fetch origin`, `git status` (грязное дерево — остановиться и сообщить), `git pull --rebase origin main`. Конец: `git push origin main`. Никогда `--force`.
 - Push вернул 403: `git format-patch -1 --stdout > out/<имя>.patch` и сообщить путь к файлу.
+- `.gitignore` исключает `*.png`: для новой папки со скриншотами всегда добавляй исключение (так же было в Н1-3 и Б1-1).
 - Репозиторий: https://github.com/mentanicarli/cuppable (раньше `chofix-game`). Игра называется Cuppable (латиницей, всегда с заглавной C); историческое «chofix» осталось только в ключах localStorage и именах файлов данных.
 - Push в `main` запускает workflow «Deploy to GitHub Pages»: `check` и `lint:legacy`, затем публикация. Красный `check` = деплоя не будет.
 
