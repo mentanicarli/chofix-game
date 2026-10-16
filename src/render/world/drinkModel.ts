@@ -246,6 +246,74 @@ export interface PartsOpts {
 
 const saucerRx = (k: number): number => 76 * Math.max(0.85, Math.min(1.4, 0.2 + 0.8 * k));
 
+/* ---------- посадка на блюдце (Н1-3б) ---------- */
+
+/** Донышко утоплено в углубление блюдца: единицы модели (≈ 2,5 px в баре и книге, ≈ 1 px в иконках). */
+export const SEAT_SINK = { full: 3, compact: 2 } as const;
+/** Блюдце шире донышка минимум на 30 %. */
+export const SEAT_MIN_WIDE = 1.3;
+export interface Ell { cx: number; cy: number; rx: number; ry: number }
+export interface Seat {
+  /** донышко: полуширина, y краёв, глубина дуги, нижняя точка */
+  Wb: number; yb: number; depth: number; yLow: number;
+  /** y управляющей точки дуги донышка (Q) */
+  ctrl: number;
+  sink: number;
+  saucer: Ell;
+  recess: Ell;
+  /** тёмный контактный эллипс под донышком */
+  contact: Ell;
+}
+/** Точка дуги донышка по параметру t (0..1): от правого края к левому, как у `Q` в корпусе. */
+export function bottomArc(seat: Pick<Seat, 'Wb' | 'yb' | 'ctrl'>, t: number): { x: number; y: number } {
+  return { x: seat.Wb * (1 - 2 * t), y: (1 - t) * (1 - t) * seat.yb + 2 * (1 - t) * t * seat.ctrl + t * t * seat.yb };
+}
+/**
+ * Геометрия посадки: донышко (эллипс-основание, нижняя дуга корпуса) ⊂ углубление ⊂ блюдце, три эллипса вложены друг в друга, поэтому щели нет.
+ * Нижняя точка донышка лежит на `sink` ниже центра углубления; блюдце шире донышка не меньше чем на 30 %.
+ */
+export function seatOf(g: Geom, level: Lod): Seat {
+  const compact = level === 'compact';
+  let Wb: number;
+  let yb: number;
+  let ctrl: number;
+  let rxOld: number;
+  if (g.kind === 'glass') {
+    Wb = g.Wb; yb = g.yb; ctrl = g.bulge;
+    rxOld = saucerRx(g.k) * 0.72;
+  } else if (g.kind === 'ceramic') {
+    Wb = g.Wb; yb = g.yb; ctrl = 4 * g.ky;
+    rxOld = compact ? g.W * 1.035 : saucerRx(g.k) * 0.9;
+  } else {
+    Wb = g.Wb; yb = g.yb; ctrl = 3 * g.k;
+    rxOld = 62 * g.k * 1.12;
+  }
+  const depth = (ctrl - yb) / 2;
+  const yLow = (yb + ctrl) / 2;
+  const sink = compact ? SEAT_SINK.compact : SEAT_SINK.full;
+  const recess: Ell = { cx: 0, cy: yLow - sink, rx: Wb * 1.14, ry: 2 * depth - sink + 1.5 };
+  const rxS = Math.max(rxOld, SEAT_MIN_WIDE * Wb + 3, recess.rx + 7);
+  const saucer: Ell = { cx: 0, cy: recess.cy + 2, rx: rxS, ry: recess.ry + 5 };
+  const contact: Ell = { cx: 0, cy: yLow - depth * 0.55, rx: Wb * 1.06, ry: depth * 0.95 };
+  return { Wb, yb, depth, yLow, ctrl, sink, saucer, recess, contact };
+}
+const ellSvg = (e: Ell, attrs: string): string => `<ellipse cx="${f2(e.cx)}" cy="${f2(e.cy)}" rx="${f2(e.rx)}" ry="${f2(e.ry)}" ${attrs}/>`;
+const CONTACT = mixColor(col('KRAFT_SH'), INK, 0.5);
+/**
+ * Слои посадки снизу вверх: мягкая тень под блюдцем → блюдце (задний и боковой край) → светлое углубление с кольцом → контактная тень под донышком.
+ * Корпус рисуется позже, поэтому передний край блюдца его не перекрывает. В компактном уровне углубление без кольца и без обводки тени.
+ */
+function seatSvg(seat: Seat, compact: boolean, sw: (px: number) => number, thick: number): string {
+  const { saucer, recess, contact } = seat;
+  let o = ellSvg({ cx: 2, cy: saucer.cy + saucer.ry * 0.55, rx: saucer.rx, ry: saucer.ry * 0.6 }, `fill="${col('SHADOW')}" opacity=".18"`);
+  o += ellSvg(saucer, `fill="${col('KRAFT')}" stroke="${INK}" stroke-width="${sw(thick)}"`);
+  o += ellSvg(recess, `fill="${mixColor(col('KRAFT'), col('HILITE'), 0.45)}"${compact ? '' : ` stroke="${col('KRAFT_SH')}" stroke-width="${sw(1.6)}"`}`);
+  o += ellSvg(contact, `fill="${CONTACT}" fill-opacity=".7"`);
+  return o;
+}
+/** Контактная тень без блюдца (стакан без блюдца в полном уровне): тот же эллипс под донышком. */
+const contactOnly = (seat: Seat): string => ellSvg({ ...seat.contact, ry: seat.contact.ry * 1.15, cy: seat.contact.cy + 1 }, `fill="${CONTACT}" fill-opacity=".55"`);
+
 /** Все слои модели для спецификации. */
 export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
   const g = geomOf(spec.vessel);
@@ -270,11 +338,11 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
 
   if (g.kind === 'glass') {
     const fill = spec.cold ? 0.96 : 0.88;
-    if (o.saucer) {
-      const sr = saucerRx(g.k) * 0.8;
-      back += `<ellipse cx="0" cy="7" rx="${f2(sr * 0.9)}" ry="9" fill="${col('KRAFT')}" stroke="${INK}" stroke-width="${sw(3)}"/><ellipse cx="0" cy="5" rx="${f2(sr * 0.62)}" ry="4.6" fill="${col('KRAFT_SH')}"/>`;
-      grow(-sr * 0.9, 0, sr * 0.9, 18);
-    } else back += `<ellipse cx="2" cy="${f2(3 * g.ky)}" rx="${f2(g.Wt * 0.95)}" ry="${f2(3.6 * g.ky)}" fill="${col('SHADOW')}" opacity=".22"/>`;
+    const seat = seatOf(g, o.level);
+    if (o.saucer || compact) {
+      back += seatSvg(seat, compact, sw, 3);
+      grow(-seat.saucer.rx, seat.saucer.cy - seat.saucer.ry, seat.saucer.rx, seat.saucer.cy + seat.saucer.ry + 2);
+    } else back += contactOnly(seat);
     back += `<path d="${glassPath(g)}" fill="${PAL.glass.fill}" fill-opacity="${PAL.glass.alpha}"/>`;
     const liq = glassLiquidSvg(spec, g, fill, compact, sw);
     const id = 'gc' + (spec.id.length * 7 + Math.round(g.k * 100));
@@ -305,8 +373,8 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     const y0 = -H * 0.8;
     const y1 = -H * 0.26;
     const hp = `M${f2(hx)} ${f2(y0)}C${f2(hx + reach)} ${f2(y0 - 6 * ky)} ${f2(hx + reach)} ${f2(y1 + 4 * ky)} ${f2(hx - 3)} ${f2(y1)}`;
-    const sr = compact ? W * 1.15 : saucerRx(k);
-    back += `<ellipse cx="0" cy="7" rx="${f2(sr * 0.9)}" ry="10" fill="${col('KRAFT')}" stroke="${INK}" stroke-width="${sw(M)}"/><ellipse cx="0" cy="5" rx="${f2(sr * 0.62)}" ry="5" fill="${col('KRAFT_SH')}"/>`;
+    const seat = seatOf(g, o.level);
+    back += seatSvg(seat, compact, sw, M);
     back += `<path d="${hp}" fill="none" stroke="${INK}" stroke-width="${sw(th * 0 + th + 2 * M)}" stroke-linecap="round"/><path d="${hp}" fill="none" stroke="${col('PAPER')}" stroke-width="${sw(th)}" stroke-linecap="round"/>`;
     back += `<path d="${side('Z')}" fill="${col('PAPER')}"/>`;
     back += `<path d="M${f2(W * 0.55)} ${f2(-H * 0.98)}L${f2(W)} ${f2(-H)}C${f2(W * 1.03)} ${f2(-H * 0.5)} ${f2(Wb * 1.1)} ${f2(-H * 0.1)} ${f2(Wb)} ${f2(yb)}Q${f2(Wb * 0.4)} ${f2(ky)} ${f2(Wb * 0.15)} 0C${f2(Wb * 0.5)} ${f2(-H * 0.3)} ${f2(W * 0.72)} ${f2(-H * 0.62)} ${f2(W * 0.55)} ${f2(-H * 0.98)}Z" fill="${col('KRAFT_SH')}"/>`;
@@ -323,7 +391,7 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     front += `<path d="${side('')}" fill="none" stroke="${INK}" stroke-width="${sw(M)}" stroke-linejoin="round" stroke-linecap="round"/>`;
     front += `<ellipse cx="0" cy="${f2(-H)}" rx="${f2(W)}" ry="${f2(ryR)}" fill="none" stroke="${INK}" stroke-width="${sw(M)}"/>`;
     front += `<path d="M${f2(-W * 0.82)} ${f2(-H * 0.8)}Q${f2(-W * 0.88)} ${f2(-H * 0.45)} ${f2(-Wb * 0.88)} ${f2(-H * 0.2)}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="${sw(3)}" stroke-linecap="round"/>`;
-    grow(-sr * 0.9, -H - ryR - 2, sr * 0.9 + 4, 18);
+    grow(-seat.saucer.rx, -H - ryR - 2, seat.saucer.rx + 4, seat.saucer.cy + seat.saucer.ry + 2);
     grow(-W, -H - ryR, W + reach + 6, 0);
   } else {
     const { W, Wb, H, yb, ryR, reach, k } = g;
@@ -332,8 +400,8 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     const y0 = -H * 0.82;
     const y1 = -H * 0.3;
     const hp = `M${f2(hx)} ${f2(y0)}C${f2(hx + reach)} ${f2(y0 - 4 * k)} ${f2(hx + reach)} ${f2(y1 + 3 * k)} ${f2(hx - 3)} ${f2(y1)}`;
-    const sr = 62 * k * 1.12;
-    back += `<ellipse cx="0" cy="${f2(5 * k)}" rx="${f2(sr)}" ry="${f2(8 * k)}" fill="${col('KRAFT')}" stroke="${INK}" stroke-width="${sw(M)}"/><ellipse cx="0" cy="${f2(3.5 * k)}" rx="${f2(sr * 0.58)}" ry="${f2(3.6 * k)}" fill="${col('KRAFT_SH')}"/>`;
+    const seat = seatOf(g, o.level);
+    back += seatSvg(seat, compact, sw, M);
     back += `<path d="${hp}" fill="none" stroke="${INK}" stroke-width="${sw(4.2 + 2 * M)}" stroke-linecap="round"/><path d="${hp}" fill="none" stroke="${col('PAPER')}" stroke-width="${sw(4.2)}" stroke-linecap="round"/>`;
     back += `<path d="${side('Z')}" fill="${col('PAPER')}"/>`;
     back += `<ellipse cx="0" cy="${f2(-H)}" rx="${f2(W)}" ry="${f2(ryR)}" fill="${col('CER_IN')}"/>`;
@@ -341,7 +409,7 @@ export function drinkParts(spec: DrinkSpec, o: PartsOpts): DrinkParts {
     if (!compact && surfaceTop.ring) liquid += `<ellipse cx="0" cy="${f2(-H + 1.4 * k)}" rx="${f2(W - 4 * k)}" ry="${f2(ryR - 2.6 * k)}" fill="none" stroke="${surfaceTop.ring}" stroke-width="${sw(3)}"/>`;
     front += `<path d="${side('')}" fill="none" stroke="${INK}" stroke-width="${sw(M)}" stroke-linejoin="round" stroke-linecap="round"/>`;
     front += `<ellipse cx="0" cy="${f2(-H)}" rx="${f2(W)}" ry="${f2(ryR)}" fill="none" stroke="${INK}" stroke-width="${sw(M)}"/>`;
-    grow(-sr, -H - ryR - 2, sr + 2, 14 * k);
+    grow(-seat.saucer.rx, -H - ryR - 2, seat.saucer.rx + 2, seat.saucer.cy + seat.saucer.ry + 2);
     grow(-W, -H, W + reach + 5, 0);
   }
   let steam = '';

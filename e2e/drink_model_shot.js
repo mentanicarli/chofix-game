@@ -42,7 +42,7 @@ const SIZES = [[1280, 720], [1024, 600]];
       await p.waitForTimeout(500); await PW.dismissCard(p);
     };
     const level = async (f) => { await p.evaluate((f) => { const B = __dbg.BR, rc = B.rc; B.cup.es = f > 0.15 ? (rc.shots || 0) * 30 : 0; if (rc.water) B.cup.water = rc.water * f; if (rc.milk) { B.cup.milk = rc.milk * f; B.cup.foam = f > 0.9 ? rc.foam || 0 : 0; } if (rc.ice) B.cup.ice = rc.ice * f; B.cup.level = f; }, f); await p.waitForTimeout(900); };
-    const cases = [['latte', '0.3', false, 'latte_hot'], ['cappuccino', '0.4', true, 'cappuccino_cold'], ['orange_bumble', '0.3', true, 'bumble_0.3'], ['orange_bumble', '0.6', true, 'bumble_0.6']];
+    const cases = [['latte', '0.3', false, 'latte_hot'], ['cappuccino', '0.4', true, 'cappuccino_cold'], ['orange_bumble', '0.3', true, 'bumble_0.3'], ['orange_bumble', '0.6', true, 'bumble_0.6'], ['espresso', '0.2', false, 'espresso_old_art']];
     for (const [id, size, cold, name] of cases) {
       if (!(on('bar') || on('ticket') || on('ice'))) break;
       await order(id, size, cold); await level(1);
